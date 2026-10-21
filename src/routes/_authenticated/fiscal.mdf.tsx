@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { emitirMdfFn, consultarMdfFn, encerrarMdfFn, cancelarMdfFn } from "@/lib/sefaz-mdf-server";
 import { gerarDamdfePdf, damdfeDataDoXml } from "@/lib/damdfe-pdf";
 import { MDFE_AMBIENTE } from "@/lib/sefaz-ambiente";
+import { PRODUTO_PREDOMINANTE_PADRAO } from "@/lib/ncm-fiscal";
 import { DateInput } from "@/components/erp/date-input";
 import { StatusBadge } from "@/components/erp/status-badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -1722,7 +1723,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
           cnpjSeg: segOrigem?.cnpjSeg || "",
         }),
         contratantes: contratantesMdf,
-        prodPred: { xProd: proPredMdf, tpCarga: proPredTpCarga || undefined, ncm: proPredNcm || undefined },
+        prodPred: { xProd: proPredMdf || PRODUTO_PREDOMINANTE_PADRAO, tpCarga: proPredTpCarga || undefined, ncm: proPredNcm || undefined },
         mdfesTransbordo: await (async () => {
           // Municípios de descarga reais do manifesto origem (do XML dele);
           // xMun ausente é resolvido via IBGE, senão a emissão aborta (215).

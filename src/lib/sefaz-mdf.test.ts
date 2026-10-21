@@ -21,14 +21,14 @@ describe("regras do MDF-e", () => {
   });
 
   it("usa produto padrão quando não há dados", () => {
-    expect(montarProdPredXml()).toContain("<tpCarga>05</tpCarga><xProd>CARGA GERAL</xProd>");
+    expect(montarProdPredXml()).toContain("<tpCarga>05</tpCarga><xProd>CAIXAS</xProd>");
   });
 
   it("normaliza dados incompletos com valores fiscais seguros", () => {
     const xml = montarProdPredXml({ tpCarga: "", xProd: "", ncm: "" });
 
     expect(xml).toContain("<tpCarga>05</tpCarga>");
-    expect(xml).toContain("<xProd>CARGA GERAL</xProd>");
+    expect(xml).toContain("<xProd>CAIXAS</xProd>");
     expect(xml).not.toContain("<NCM>");
   });
 

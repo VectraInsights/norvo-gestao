@@ -6558,3 +6558,17 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
   (cabecalho `bg-primary/8` + `rounded-t-xl`); a tabela de NF-es continua sendo a unica
   parte com rolagem.
 - tsc sem erro novo e build OK.
+
+## CT-e: produto predominante fora da tela, padrao "CAIXAS" (21/10)
+
+- Decisao do dono: o predominant **nao aparece no formulario de emissao** — para
+  transportadora a carga e sempre "CAIXAS" (carga generica).
+- O card "Produto Predominante" saiu da aba Tributacao e Carga; o `<proPred>` do CT-e
+  (`infCarga/proPred`) vai sempre "CAIXAS" (`PRODUTO_PREDOMINANTE_PADRAO`).
+- O cadastro `ncm_fiscal` continua existindo **so** para o usuario ajustar o NCM e o
+  tipo de carga do predominant — que vao para o `<prodPred>` do MDF-e. O item padrao
+  "CAIXAS" e garantido automaticamente (`garantirPadraoNcmFiscal`, idempotente) ao abrir
+  o CT-e ou a tela Configuracoes > NCM dos CT-es.
+- MDF-e: `prodPred/xProd` usa "CAIXAS" como fallback e o `montarProdPredXml` passou a
+  usar "CAIXAS" como xProd padrao (antes "CARGA GERAL"). Teste atualizado.
+- tsc sem erro novo, `npm test` (70) e build OK.

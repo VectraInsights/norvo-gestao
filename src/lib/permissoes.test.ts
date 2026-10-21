@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MODULOS, moduloDaRota, modulosDaRota, podeAcessarRota } from "./permissoes";
+import { MODULOS, moduloDaRota, modulosDaRota, moduloDoItemMenu, podeAcessarRota } from "./permissoes";
 
 describe("moduloDaRota", () => {
   it("identifica módulos nas rotas do ERP", () => {
@@ -49,5 +49,19 @@ describe("podeAcessarRota (cadastros de apoio)", () => {
     expect(modulosDaRota("/frota/veiculos")).toEqual(["frota", "fiscal"]);
     expect(modulosDaRota("/rh/colaboradores")).toEqual(["rh", "fiscal"]);
     expect(modulosDaRota("/frota/multas")).toEqual(["frota"]);
+  });
+});
+
+describe("moduloDoItemMenu (menu do sidebar)", () => {
+  it("sem módulo explícito, vale o módulo da rota (regra estrita)", () => {
+    expect(moduloDoItemMenu("/frota/veiculos")).toBe("frota");
+    expect(moduloDoItemMenu("/rh/colaboradores")).toBe("rh");
+    expect(moduloDoItemMenu("/fiscal/cte")).toBe("fiscal");
+  });
+
+  it("com módulo explícito, vale o módulo do grupo do item", () => {
+    // "Veículos" e "Motoristas" dentro do grupo Fiscal
+    expect(moduloDoItemMenu("/frota/veiculos", "fiscal")).toBe("fiscal");
+    expect(moduloDoItemMenu("/rh/colaboradores", "fiscal")).toBe("fiscal");
   });
 });

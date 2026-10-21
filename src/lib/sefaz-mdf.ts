@@ -73,7 +73,7 @@ function escapeXml(value: string): string {
 
 export function montarProdPredXml(prod?: { tpCarga?: string; xProd?: string; ncm?: string }): string {
   const tpCarga = /^(0[1-9]|1[01])$/.test(String(prod?.tpCarga || "").trim()) ? String(prod!.tpCarga).trim() : "05";
-  const xProd = escapeXml(String(prod?.xProd || "").trim().slice(0, 120) || "CARGA GERAL");
+  const xProd = escapeXml(String(prod?.xProd || "").trim().slice(0, 120) || "CAIXAS");
   const ncm = String(prod?.ncm || "").replace(/\D/g, "");
   const ncmXml = (/^\d{8}$/.test(ncm) || /^\d{2}$/.test(ncm)) ? `<NCM>${ncm}</NCM>` : "";
   return `<prodPred><tpCarga>${tpCarga}</tpCarga><xProd>${xProd}</xProd>${ncmXml}</prodPred>`;

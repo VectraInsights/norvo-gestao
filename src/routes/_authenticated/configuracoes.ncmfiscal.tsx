@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Check, Package, Plus, Trash2, X } from "lucide-react";
@@ -35,6 +35,7 @@ import { SearchField } from "@/components/erp/search-field";
 import { supabase } from "@/integrations/supabase/client";
 import {
   OPCOES_TP_CARGA,
+  garantirPadraoNcmFiscal,
   normalizaNcm,
   rotuloTpCarga,
   tipoAnttDoTpCarga,
@@ -72,6 +73,13 @@ export function NcmFiscalTab({ empresaId }: { empresaId: string }) {
   const [editXProd, setEditXProd] = useState("");
   const [editTipo, setEditTipo] = useState<string>("");
   const [excluindo, setExcluindo] = useState<Linha | null>(null);
+
+  // Garante o item padrao "CAIXAS" (produto predominante das cargas).
+  useEffect(() => {
+    void garantirPadraoNcmFiscal(empresaId).then(() => {
+      qc.invalidateQueries({ queryKey: ["ncm-fiscal", empresaId] });
+    });
+  }, [empresaId, qc]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["ncm-fiscal", empresaId],

@@ -35,8 +35,19 @@ import {
   OctagonAlert,
   Calculator,
 } from "lucide-react";
+import type { ModuloKey } from "@/lib/permissoes";
 
-export type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
+export type NavItem = {
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  /**
+   * Módulo que libera este item no menu. Só para itens que apontam para a tela de
+   * OUTRO módulo (ex.: Veículos/Motoristas dentro do grupo Fiscal) — sem ele, vale o
+   * módulo da própria rota.
+   */
+  modulo?: ModuloKey;
+};
 export type NavGroup = { label: string; icon: typeof LayoutDashboard; items: NavItem[] };
 
 const byLabel = (a: { label: string }, b: { label: string }) =>
@@ -128,9 +139,11 @@ const RAW_NAV: NavGroup[] = [
       { to: "/fiscal/relatorios", label: "Relatórios e Dashboards", icon: BarChart3 },
       { to: "/fiscal/contador", label: "Painel do Contador", icon: Handshake },
       // Cadastros de apoio: o Fiscal precisa de veículo e motorista para emitir
-      // (o cadastro é o mesmo do Frota/RH — ver MODULOS_ALTERNATIVOS).
-      { to: "/frota/veiculos", label: "Veículos", icon: Truck },
-      { to: "/rh/colaboradores", label: "Motoristas", icon: UsersRound },
+      // (o cadastro é o mesmo do Frota/RH — ver MODULOS_ALTERNATIVOS). O item fica
+      // dentro do grupo Fiscal, então `modulo: "fiscal"` libera quem só tem Fiscal —
+      // os grupos Frota & Viagens e DP / RH continuam sumindo do menu dele.
+      { to: "/frota/veiculos", label: "Veículos", icon: Truck, modulo: "fiscal" },
+      { to: "/rh/colaboradores", label: "Motoristas", icon: UsersRound, modulo: "fiscal" },
     ],
   },
 ];

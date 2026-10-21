@@ -101,7 +101,7 @@ import { SEFAZ_AMBIENTE, erroSefazAmigavel } from "@/lib/sefaz-ambiente";
 import { pisoMinimoAntt } from "@/lib/piso-antt";
 import { emitirCiotFn, consultarFrotaAnttFn, consultarCiotGeradoAnttFn } from "@/lib/antt-ciot-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
-import { rotuloTpCarga } from "@/lib/ncm-fiscal";
+import { garantirPadraoNcmFiscal } from "@/lib/ncm-fiscal";
 import { gerarDactePdf, DACTE_REV } from "@/lib/dacte-pdf";
 import { completarLogradouro, temTipoLogradouro } from "@/lib/endereco";
 import { consultarCnpj, patchContatoComCnpj } from "@/lib/cnpj";
@@ -1960,9 +1960,7 @@ function CtePage() {
     vPrest: "0.00",
     vCarga: "0.00",
     peso: "0",
-    proPred: "",
-    proPredNcm: "",
-    proPredTpCarga: "",
+    proPred: "CAIXAS",
     rntrc: "",
     icmsCST: "00",
     icmsBase: "1000.00",
@@ -3014,21 +3012,13 @@ function CtePage() {
     },
   });
 
-  // Cadastro fiscal de NCM (modulo Fiscal): produtos predominantes da carga.
-  const { data: ncmFiscal } = useQuery({
-    enabled: !!empresa,
-    queryKey: ["ncm-fiscal", empresa?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ncm_fiscal" as never)
-        .select("id,ncm,x_prod,tp_carga")
-        .eq("empresa_id", empresa!.id)
-        .order("x_prod");
-      if (error) return [] as { id: string; ncm: string | null; x_prod: string; tp_carga: string | null }[];
-      return ((data ?? []) as unknown as { id: string; ncm: string | null; x_prod: string; tp_carga: string | null }[]) ?? [];
-    },
-  });
-
+  // Cadastro fiscal de NCM (modulo Fiscal): o item padrao "CAIXAS" e o produto
+  // predominante das cargas. Fica no cadastro (Configuracoes > NCM dos CT-es) para o
+  // usuario ajustar NCM e tipo de carga, mas nao aparece no formulario de emissao.
+  useEffect(() => {
+    if (!empresa) return;
+    void garantirPadraoNcmFiscal(empresa.id);
+  }, [empresa?.id]);
   // PIS/COFINS automático conforme regime da empresa
   const { data: regimeData } = useQuery({
     enabled: !!empresa,
@@ -4847,7 +4837,7 @@ function CtePage() {
               vPrest: totalPrestacao(form),
               vCarga: parseFloat(form.vCarga) || 0,
               pesoKg: parseFloat(form.peso) || 0,
-              infCTeNorm: { proPred: (form as any).proPred || "CARGA GERAL" },
+              infCTeNorm: { proPred: (form as any).proPred || "CAIXAS" },
               rntrc: rntrcFinal,
               modalRod: {
                 rntrc: rntrcFinal,
@@ -8879,57 +8869,6 @@ function CtePage() {
 
             {/* === TAB: Doc Mercadorias === */}
             <TabsContent value="docs" className="mt-2 min-h-0 flex-1 space-y-3 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
-              <Card className="overflow-hidden shrink-0">
-                <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
-                  Produto Predominante
-                </div>
-                <div className="grid grid-cols-1 gap-2 p-3 md:grid-cols-3">
-                  <div>
-                    <Label className="text-[10px] text-foreground/80">Produto (cadastro fiscal)</Label>
-                    <Select
-                      value={(form as any).proPredNcm || "__none__"}
-                      onValueChange={(v) => {
-                        const item = (ncmFiscal ?? []).find((x) => x.id === v);
-                        setForm({
-                          ...form,
-                          proPred: item ? item.x_prod : "",
-                          proPredNcm: item ? item.ncm || "" : "",
-                          proPredTpCarga: item ? item.tp_carga || "" : "",
-                        } as any);
-                      }}
-                    >
-                      <SelectTrigger className="h-7 text-xs">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">Sem produto predominante</SelectItem>
-                        {(ncmFiscal ?? []).map((x) => (
-                          <SelectItem key={x.id} value={x.id}>
-                            {x.x_prod}
-                            {x.ncm ? ` — ${x.ncm}` : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-[10px] text-foreground/80">NCM</Label>
-                    <Input
-                      className="h-7 text-xs bg-transparent dark:bg-transparent"
-                      value={(form as any).proPredNcm || ""}
-                      readOnly
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-[10px] text-foreground/80">Tipo de carga</Label>
-                    <Input
-                      className="h-7 text-xs bg-transparent dark:bg-transparent"
-                      value={rotuloTpCarga((form as any).proPredTpCarga)}
-                      readOnly
-                    />
-                  </div>
-                </div>
-              </Card>
               <Card className="overflow-hidden flex min-h-0 flex-1 flex-col">
                 <div className="min-h-0 flex-1 overflow-y-auto overflow-x-auto [&_.erp-table-wrap]:max-h-none">
                   <Table>

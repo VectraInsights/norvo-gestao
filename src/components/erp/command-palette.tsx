@@ -9,7 +9,7 @@ import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSelectedEmpresaId } from "@/hooks/use-empresa";
 import { usePermissoes } from "@/hooks/use-permissoes";
-import { podeAcessarRota } from "@/lib/permissoes";
+import { moduloDaRota } from "@/lib/permissoes";
 
 type RotaBusca = { label: string; to: string; secao?: string; hint?: string };
 
@@ -70,7 +70,7 @@ export function CommandPalette() {
   const rotaVisivel = (r: RotaBusca) => {
     if (r.secao === "usuarios") return ehAdmin;
     if (r.secao === "fiscais") return pode("fiscal");
-    return podeAcessarRota(r.to, pode);
+    return pode(moduloDaRota(r.to));
   };
 
   const { data: contatos } = useQuery({

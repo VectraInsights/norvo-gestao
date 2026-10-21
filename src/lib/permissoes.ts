@@ -47,3 +47,18 @@ export function podeAcessarRota(
   if (!mods.length) return true;
   return mods.some((m) => pode(m));
 }
+
+/**
+ * Módulo que libera um ITEM DE MENU.
+ *
+ * Sem `modulo`, vale o módulo da própria rota (regra estrita: o grupo Frota & Viagens
+ * some para quem só tem Fiscal). Com `modulo`, vale o módulo do GRUPO — é assim que
+ * "Veículos" e "Motoristas" aparecem dentro do grupo Fiscal sem abrir o grupo
+ * Frota & Viagens / DP / RH para o usuário.
+ */
+export function moduloDoItemMenu(
+  to: string,
+  modulo?: ModuloKey,
+): ModuloKey | null {
+  return modulo ?? moduloDaRota(to);
+}

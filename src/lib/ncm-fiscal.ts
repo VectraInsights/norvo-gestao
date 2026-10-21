@@ -179,3 +179,37 @@ export async function listarNcmFiscal(empresaId: string): Promise<NcmFiscal[]> {
     return [];
   }
 }
+
+/** Produto predominante padrao da transportadora. */
+export const PRODUTO_PREDOMINANTE_PADRAO = "CAIXAS";
+
+/**
+ * Garante o item padrao "CAIXAS" no cadastro fiscal da empresa.
+ *
+ * O predominant e sempre "CAIXAS" (carga generica de transportadora), entao nao ha
+ * seletor na tela de emissao: o cadastro existe so para o usuario ajustar o NCM e o
+ * tipo de carga (que vao para o <prodPred> do MDF-e). Idempotente.
+ */
+export async function garantirPadraoNcmFiscal(empresaId: string): Promise<boolean> {
+  try {
+    const { data: existentes, error } = await supabase
+      .from("ncm_fiscal" as never)
+      .select("id, x_prod")
+      .eq("empresa_id", empresaId);
+    if (error) return false;
+    const jaTem = ((existentes ?? []) as unknown as { id: string; x_prod: string }[]).some(
+      (r) => String(r.x_prod || "").trim().toUpperCase() === PRODUTO_PREDOMINANTE_PADRAO,
+    );
+    if (jaTem) return true;
+    const { error: errIns } = await supabase.from("ncm_fiscal" as never).insert({
+      empresa_id: empresaId,
+      ncm: null,
+      x_prod: PRODUTO_PREDOMINANTE_PADRAO,
+      tp_carga: "05",
+      origem: "manual",
+    } as never);
+    return !errIns;
+  } catch {
+    return false;
+  }
+}

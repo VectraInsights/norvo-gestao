@@ -43,7 +43,7 @@ import { limparCachePersistido } from "@/lib/query-cache";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { setSelectedEmpresaId, useSelectedEmpresaId } from "@/hooks/use-empresa";
 import { usePermissoes } from "@/hooks/use-permissoes";
-import { podeAcessarRota } from "@/lib/permissoes";
+import { moduloDaRota, moduloDoItemMenu, podeAcessarRota } from "@/lib/permissoes";
 import { AlterarSenhaDialog } from "@/components/erp/alterar-senha-dialog";
 import {
   DropdownMenu,
@@ -193,21 +193,26 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   // Permissões por módulo da empresa atual
   const { pode, ehAdmin, souSuperAdmin } = usePermissoes();
-  const visivel = (to: string) => {
+  // O item do menu vale o módulo do PRÓPRIO grupo (`i.modulo`) ou, sem ele, o módulo
+  // da rota. Assim o grupo Frota/DP-RH some para quem só tem Fiscal, mesmo com o item
+  // "Veículos" existindo lá dentro do grupo Fiscal.
+  const visivel = (to: string, modulo?: string) => {
     if (to === "/configuracoes/usuarios") return ehAdmin;
-    return podeAcessarRota(to, pode);
+    return pode(moduloDoItemMenu(to, modulo as any));
   };
 
   // Visão geral é um link direto (Dashboard); Favoritos sempre visível; demais conforme personalização
+  // (o mesmo item pode estar em 2 grupos — ex.: Veículos no Frota e no Fiscal: mostra 1 vez)
   const favItems = ALL_NAV_ITEMS.filter((i) => favorites.includes(i.to))
-    .filter((i) => visivel(i.to))
+    .filter((i) => visivel(i.to, i.modulo))
+    .filter((i, idx, arr) => arr.findIndex((x) => x.to === i.to) === idx)
     .sort((a, b) => a.label.localeCompare(b.label, "pt-BR", { sensitivity: "base" }));
   const showOverview = prefGroups.some((g) => g.label === OVERVIEW_LABEL);
   const navGroups = [
     { label: FAVORITES_LABEL, icon: Star, items: favItems },
     ...prefGroups
       .filter((g) => g.label !== OVERVIEW_LABEL)
-      .map((g) => ({ ...g, items: g.items.filter((i) => visivel(i.to)) }))
+      .map((g) => ({ ...g, items: g.items.filter((i) => visivel(i.to, i.modulo)) }))
       .filter((g) => g.items.length > 0),
   ];
 
