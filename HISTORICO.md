@@ -6548,3 +6548,13 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
   no MDF-e) — o item recem-cadastrado ja aparece no seletor. O listener so fica ativo
   com o dialogo de emissao aberto.
 - tsc sem erro novo, `npm test` (68) e build OK.
+
+## CT-e: produto predominante foi para a aba Tributacao e Carga (21/10)
+
+- O card "Produto Predominante" saiu da aba **Geral** e foi para o topo da aba
+  **Tributacao e Carga** (`?secao=docs`), que e onde mora a carga do CT-e
+  (`infCarga/proPred`). Faz mais sentido ao lado da tabela de NF-es e dos impostos.
+- Card com `shrink-0` (nao encolhe) e a mesma identidade visual dos outros blocos
+  (cabecalho `bg-primary/8` + `rounded-t-xl`); a tabela de NF-es continua sendo a unica
+  parte com rolagem.
+- tsc sem erro novo e build OK.

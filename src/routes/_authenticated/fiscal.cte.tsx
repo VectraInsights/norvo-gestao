@@ -8865,11 +8865,25 @@ function CtePage() {
                   )}
                 </Card>
               </div>
-              <Card className="overflow-hidden p-3">
+              <Card className="overflow-hidden p-3 flex min-h-0 flex-1 flex-col">
+                <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                  Observações Gerais
+                </div>
+                <Textarea
+                  className="min-h-[48px] flex-1 text-xs font-mono resize-none"
+                  value={(form as any).obsGerais || ""}
+                  onChange={(e) => setForm({ ...form, obsGerais: e.target.value } as any)}
+                />
+              </Card>
+            </TabsContent>
+
+            {/* === TAB: Doc Mercadorias === */}
+            <TabsContent value="docs" className="mt-2 min-h-0 flex-1 space-y-3 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
+              <Card className="overflow-hidden shrink-0">
                 <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                   Produto Predominante
                 </div>
-                <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-3">
+                <div className="grid grid-cols-1 gap-2 p-3 md:grid-cols-3">
                   <div>
                     <Label className="text-[10px] text-foreground/80">Produto (cadastro fiscal)</Label>
                     <Select
@@ -8916,20 +8930,6 @@ function CtePage() {
                   </div>
                 </div>
               </Card>
-              <Card className="overflow-hidden p-3 flex min-h-0 flex-1 flex-col">
-                <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
-                  Observações Gerais
-                </div>
-                <Textarea
-                  className="min-h-[48px] flex-1 text-xs font-mono resize-none"
-                  value={(form as any).obsGerais || ""}
-                  onChange={(e) => setForm({ ...form, obsGerais: e.target.value } as any)}
-                />
-              </Card>
-            </TabsContent>
-
-            {/* === TAB: Doc Mercadorias === */}
-            <TabsContent value="docs" className="mt-2 min-h-0 flex-1 space-y-3 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
               <Card className="overflow-hidden flex min-h-0 flex-1 flex-col">
                 <div className="min-h-0 flex-1 overflow-y-auto overflow-x-auto [&_.erp-table-wrap]:max-h-none">
                   <Table>
