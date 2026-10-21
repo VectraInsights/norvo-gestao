@@ -6642,6 +6642,24 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
   A leitura e pelo rotulo "ESPÉCIE / TIPO" (e "CARROCERIA"), com a regra antiga no texto
   linearizado como reserva. Testado no CRLV real: tipo "Van/Furgao" (FIAT/DUCATO MINIBUS),
   placa HEH8H61, chassi 93W245L3392042935, renavam 00152666907, marca FIAT/DUCATO MINIBUS.
+- **Todos os trucks saiam como Cavalo Mecanico (CRLV MWB5492)**: o CRLV so diz "CARGA
+  CAMINHAO" (generico) e o parser mapeava sempre p/ Cavalo Mecanico. Agora a **carroceria**
+  desempata: com corpo (baú / "CARROCERIA FECHADA", "FECHADA/CABINE ESTENDIDA"...) e
+  caminhão com carga propria = **Truck**; sem carroceria ("NAO APLICAVEL") e o cavalo de
+  uma carreta = Cavalo Mecanico. Nomes explicitos no CRLV seguem com prioridade
+  (CAVALO MECANICO, TRUCK, TOCO, 3/4, SEMI-REBOQUE, PASSAGEIRO...).
+  Validado nos **187 CRLVs com texto** da pasta: 113 Truck, 69 Carreta, 3 Van/Furgao,
+  2 Cavalo Mecanico.
+- **CRLV impresso em PDF (sem camada de texto)**: 11 dos 198 PDFs da pasta sao "Print to
+  PDF" (so a imagem da tela) — nao ha texto para ler, entao nada era extraido. Novo
+  fallback com **OCR** (tesseract.js, a mesma lib que a CNH usa no RH): renderiza a pagina
+  em canvas, le com tesseract e usa as palavras como "itens" — como a pagina impressa tem o
+  layout do CRLV digital, as coordenadas batem e o parser por rotulo funciona igual.
+  Sem o texto, o botao mostra "Lendo PDF (OCR)…" e, se o OCR falhar, um toast explica que
+  o PDF e uma impressao (sugere baixar o CRLV digital).
+- **Helpers do CRLV foram para `src/lib/crlv.ts`** (antes estavam dentro da rota), com
+  teste proprio (`crlv.test.ts`, 9 casos: leitura por rotulo com acento/pontuacao e o
+  mapeamento de tipo). `npm test` (79).
 - **Tela de Veiculos sem rolagem fora**: a pagina virou coluna flex com altura da viewport
   (`h-[calc(100dvh-112px)] sm:h-[calc(100dvh-128px)] lg:h-[calc(100dvh-144px)]`,
   mesma conta do CT-e: header 64px + padding do `main`). O card da lista e `flex-1 min-h-0`

@@ -65,6 +65,12 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { num, maskDoc } from "@/lib/format";
 import { ALTURA_PAGINA } from "@/lib/layout";
+import {
+  ocrPaginaCrlv,
+  tipoVeiculoDoCrlv,
+  valorSobRotulo,
+  type ItemTexto,
+} from "@/lib/crlv";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
@@ -82,84 +88,6 @@ export const Route = createFileRoute("/_authenticated/frota/veiculos")({
   ),
 });
 
-/** Item de texto do PDF com a coordenada onde foi desenhado. */
-type ItemTexto = { s: string; x: number; y: number };
-
-/**
- * Tipo de veículo a partir do texto do CRLV.
- *
- * O CRLV descreve a espécie em texto livre ("CARGA CAMINHAO", "PASSAGEIRO
- * MICROONIBUS", "SEMI-REBOQUE", "TRUCK"...) e o cadastro usa os tipos da lista
- * padrão. Aqui o texto vira um dos tipos do cadastro.
- */
-function tipoVeiculoDoCrlv(texto: string): string {
-  const t = String(texto || "")
-    .toUpperCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ");
-  if (!t) return "";
-  if (t.includes("SEMI-REBOQUE") || t.includes("REBOQUE") || t.includes("CARRETA") || t.includes("BITREM"))
-    return "Carreta";
-  if (t.includes("TOCO")) return "Toco";
-  if (t.includes("3/4")) return "3/4";
-  if (t.includes("TRUCK")) return "Truck";
-  if (
-    t.includes("TRACAO") ||
-    t.includes("CAVALO MECANICO") ||
-    t.includes("CAMINHAO") ||
-    t.includes("CARGA CAMINHAO") ||
-    t.includes("CARGA SECA") ||
-    t.includes("CARGA FRIA") ||
-    t.includes("CARGA BORDA") ||
-    t.includes("IMPLEMENTO")
-  )
-    return "Cavalo Mecânico";
-  if (
-    t.includes("PASSAGEIRO") ||
-    t.includes("MICROONIBUS") ||
-    t.includes("MINIBUS") ||
-    t.includes("ONIBUS") ||
-    t.includes("VAN") ||
-    t.includes("UTILITARIO") ||
-    t.includes("FURGAO")
-  )
-    return "Van/Furgão";
-  return "";
-}
-
-/** Normaliza um rótulo para comparação: sem acento, sem pontuação, maiúsculo. */
-const normRotulo = (s: string) =>
-  String(s || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "");
-
-/**
- * Valor de um campo do CRLV, lido pelo RÓTULO.
- *
- * O CRLV digital é desenhado em colunas: o rótulo fica numa linha e o valor logo
- * abaixo, na mesma coluna. O PDF entrega os itens numa ordem que não é a visual,
- * então buscar no texto linearizado erra — daqui buscar pela coordenada.
- */
-function valorSobRotulo(itens: ItemTexto[], rotulo: string): string {
-  const alvo = normRotulo(rotulo);
-  if (!alvo) return "";
-  for (const lbl of itens.filter((it) => normRotulo(it.s) === alvo)) {
-    const abaixo = itens
-      .filter(
-        (it) =>
-          it.s.trim() &&
-          it.y < lbl.y - 4 &&
-          it.y > lbl.y - 34 &&
-          Math.abs(it.x - lbl.x) < 16,
-      )
-      .sort((a, b) => b.y - a.y);
-    if (abaixo.length) return abaixo[0].s.trim();
-  }
-  return "";
-}
 
 type Veiculo = {
   id: string;
@@ -214,6 +142,7 @@ function Veiculos() {
   const [tipoOpen, setTipoOpen] = useState(false);
   const [tipoQuery, setTipoQuery] = useState("");
   const [isParsingPdf, setIsParsingPdf] = useState(false);
+  const [isOcr, setIsOcr] = useState(false);
   const [tiposOpen, setTiposOpen] = useState(false);
   const [rntrcOpen, setRntrcOpen] = useState(false);
   const [rntrcBusca, setRntrcBusca] = useState("");
@@ -418,7 +347,7 @@ function Veiculos() {
       // Itens com coordenada: o CRLV digital é desenhado em COLUNAS (rótulo numa
       // linha, valor logo abaixo na mesma coluna) e o PDF entrega os itens numa
       // ordem que não é a visual. Ler pelo rótulo+coordenada é o jeito confiável.
-      const itens: ItemTexto[] = [];
+      let itens: ItemTexto[] = [];
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
@@ -429,6 +358,25 @@ function Veiculos() {
           text += s + " ";
         }
         text += "\n";
+      }
+
+      // CRLV IMPRESSO em PDF ("Print to PDF"): o arquivo é só a imagem da tela, sem
+      // camada de texto. Cai no OCR (mesma lib que a CNH usa no RH) e os itens do OCR
+      // viram os "itens" — como a página impressa tem o mesmo layout do CRLV digital,
+      // as coordenadas batem e o parser por rótulo funciona igual.
+      if (text.replace(/\s/g, "").length < 200) {
+        setIsOcr(true);
+        const ocr = await ocrPaginaCrlv(pdf);
+        if (!ocr.length) {
+          toast.error("Não consegui ler este CRLV", {
+            description:
+              "O PDF parece ser uma impressão (sem texto selecionável). Baixe o CRLV digital em PDF ou preencha os dados manualmente.",
+            duration: 9000,
+          });
+          return;
+        }
+        itens = ocr;
+        text = ocr.map((i) => i.s).join(" ") + "\n";
       }
       // CRLV digital é 2 colunas — texto extraído vem embaralhado. Estratégia: isola bloco de DADOS após "Leia o QR Code" e antes de "RECUPERADO"
       const upper = text.toUpperCase().replace(/\s+/g, " ");
@@ -510,12 +458,14 @@ function Veiculos() {
         }
       }
       // Tipo do veículo: pelo rótulo ESPÉCIE / TIPO do CRLV (texto livre tipo
-      // "PASSAGEIRO MICROONIBUS", que nenhuma palavra-chave antiga pegava) e, na
-      // falta, pelos padrões no texto linearizado (como já funcionava).
+      // "PASSAGEIRO MICROONIBUS" ou "CARGA CAMINHAO", que nenhuma palavra-chave
+      // antiga pegava). No caso genérico, a CARROCERIA desempata: com baú é
+      // Truck, sem carroceria é o cavalo de uma carreta.
       const especieRotulo = valorSobRotulo(itens, "ESPÉCIE / TIPO");
+      const carroceriaRotulo = valorSobRotulo(itens, "CARROCERIA");
       const especieVal =
-        tipoVeiculoDoCrlv(especieRotulo) ||
-        tipoVeiculoDoCrlv(valorSobRotulo(itens, "CARROCERIA")) ||
+        tipoVeiculoDoCrlv(especieRotulo, carroceriaRotulo) ||
+        tipoVeiculoDoCrlv(valorSobRotulo(itens, "MARCA / MODELO / VERSÃO"), carroceriaRotulo) ||
         (dadosBloco.includes("SEMI-REBOQUE")
           ? "Carreta"
           : dadosBloco.includes("TRACAO") ||
@@ -839,7 +789,9 @@ function Veiculos() {
                 />
               </label>
               {isParsingPdf && (
-                <span className="text-xs text-muted-foreground self-center">Lendo PDF…</span>
+                <span className="text-xs text-muted-foreground self-center">
+                  {isOcr ? "Lendo PDF (OCR)…" : "Lendo PDF…"}
+                </span>
               )}
             </div>
             <Card className="p-1.5">
