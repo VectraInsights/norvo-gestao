@@ -6603,4 +6603,7 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
   separadores e caixa ("ARL-4D94" = "ARL4D94") e ignora o veiculo que esta sendo editado.
 - O campo Placa agora normaliza a digitacao (so letras e numeros, maiusculas) — evita a
   variante com traco que escapava da unique constraint e criava placa duplicada.
+- **Importacao do CRLV com placa ja cadastrada**: nao preenche mais o formulario — apenas
+  mostra o toast "Veiculo ja cadastrado" (com a placa na descricao) e devolve o formulario
+  como estava.
 - tsc sem erro novo, `npm test` (70) e build OK.

@@ -463,17 +463,14 @@ function Veiculos() {
       if (Object.keys(updates).length === 0) {
         toast.error("Não foi possível extrair dados do PDF. Verifique se é o CRLV digital.");
       } else {
-        setForm((f) => ({ ...f, ...updates }));
-        // A placa que veio do CRLV pode já estar cadastrada: avisa na hora.
+        // Veículo já cadastrado: não preenche o formulário, só avisa.
         const dup = updates.placa ? veiculoComMesmaPlaca(updates.placa) : null;
         if (dup) {
-          toast.error("Já existe um veículo com esta placa", {
-            description: `${dup.placa}${dup.marca_modelo ? ` — ${dup.marca_modelo}` : ""}. Confira os dados antes de salvar.`,
-            duration: 8000,
-          });
-        } else {
-          toast.success("Dados do CRLV importados — confira e salve");
+          toast.error("Veículo já cadastrado", { description: updates.placa });
+          return;
         }
+        setForm((f) => ({ ...f, ...updates }));
+        toast.success("Dados do CRLV importados — confira e salve");
       }
     } catch (e: any) {
       toast.error("Falha ao ler PDF", { description: e.message });
