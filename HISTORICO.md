@@ -6620,3 +6620,25 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
   preenchido se estivesse vazio) e o CNPJ/CPF do dono vem junto. O caminho inverso
   (digitar o proprietario preenche o RNTRC) continua valendo.
 - tsc sem erro novo, `npm test` (70) e build OK.
+
+## Frota: import de CRLV por rotulo (com reserva) + tela sem rolagem fora (21/10)
+
+- **Chassi que nao vinha (CRLV GQU3265)**: a regex do parser exigia 17 caracteres, mas
+  o chassi deste CRLV tem 14 (`34500512300991`) — e o PDF entrega os itens numa ordem
+  que nao e a visual (rotulos e valores ficam separados no texto linearizado).
+  Novo `valorSobRotulo(itens, rotulo)`: le o valor do campo pela COORDENADA (o CRLV e
+  desenhado em colunas: rotulo numa linha, valor logo abaixo na mesma coluna).
+  Aplicado como **reserva** — a logica que ja funciona continua sendo a principal:
+  chassi (regex de 17 -> reserva por rotulo), placa, renavam e proprietario
+  (3 padroes de layout -> reserva pelo rotulo NOME). O **CPF/CNPJ do proprietario** agora
+  vem do CRLV (campo novo, so por rotulo).
+  Testado no CRLV real: placa GQU3265, renavam 00264021991, chassi 34500512300991,
+  proprietario JUVENAL TRANSPORTES LTDA, CNPJ 03.919.614/0001-60, ano 1976,
+  tipo Cavalo Mecanico, marca M.BENZ/L 1513.
+- **Tela de Veiculos sem rolagem fora**: a pagina virou coluna flex com altura da viewport
+  (`h-[calc(100dvh-112px)] sm:h-[calc(100dvh-128px)] lg:h-[calc(100dvh-144px)]`,
+  mesma conta do CT-e: header 64px + padding do `main`). O card da lista e `flex-1 min-h-0`
+  e a rolagem ficou SO dentro da tabela (`[&_.erp-table-wrap]:max-h-none` + wrapper
+  `overflow-y-auto`); a paginacao fica fixa no rodape. A barra de rolagem externa
+  (da janela) some.
+- tsc sem erro novo, `npm test` (70) e build OK.

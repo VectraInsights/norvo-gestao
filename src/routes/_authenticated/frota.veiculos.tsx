@@ -81,6 +81,42 @@ export const Route = createFileRoute("/_authenticated/frota/veiculos")({
   ),
 });
 
+/** Item de texto do PDF com a coordenada onde foi desenhado. */
+type ItemTexto = { s: string; x: number; y: number };
+
+/** Normaliza um rótulo para comparação: sem acento, sem pontuação, maiúsculo. */
+const normRotulo = (s: string) =>
+  String(s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+
+/**
+ * Valor de um campo do CRLV, lido pelo RÓTULO.
+ *
+ * O CRLV digital é desenhado em colunas: o rótulo fica numa linha e o valor logo
+ * abaixo, na mesma coluna. O PDF entrega os itens numa ordem que não é a visual,
+ * então buscar no texto linearizado erra — daqui buscar pela coordenada.
+ */
+function valorSobRotulo(itens: ItemTexto[], rotulo: string): string {
+  const alvo = normRotulo(rotulo);
+  if (!alvo) return "";
+  for (const lbl of itens.filter((it) => normRotulo(it.s) === alvo)) {
+    const abaixo = itens
+      .filter(
+        (it) =>
+          it.s.trim() &&
+          it.y < lbl.y - 4 &&
+          it.y > lbl.y - 34 &&
+          Math.abs(it.x - lbl.x) < 16,
+      )
+      .sort((a, b) => b.y - a.y);
+    if (abaixo.length) return abaixo[0].s.trim();
+  }
+  return "";
+}
+
 type Veiculo = {
   id: string;
   placa: string;
@@ -335,10 +371,20 @@ function Veiculos() {
       const buf = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: buf, verbosity: 0 } as any).promise;
       let text = "";
+      // Itens com coordenada: o CRLV digital é desenhado em COLUNAS (rótulo numa
+      // linha, valor logo abaixo na mesma coluna) e o PDF entrega os itens numa
+      // ordem que não é a visual. Ler pelo rótulo+coordenada é o jeito confiável.
+      const itens: ItemTexto[] = [];
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
-        text += (content.items as any[]).map((it: any) => it.str).join(" ") + "\n";
+        for (const it of content.items as any[]) {
+          const s = String(it?.str || "");
+          if (!s.trim()) continue;
+          itens.push({ s, x: Number(it?.transform?.[4] || 0), y: Number(it?.transform?.[5] || 0) });
+          text += s + " ";
+        }
+        text += "\n";
       }
       // CRLV digital é 2 colunas — texto extraído vem embaralhado. Estratégia: isola bloco de DADOS após "Leia o QR Code" e antes de "RECUPERADO"
       const upper = text.toUpperCase().replace(/\s+/g, " ");
@@ -412,6 +458,11 @@ function Veiculos() {
             /0\dP\s+\S+\s+([A-Z][A-Z0-9 \.\-\/&]+?)\s+(EPP|LTDA|MEI|EIRELI|S\.?A\.?)\s+\d/,
           );
           if (p3) propVal = clean(`${p3[1]} ${p3[2]}`);
+          else {
+            // Reserva: leitura pelo rótulo NOME do CRLV (quando nenhum padrão pega).
+            const nomeRot = clean(valorSobRotulo(itens, "NOME"));
+            if (nomeRot.length > 3) propVal = nomeRot;
+          }
         }
       }
       const especieVal = dadosBloco.includes("SEMI-REBOQUE")
@@ -427,13 +478,32 @@ function Veiculos() {
             ? "Carreta"
             : "";
       const updates: Partial<typeof form> = {};
+      // Placa: a regex (formato que já funciona) e, na falta, a leitura pelo rótulo.
       if (placaMatch) updates.placa = placaMatch[1].replace(/[^A-Z0-9]/g, "").toUpperCase();
+      else {
+        const pRot = valorSobRotulo(itens, "PLACA").replace(/[^A-Z0-9]/g, "").toUpperCase();
+        if (pRot.length === 7) updates.placa = pRot;
+      }
       if (renavamMatch) updates.renavam = renavamMatch[1];
       else {
         const rm2 = upper.match(/C[ÓO]DIGO\s+RENAVAM[^0-9]*([0-9]{11})/);
         if (rm2) updates.renavam = rm2[1];
+        else {
+          const rRot = valorSobRotulo(itens, "CÓDIGO RENAVAM").replace(/\D/g, "");
+          if (rRot.length === 11) updates.renavam = rRot;
+        }
       }
+      // Chassi: a regex de 17 caracteres (formato que já funciona) e, na falta, a
+      // leitura pelo rótulo — neste CRLV o chassi tem 14 caracteres e a regex não pega.
       if (chassiMatch && chassiMatch[1].length === 17) updates.chassi = chassiMatch[1];
+      else {
+        const cRot = valorSobRotulo(itens, "CHASSI").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+        if (cRot.length >= 8) updates.chassi = cRot;
+      }
+      // CPF/CNPJ do proprietário: vem pelo rótulo (o CRLV traz, a regex não pegava).
+      const docRotulo = valorSobRotulo(itens, "CPF / CNPJ").replace(/\D/g, "");
+      if (docRotulo.length === 11 || docRotulo.length === 14)
+        updates.proprietario_doc = maskDoc(docRotulo);
       // CRLV: primeiro ano = EXERCÍCIO (licenciamento), segundo = ANO FAB/MODELO
       if (anos.length >= 2)
         updates.ano = anos[1]; // segundo = fabricação
@@ -670,7 +740,7 @@ function Veiculos() {
   const veiculosVisiveis = lista.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
 
   return (
-    <>
+    <div className="flex h-[calc(100dvh-112px)] min-h-[500px] flex-col sm:h-[calc(100dvh-128px)] lg:h-[calc(100dvh-144px)]">
       <PageHeader
         eyebrow="Frota"
         title="Veículos"
@@ -684,7 +754,7 @@ function Veiculos() {
           if (!v) reset();
         }}
       >
-        <div className="mb-4 flex items-center gap-2">
+        <div className="mb-4 flex shrink-0 items-center gap-2">
           <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} className="max-w-sm" />
           <DialogTrigger asChild>
             <PrimaryButton
@@ -720,9 +790,6 @@ function Veiculos() {
               {isParsingPdf && (
                 <span className="text-xs text-muted-foreground self-center">Lendo PDF…</span>
               )}
-              <span className="text-[10px] text-muted-foreground self-center">
-                Preenche placa, RENAVAM, chassi e modelo automaticamente
-              </span>
             </div>
             <Card className="p-1.5">
               <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
@@ -1137,7 +1204,7 @@ function Veiculos() {
       </Dialog>
 
       {isLoading ? (
-        <Card className="overflow-hidden shadow-panel">
+        <Card className="flex-1 overflow-hidden shadow-panel">
           <div className="space-y-2 p-4">
             {Array.from({ length: 5 }).map((_, i) => (
               <Skeleton key={i} className="h-10 w-full" />
@@ -1145,14 +1212,19 @@ function Veiculos() {
           </div>
         </Card>
       ) : !lista.length ? (
-        <EmptyState
-          icon={Truck}
-          title="Nenhum veículo"
-          description="Cadastre os caminhões para vincular viagens, motoristas e despesas."
-        />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <EmptyState
+            icon={Truck}
+            title="Nenhum veículo"
+            description="Cadastre os caminhões para vincular viagens, motoristas e despesas."
+          />
+        </div>
       ) : (
-        <Card className="overflow-hidden shadow-panel">
-          <Table>
+        <Card className="flex min-h-0 flex-1 flex-col overflow-hidden shadow-panel">
+          {/* A rolagem é só aqui dentro: a lista de placas cresce até o rodapé e a
+              página não cria barra de rolagem fora. */}
+          <div className="min-h-0 flex-1 overflow-y-auto [&_.erp-table-wrap]:max-h-none">
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Placa</TableHead>
@@ -1229,16 +1301,19 @@ function Veiculos() {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
-          <Pagination
-            pagina={paginaAtual}
-            totalPaginas={totalPaginas}
-            total={lista.length}
-            pageSize={pageSize}
-            onPagina={setPagina}
-          />
+            </Table>
+          </div>
+          <div className="shrink-0">
+            <Pagination
+              pagina={paginaAtual}
+              totalPaginas={totalPaginas}
+              total={lista.length}
+              pageSize={pageSize}
+              onPagina={setPagina}
+            />
+          </div>
         </Card>
       )}
-    </>
+    </div>
   );
 }
