@@ -1549,28 +1549,35 @@ function PercursosPage() {
     }
   }, [editing?.rem_xmun, editing?.rem_uf]);
   // Regra MG: coleta e entrega dentro de Minas Gerais => ICMS isento (CST 40).
-  // Só entra quando o CST ainda é o padrão (00) ou já é isento/não tributado: um CST
-  // escolhido à mão (20, 60, 70...) é preservado. O efeito roda na mudança de UF, então
+  // Saindo de MG (qualquer outro estado) => volta ao CST padrão 00.
+  // Só mexe quando o CST é o padrão (00) ou o isento (40/41): um CST escolhido à mão
+  // (20, 60, 70...) é preservado nos dois sentidos. O efeito roda na mudança de UF, então
   // uma escolha manual do CST depois disso continua valendo.
   useEffect(() => {
     if (!editing) return;
     const cU = String(editing.coleta_uf || "").trim().toUpperCase();
     const eU = String(editing.entrega_uf || "").trim().toUpperCase();
-    if (cU !== "MG" || eU !== "MG") return;
+    if (!cU || !eU) return; // rota ainda não identificada
     const cst = String(editing.icms_cst || "00").trim();
     const aliq = String(editing.icms_aliq ?? "").trim();
-    if (cst === "40") {
-      if (aliq === "0.00" || aliq === "0,00") return;
-      setEditing((e) => (e ? { ...e, icms_aliq: "0.00" } : e));
+    const ehZero = aliq === "0.00" || aliq === "0,00";
+    if (cU === "MG" && eU === "MG") {
+      // Dentro de MG: isento (CST 40) com alíquota zerada.
+      if (cst === "40" || cst === "41") {
+        if (ehZero) return;
+        setEditing((e) => (e ? { ...e, icms_aliq: "0.00" } : e));
+        return;
+      }
+      if (cst !== "00") return; // CST escolhido à mão: não mexe
+      setEditing((e) => (e ? { ...e, icms_cst: "40", icms_aliq: "0.00" } : e));
       return;
     }
-    if (cst === "41") {
-      if (aliq === "0.00" || aliq === "0,00") return;
-      setEditing((e) => (e ? { ...e, icms_aliq: "0.00" } : e));
-      return;
-    }
-    if (cst !== "00") return; // CST escolhido à mão: não mexe.
-    setEditing((e) => (e ? { ...e, icms_cst: "40", icms_aliq: "0.00" } : e));
+    // Fora de MG: volta ao CST padrão. Só quando o CST era o isento automático.
+    if (cst !== "40" && cst !== "41") return;
+    // Alíquota esperada p/ a rota (mesma regra do CT-e): origem MG -> 12% p/ Sul e
+    // Sudeste listado (SP/RJ/PR/SC/RS), 7% p/ os demais destinos.
+    const esperada = cU === "MG" ? (["SP", "RJ", "PR", "SC", "RS"].includes(eU) ? "12.00" : "7.00") : aliq || "0.00";
+    setEditing((e) => (e ? { ...e, icms_cst: "00", icms_aliq: esperada } : e));
   }, [editing?.coleta_uf, editing?.entrega_uf]);
   const lastLookupParte = useRef<Record<string, string>>({});
   const lookupParte = async (p: "consig" | "redesp", digits: string) => {

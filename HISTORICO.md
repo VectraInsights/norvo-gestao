@@ -6492,3 +6492,17 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
 - O efeito nao volta o CST quando a rota sai de MG (ex.: entrega vira SP) — o CST fica
   como esta, para o usuario ajustar; apenas a aliquota e zerada nos CST 40/41.
 - tsc sem erro novo, `npm test` (64) e build OK.
+
+## Percursos: CST volta a 00 quando a rota sai de MG (21/10)
+
+- Complemento da regra MG: com coleta e entrega **fora** de MG (qualquer estado), o
+  `icms_cst` volta ao **padrao 00** e o campo de aliquota destrava.
+- A volta so acontece quando o CST era o isento automatico (40/41) — um CST escolhido a
+  mao (20, 60, 70...) continua preservado nos dois sentidos.
+- A aliquota volta com o valor esperado para a rota, **mesma regra que o CT-e ja valida**
+  (`aliqIcmsEsperada`): origem MG -> 12% para SP/RJ/PR/SC/RS e 7% para os demais
+  destinos. Origem fora de MG: o app nao opina e mantem o valor atual (para o usuario
+  preencher).
+- Efeito so age quando as DUAS UFs estao preenchidas (rota identificada); a regra tambem
+  roda na abertura de percurso, corrigindo cadastros legados com CST 40 em rota interestadual.
+- tsc sem erro novo, `npm test` (64) e build OK.
