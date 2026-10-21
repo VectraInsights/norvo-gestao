@@ -6466,3 +6466,14 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
   CT-e; tipo de carga e NCM sao completados pelo cadastro fiscal).
 - tsc sem erro novo (33 assinaturas unicas, igual ao baseline), `npm test` (64) e
   build OK.
+
+## Percursos: alíquota de ICMS travada nos CST isento/não tributado (21/10)
+
+- `fiscal.percursos.tsx`: com **CST 40 (Isenta)** ou **41 (Não tributada)** o campo
+  "Alíq. ICMS %" fica travado em 0,00 (read-only com cadeado, fundo `bg-muted`).
+- Trocar o CST para 40/41 zera a alíquota na hora; trocar de volta destrava o campo.
+- No salvar, `icms_aliq` e gravado zerado quando o CST e 40/41 (defensivo, vale para
+  insert e update) — assim o CT-e nunca sai com alíquota de ICMS em carga isenta.
+- Novo prop `bloqueado` no componente local `Num` (o `fixo` so mostrava valor fixo sem
+  poder zerar por codigo).
+- tsc sem erro novo, `npm test` (64) e build OK.

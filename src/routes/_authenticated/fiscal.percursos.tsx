@@ -44,6 +44,7 @@ import {
   RefreshCw,
   Plus,
   Loader2,
+  Lock,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -244,6 +245,7 @@ function Num({
   dec,
   prefix,
   fixo,
+  bloqueado,
 }: {
   editing?: any;
   set?: (k: string, v: any) => void;
@@ -252,7 +254,22 @@ function Num({
   dec?: number;
   prefix?: string;
   fixo?: string;
+  /** Valor travado (read-only). Ex.: alíquota de ICMS em CST isento/não tributado. */
+  bloqueado?: string;
 }) {
+  if (bloqueado !== undefined)
+    return (
+      <div>
+        <Label className="text-[10px] text-muted-foreground flex items-center gap-1">
+          {label} <Lock className="h-3 w-3 text-muted-foreground/50" />
+        </Label>
+        <Input
+          className="h-7 text-xs bg-muted text-muted-foreground"
+          value={bloqueado}
+          readOnly
+        />
+      </div>
+    );
   if (fixo !== undefined)
     return (
       <div>
@@ -361,6 +378,10 @@ const CSTS_ICMS: Array<[string, string]> = [
   ],
   ["90", "Outras"],
 ];
+// CST 40 (isenta) e 41 (não tributada): não há ICMS — a alíquota fica zerada e
+// travada na tela do percurso.
+const CST_SEM_ICMS = ["40", "41"];
+const cstSemIcms = (cst: any) => CST_SEM_ICMS.includes(String(cst ?? "").trim());
 const normTxt = (s: any) =>
   String(s || "")
     .toLowerCase()
@@ -1071,6 +1092,8 @@ function PercursosPage() {
         payload[k] =
           typeof vv === "string" ? vv.toUpperCase() : (vv ?? (k === "seg_repassar" ? false : ""));
       }
+      // CST 40 (isenta) / 41 (não tributada): sem ICMS — alíquota gravada zerada.
+      if (cstSemIcms(payload.icms_cst)) payload.icms_aliq = "0.00";
       for (const p of ["rem", "dest", "toma"]) {
         const c = contatoByDoc.get(String(editing[p + "_cnpj"] || "").replace(/\D/g, "")) || {};
         const fb: Record<string, any> = {
@@ -2182,7 +2205,11 @@ function PercursosPage() {
                           <Combo
                             label="CST ICMS"
                             value={editing.icms_cst || "00"}
-                            onPick={(v) => set("icms_cst", v)}
+                            onPick={(v) => {
+                              set("icms_cst", v);
+                              // Isenta/Não tributada: alíquota de ICMS vai a zero.
+                              if (cstSemIcms(v)) set("icms_aliq", "0.00");
+                            }}
                             opts={OPTS_CST}
                           />
                         </div>
@@ -2226,7 +2253,13 @@ function PercursosPage() {
                         </div>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-8 gap-1">
-                        <Num editing={editing} set={set} label="Alíq. ICMS %" k="icms_aliq" />
+                        <Num
+                          editing={editing}
+                          set={set}
+                          label="Alíq. ICMS %"
+                          k="icms_aliq"
+                          bloqueado={cstSemIcms(editing.icms_cst) ? "0,00" : undefined}
+                        />
                         <Num editing={editing} set={set} label="Redução base %" k="reducao_base" />
                         <Num
                           editing={editing}
