@@ -6774,3 +6774,5 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
   - **Chassi mais largo**: a coluna do chassi no grid de documentação agora ocupa 1.5fr para caber os 17 caracteres inteiros sem cortar.
   - **RNTRC em largura total**: o campo RNTRC saiu do grid de 3 colunas e agora ocupa toda a extensão da linha.
   - Modal centralizado (já commitado em 5bb0399): cadastro/edição em modal `w-[560px]` centralizado.
+
+- **Placa com hífen em toda exibição (22/10)** - o campo Placa agora formata como `xxx-xxxx` (ex: ABC-1234) tanto ao digitar quanto ao carregar um veículo existente (`formatarPlaca` no `openEdit`). Ao salvar, o hífen é removido antes de gravar no banco, mantendo o dado limpo. A detecção de placa duplicada já ignorava o hífen via `normalizePlaca`.

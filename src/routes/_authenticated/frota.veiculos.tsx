@@ -654,10 +654,15 @@ function Veiculos() {
     setForm(formVazio());
   };
 
+  const formatarPlaca = (p: string) => {
+    const s = String(p ?? "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    return s.length > 3 ? s.slice(0, 3) + "-" + s.slice(3) : s;
+  };
+
   const openEdit = (v: Veiculo) => {
     setEditing(v);
     setForm({
-      placa: v.placa ?? "",
+      placa: formatarPlaca(v.placa ?? ""),
       marca_modelo: v.marca_modelo ?? "",
       tipo: v.tipo ?? "",
       ano: v.ano ? String(v.ano) : "",
@@ -678,7 +683,7 @@ function Veiculos() {
   const save = useMutation({
     mutationFn: async () => {
       if (!empresa) throw new Error("Selecione uma empresa");
-      const placa = form.placa.trim().toUpperCase();
+      const placa = form.placa.replace(/-/g, "").trim().toUpperCase();
       if (!placa) throw new Error("Placa é obrigatória");
       if (!form.marca_modelo.trim()) throw new Error("Marca/modelo é obrigatório");
       if (!form.tipo) throw new Error("Tipo é obrigatório");
