@@ -448,6 +448,7 @@ export async function lerCrlvImpresso(
       "ABCDEFGHIJKLMNOPQRSTUVWXYZ ",
     );
     const anoTxt = await recorte("ANO FABRICAÇÃO", 90, 20, "0123456789");
+    const eixosTxt = await recorte("EIXOS", 30, 18, "0123456789");
 
     // O texto da página toda serve de reserva para o que o recorte não pegou.
     const txt = extrairDoTextoOcr(texto);
@@ -467,7 +468,7 @@ export async function lerCrlvImpresso(
       especie: especieTxt || txt.especie,
       carroceria: txt.carroceria,
       marca: marcaTxt || txt.marca,
-      eixos: txt.eixos,
+      eixos: (eixosTxt.match(/\d{1,2}/) || [])[0] || txt.eixos,
       categoria: txt.categoria,
       // os mesmos itens, em pontos da página (para a leitura por rótulo)
       itens: palavras.map((p) => ({

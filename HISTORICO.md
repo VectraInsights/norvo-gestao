@@ -6750,3 +6750,5 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
     HEH8H61 → "FIAT/DUCATO MINIBUS" e OQU0011 → "I/M.BENZ C 250 CGI COUPE".
   - 2 placas da pasta ainda não estão cadastradas (IUS7173, DND1I40) — são novas, o
     dono importa quando quiser.
+
+- **CRLV IMPRESSO: eixos não lidos (22/10)** - no `lerCrlvImpresso` (`src/lib/crlv.ts`), o campo EIXOS não tinha recorte dedicado: vinha só da reserva do OCR da página inteira (`extrairDoTextoOcr`), que costuma errar. Adicionado recorte específico para o rótulo "EIXOS" (whitelist de dígitos, ~70ms), com fallback para a reserva. Corrigido o caso PVQ3560, onde a quantidade de eixos não era puxada.
