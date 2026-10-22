@@ -829,7 +829,7 @@ function Veiculos() {
             </PrimaryButton>
           </DialogTrigger>
         </div>
-        <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto">
+        <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3 rounded-2xl sm:p-6 overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? `Editar ${editing.placa}` : "Novo veículo"}</DialogTitle>
           </DialogHeader>
@@ -998,7 +998,7 @@ function Veiculos() {
                   decimals={0}
                   value={form.quantidade_eixos}
                   onChange={(v) => set("quantidade_eixos", v)}
-                  className="w-16 h-7 text-xs"
+                  className="w-16 h-7 text-xs text-left"
                 />
               </div>
                 </div>

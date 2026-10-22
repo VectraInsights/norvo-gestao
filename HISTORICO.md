@@ -6763,3 +6763,8 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
   (`frota.veiculos.tsx`), quando o CRLV não tem eixo (moto mostra "*" no campo),
   o código assumia default "3". Removido o fallback: quando não encontra dígito
   de eixo, deixa o campo vazio para o dono conferir.
+
+- **Cadastro de Veículo em modal menor e centralizado (22/10)** - o DialogContent do
+  cadastro/edição de veículo (`frota.veiculos.tsx`) estava em tela cheia
+  (`w-screen h-screen max-w-none max-h-none`). Mudado para um modal centralizado
+  (`inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] ... max-h-[90vh] rounded-2xl sm:p-6 overflow-y-auto`), seguindo o mesmo padrão do modal de cancelamento de CTe e de outras telas do app.
