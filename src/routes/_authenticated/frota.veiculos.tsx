@@ -862,7 +862,7 @@ function Veiculos() {
                   <div>
                     <Label className="text-[10px] text-muted-foreground">Placa *</Label>
                     <Input
-                      className="uppercase h-7 text-xs"
+                      className="uppercase h-7 text-xs text-left"
                       value={form.placa}
                       onChange={(e) =>
                         set("placa", e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase())
@@ -879,7 +879,7 @@ function Veiculos() {
                     <Label className="text-[10px] text-muted-foreground">Ano *</Label>
                     <Input
                       type="number"
-                      className="h-7 text-xs"
+                      className="h-7 text-xs text-left"
                       value={form.ano}
                       onChange={(e) => set("ano", e.target.value)}
                     />
@@ -902,7 +902,7 @@ function Veiculos() {
                   <div>
                     <Label className="text-[10px] text-muted-foreground">Marca / modelo *</Label>
                     <Input
-                      className="h-7 text-xs"
+                      className="h-7 text-xs text-left"
                       value={form.marca_modelo}
                       onChange={(e) => set("marca_modelo", e.target.value)}
                     />
@@ -1012,7 +1012,7 @@ function Veiculos() {
                   <div>
                     <Label className="text-[10px] text-muted-foreground">RENAVAM *</Label>
                     <Input
-                      className="h-7 text-xs"
+                      className="h-7 text-xs text-left"
                       value={form.renavam}
                       onChange={(e) => set("renavam", e.target.value)}
                     />
@@ -1023,7 +1023,7 @@ function Veiculos() {
                       value={form.chassi}
                       onChange={(e) => set("chassi", e.target.value.toUpperCase())}
                       maxLength={17}
-                      className="uppercase font-mono text-xs h-7"
+                      className="uppercase font-mono text-xs h-7 text-left"
                     />
                   </div>
                   <div>
@@ -1031,7 +1031,7 @@ function Veiculos() {
                     <Input
                       value={form.tag_pedagio}
                       onChange={(e) => set("tag_pedagio", e.target.value)}
-                      className="font-mono text-xs h-7"
+                      className="font-mono text-xs h-7 text-left"
                     />
                   </div>
                 </div>
@@ -1083,7 +1083,7 @@ function Veiculos() {
                               Novo RNTRC &quot;{rntrcBusca}&quot; — informe o CNPJ do dono
                             </div>
                             <Input
-                              className="h-7 text-xs font-mono"
+                              className="h-7 text-xs font-mono text-left"
                               value={novoRntrcCnpj}
                               onChange={(e) => setNovoRntrcCnpj(maskDoc(e.target.value))}
                             />
@@ -1164,7 +1164,7 @@ function Veiculos() {
                   <div>
                     <Label className="text-[10px] text-muted-foreground">Proprietário *</Label>
                     <Input
-                      className="h-7 text-xs"
+                      className="h-7 text-xs text-left"
                       value={form.proprietario}
                       onChange={(e) => handleProprietarioChange(e.target.value)}
                     />
@@ -1174,7 +1174,7 @@ function Veiculos() {
                     <Input
                       value={form.proprietario_doc}
                       onChange={(e) => set("proprietario_doc", maskDoc(e.target.value))}
-                      className="font-mono h-7 text-xs"
+                      className="font-mono h-7 text-xs text-left"
                     />
                   </div>
                 </div>
@@ -1203,7 +1203,7 @@ function Veiculos() {
               </div>
               <Textarea
                 rows={2}
-                className="text-xs"
+                className="text-xs text-left"
                 value={form.observacoes}
                 onChange={(e) => set("observacoes", e.target.value)}
               />
@@ -1229,7 +1229,7 @@ function Veiculos() {
           <div className="grid gap-2">
             <div className="flex gap-2">
               <Input
-               
+                className="text-left"
                 value={novoTipo}
                 onChange={(e) => setNovoTipo(e.target.value)}
                 onKeyDown={(e) => {

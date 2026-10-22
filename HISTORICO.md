@@ -6752,3 +6752,9 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
     dono importa quando quiser.
 
 - **CRLV IMPRESSO: eixos não lidos (22/10)** - no `lerCrlvImpresso` (`src/lib/crlv.ts`), o campo EIXOS não tinha recorte dedicado: vinha só da reserva do OCR da página inteira (`extrairDoTextoOcr`), que costuma errar. Adicionado recorte específico para o rótulo "EIXOS" (whitelist de dígitos, ~70ms), com fallback para a reserva. Corrigido o caso PVQ3560, onde a quantidade de eixos não era puxada.
+
+- **Alinhamento de texto à esquerda nos inputs de Veículos (22/10)** - alguns campos do
+  cadastro de veículo (`src/routes/_authenticated/frota.veiculos.tsx`) estavam com o
+  texto fora do padrão (não alinhado à esquerda). Adicionado `text-left` a todos os 10
+  `<Input>` e ao `<Textarea>` de observações, deixando consistente com o restante da
+  aplicação. O campo Eixos (MoneyInput) mantém `text-right`, correto para numérico.
