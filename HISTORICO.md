@@ -6758,3 +6758,8 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
   texto fora do padrão (não alinhado à esquerda). Adicionado `text-left` a todos os 10
   `<Input>` e ao `<Textarea>` de observações, deixando consistente com o restante da
   aplicação. O campo Eixos (MoneyInput) mantém `text-right`, correto para numérico.
+
+- **CRLV de moto: eixos não preenchidos (22/10)** - no caminho digital
+  (`frota.veiculos.tsx`), quando o CRLV não tem eixo (moto mostra "*" no campo),
+  o código assumia default "3". Removido o fallback: quando não encontra dígito
+  de eixo, deixa o campo vazio para o dono conferir.

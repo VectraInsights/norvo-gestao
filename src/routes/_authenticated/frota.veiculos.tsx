@@ -565,7 +565,9 @@ function Veiculos() {
         if (propVal) updates.proprietario = propVal;
         else updates.proprietario = "LGP TRANSPORTES LTDA";
         // Eixos: dígito solitário antes de "0XP" (ex: "2   03P" ou "*.* 3 00P")
-        // Evita pegar CMT (25.0) - só pega dígito único isolado
+        // Evita pegar CMT (25.0) - só pega dígito único isolado.
+        // Motos e alguns veículos não têm eixo (CRLV mostra "*") — nesses casos
+        // não preenche nada (deixa o dono conferir), nunca assume um default.
         let eixosVal = "";
         const eixosMatch2 = dadosBloco.match(/(?:^|\s)(\d)\s+0\dP\b/m);
         if (eixosMatch2) eixosVal = eixosMatch2[1];
@@ -574,7 +576,6 @@ function Veiculos() {
           if (e2) eixosVal = e2[1];
         }
         if (eixosVal) updates.quantidade_eixos = eixosVal;
-        else updates.quantidade_eixos = "3";
         if (especieVal) updates.tipo = especieVal;
       }
       updates.observacoes = ""; // chassi agora tem campo proprio
