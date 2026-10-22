@@ -836,7 +836,7 @@ function Veiculos() {
         </div>
         <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3 rounded-2xl sm:p-6 overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editing ? `Editar ${editing.placa}` : "Novo veículo"}</DialogTitle>
+            <DialogTitle>{editing ? `Editar ${formatarPlaca(editing.placa)}` : "Novo veículo"}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-1.5">
             <div className="flex gap-2">
@@ -1316,7 +1316,7 @@ function Veiculos() {
             <TableBody>
               {veiculosVisiveis.map((v) => (
                 <TableRow key={v.id}>
-                  <TableCell className="font-mono font-medium">{v.placa}</TableCell>
+                  <TableCell className="font-mono font-medium">{formatarPlaca(v.placa)}</TableCell>
                   <TableCell>{v.marca_modelo ?? "—"}</TableCell>
                   <TableCell>{v.tipo ?? "—"}</TableCell>
                   <TableCell>{v.ano ?? "—"}</TableCell>
@@ -1352,7 +1352,7 @@ function Veiculos() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Excluir veículo {v.placa}?</AlertDialogTitle>
+                            <AlertDialogTitle>Excluir veículo {formatarPlaca(v.placa)}?</AlertDialogTitle>
                             <AlertDialogDescription>
                               Viagens existentes permanecem no histórico (sem vínculo ao veículo).
                             </AlertDialogDescription>

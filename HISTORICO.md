@@ -6776,3 +6776,5 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
   - Modal centralizado (já commitado em 5bb0399): cadastro/edição em modal `w-[560px]` centralizado.
 
 - **Placa com hífen em toda exibição (22/10)** - o campo Placa agora formata como `xxx-xxxx` (ex: ABC-1234) tanto ao digitar quanto ao carregar um veículo existente (`formatarPlaca` no `openEdit`). Ao salvar, o hífen é removido antes de gravar no banco, mantendo o dado limpo. A detecção de placa duplicada já ignorava o hífen via `normalizePlaca`.
+
+- **Placa com hífen em toda a tela de Veículos (22/10)** - a formatação `xxx-xxxx` da placa foi estendida para todos os lugares onde a placa é exibida: coluna da tabela de listagem, título do modal de edição ("Editar ABC-1234") e dialog de exclusão ("Excluir veículo ABC-1234?"). O hífen só aparece na visualização; ao salvar no banco ele é removido, mantendo o dado limpo.
