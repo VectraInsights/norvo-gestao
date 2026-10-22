@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  acharRotulo,
   extrairDoTextoOcr,
+  placaDoDocumento,
   tipoVeiculoDoCrlv,
   valorSobRotulo,
   type ItemTexto,
+  type PalavraOcr,
 } from "./crlv";
 
 // Itens no formato do CRLV digital: rótulo numa linha, valor logo abaixo na mesma coluna.
@@ -42,7 +45,8 @@ describe("valorSobRotulo", () => {
 describe("tipoVeiculoDoCrlv", () => {
   it("caminhão com baú é Truck (não Cavalo Mecânico)", () => {
     expect(tipoVeiculoDoCrlv("CARGA CAMINHAO", "CARROCERIA FECHADA")).toBe("Truck");
-    expect(tipoVeiculoDoCrlv("CARGA CAMINHONETE", "CARROCERIA ABERTA")).toBe("Truck");
+    // Caminhonete (picape): é leve — não é caminhão nem cavalo de carreta.
+    expect(tipoVeiculoDoCrlv("CARGA CAMINHONETE", "CARROCERIA ABERTA")).toBe("Van/Furgão");
     expect(tipoVeiculoDoCrlv("ESPECIAL CAMINHAO", "CAR.FECH/MEC.OPER")).toBe("Truck");
   });
 
@@ -119,5 +123,77 @@ describe("extrairDoTextoOcr (CRLV impresso)", () => {
   it("o tipo sai pela espécie + carroceria do texto do OCR", () => {
     const o = extrairDoTextoOcr(textoOcr);
     expect(tipoVeiculoDoCrlv(o.especie, o.carroceria)).toBe("Truck");
+  });
+});
+
+describe("placaDoDocumento", () => {
+  it("pega a placa no título do PDF (o CRLV digital imprime com ela)", () => {
+    expect(placaDoDocumento("", "CRLVDigital_MQK4089_2026 (1).pdf")).toBe("MQK4089");
+    expect(placaDoDocumento("", "CRLVDigital_ABC1234_2026")).toBe("ABC1234");
+  });
+
+  it("pega a placa no nome do arquivo quando não há título", () => {
+    expect(placaDoDocumento("MQK4089.pdf", "")).toBe("MQK4089");
+    expect(placaDoDocumento("CRLV MIH1250 (1).pdf", "")).toBe("MIH1250");
+  });
+
+  it("não inventa placa quando não há uma no documento", () => {
+    expect(placaDoDocumento("veiculo.pdf", "")).toBe("");
+    expect(placaDoDocumento("", "")).toBe("");
+  });
+});
+
+describe("acharRotulo", () => {
+  // Palavras do OCR de um CRLV impresso (as do rótulo e as do valor), em pixels.
+  const p = (s: string, x0: number, y0: number, x1: number, y1: number): PalavraOcr => ({
+    s,
+    conf: 90,
+    x0,
+    y0,
+    x1,
+    y1,
+  });
+
+  const palavras: PalavraOcr[] = [
+    p("CÓDIGO", 126, 359, 214, 381),
+    p("RENAVAM", 223, 364, 327, 381),
+    p("00860983307", 128, 410, 385, 436),
+    p("PLACA", 127, 455, 194, 498),
+    p("EXERCÍCIO", 413, 464, 522, 486),
+    p("MQOK4089", 123, 515, 290, 546),
+    p("ANO", 125, 574, 173, 591),
+    p("FABRICAÇÃO", 182, 570, 317, 597),
+    p("MARCA", 127, 1094, 217, 1111),
+    p("MODELO", 225, 1094, 320, 1111),
+    p("VERSÃO", 342, 1089, 426, 1111),
+    p("ESPÉCIE", 127, 1230, 209, 1252),
+    p("TIPO", 230, 1235, 280, 1252),
+    p("PLACA", 127, 1376, 194, 1393),
+    p("ANTERIOR", 200, 1376, 324, 1393),
+    p("CHASSI", 523, 1376, 598, 1393),
+  ];
+
+  it("acha o rótulo e devolve o começo da coluna do valor", () => {
+    const renavam = acharRotulo(palavras, "CÓDIGO RENAVAM");
+    expect(renavam).not.toBeNull();
+    expect(renavam!.x0).toBe(126);
+    expect(renavam!.y1).toBe(381);
+
+    const placa = acharRotulo(palavras, "PLACA EXERCÍCIO");
+    expect(placa!.x0).toBe(127);
+
+    const marca = acharRotulo(palavras, "MARCA / MODELO / VERSÃO");
+    expect(marca!.x0).toBe(127);
+    expect(marca!.y1).toBe(1111);
+  });
+
+  it("acha o CHASSI no meio da linha (e não no PLACA ANTERIOR)", () => {
+    const chassi = acharRotulo(palavras, "CHASSI");
+    expect(chassi!.x0).toBe(523);
+    expect(chassi!.y1).toBe(1393);
+  });
+
+  it("devolve null quando o rótulo não existe", () => {
+    expect(acharRotulo(palavras, "TAG PEDAGIO")).toBeNull();
   });
 });

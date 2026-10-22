@@ -66,10 +66,10 @@ import { toast } from "sonner";
 import { num, maskDoc } from "@/lib/format";
 import { ALTURA_PAGINA } from "@/lib/layout";
 import {
-  extrairDoTextoOcr,
-  ocrPaginaCrlv,
+  lerCrlvImpresso,
   tipoVeiculoDoCrlv,
   valorSobRotulo,
+  type DadosCrlvImpresso,
   type ItemTexto,
 } from "@/lib/crlv";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -361,15 +361,23 @@ function Veiculos() {
         text += "\n";
       }
 
-      // CRLV IMPRESSO em PDF ("Print to PDF"): o arquivo é só a imagem da tela, sem
-      // camada de texto. Cai no OCR (mesma lib que a CNH usa no RH) e os itens do OCR
-      // viram os "itens" — como a página impressa tem o mesmo layout do CRLV digital,
-      // as coordenadas batem e o parser por rótulo funciona igual.
+      // CRLV IMPRESSO em PDF ("Print to PDF"): o arquivo não tem camada de texto (a
+      // página é vetor/imagem). Cai no OCR (mesma lib que a CNH usa no RH) e cada
+      // campo é lido de um RECORTE da imagem, com os rótulos do próprio CRLV.
       let veioDeOcr = false;
+      let dadosOcr: DadosCrlvImpresso | null = null;
       if (text.replace(/\s/g, "").length < 200) {
         setIsOcr(true);
-        const ocr = await ocrPaginaCrlv(pdf);
-        if (!ocr.length) {
+        let tituloPdf = "";
+        try {
+          const meta: any = await pdf.getMetadata();
+          tituloPdf = String(meta?.info?.Title || "");
+        } catch {}
+        dadosOcr = await lerCrlvImpresso(pdf, {
+          nomeArquivo: file.name,
+          tituloPdf,
+        });
+        if (!dadosOcr) {
           toast.error("Não consegui ler este CRLV", {
             description:
               "O PDF parece ser uma impressão (sem texto selecionável). Baixe o CRLV digital em PDF ou preencha os dados manualmente.",
@@ -377,8 +385,8 @@ function Veiculos() {
           });
           return;
         }
-        itens = ocr;
-        text = ocr.map((i) => i.s).join(" ") + "\n";
+        itens = dadosOcr.itens;
+        text = dadosOcr.texto;
         veioDeOcr = true;
       }
       // CRLV digital é 2 colunas — texto extraído vem embaralhado. Estratégia: isola bloco de DADOS após "Leia o QR Code" e antes de "RECUPERADO"
@@ -482,17 +490,17 @@ function Veiculos() {
               ? "Carreta"
               : "");
       const updates: Partial<typeof form> = {};
-      if (veioDeOcr) {
-        // ---- CRLV IMPRESSO: os rótulos saem embaralhados no OCR, mas os VALORES
-        // estão legíveis — a leitura aqui é por padrão de texto.
-        const o = extrairDoTextoOcr(text);
+      if (veioDeOcr && dadosOcr) {
+        // ---- CRLV IMPRESSO: cada campo vem de um RECORTE da imagem (com os rótulos
+        // do próprio CRLV); o texto da página toda é só a reserva.
+        const o = dadosOcr;
         if (o.placa) updates.placa = o.placa;
         if (o.renavam) updates.renavam = o.renavam;
         if (o.chassi) updates.chassi = o.chassi;
         if (o.ano) updates.ano = o.ano;
         if (o.nome) updates.proprietario = o.nome;
         if (o.cpf) updates.proprietario_doc = maskDoc(o.cpf.replace(/\D/g, ""));
-        if (o.marca) updates.marca_modelo = o.marca;
+        if (o.marca) updates.marca_modelo = o.marca.slice(0, 60);
         if (o.eixos) updates.quantidade_eixos = o.eixos;
         if (o.categoria) updates.categoria = o.categoria.toLowerCase();
         const tpOcr = tipoVeiculoDoCrlv(o.especie, o.carroceria);

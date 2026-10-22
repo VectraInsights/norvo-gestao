@@ -6676,6 +6676,28 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
   campo fica vazio para conferir, em vez de vir "SR/RANDON" e "LGP TRANSPORTES".
   O render do pdfjs在这些 PDFs e lento (~20s em 1x, o PDF tem ~3.600 operadores de
   vetor): o botao mostra "Lendo PDF (OCR)…".
+- **CRLV IMPRESSO: leitura por RECORTE (22/10)** - a leitura por OCR da pagina inteira
+  errava feio (o dono reclamou: placa "QOK4089" em vez de "MQK4089", RENAVAM com o
+  "codigo de seguranca", marca/modelo vazio, tipo "Truck" num caminhonete). Causas e
+  correcoes:
+  1. **OCR com recorte por campo**: cada campo e lido de um RECORTE da imagem (a faixa
+     logo abaixo do rotulo, na mesma coluna do CRLV) com whitelist de caracteres e
+     PSM 6. O rotulo e achado pelas PALAVRAS do OCR (`acharRotulo`), e o proximo rotulo
+     corta a faixa. Medido: trocar a whitelist custa ~1ms e o recorte ~70ms.
+  2. **Placa pelo documento, nao pela imagem**: o CRLV digital e impresso com o titulo
+     "CRLVDigital_<PLACA>_<ano>" e o arquivo tem o nome da placa - `placaDoDocumento(nome, titulo)`.
+     O OCR troca letras com frequencia (Q vira O, M vira I) entao essa fonte vence.
+  3. **Tipo**: "CARGA CAMINHONETE" (picape) e **Van/Furgao**, nao Truck (a regra do
+     "generico" so valia para "CARGA CAMINHAO").
+  4. **Ano**: o recorte do rotulo "ANO FABRICACAO" pega so o ano de fabricacao (2005),
+     nao o de exercicio (2026) nem o de modelo (2006).
+  Validado no PDF real (MQK4089, "Print to PDF" 100% vetorial) com o codigo de
+  verdade: placa MQK4089, renavam 00860983307, chassi 8AJCR32GX60001257, ano 2005,
+  nome JUVENAL TRANSPORTES LTDA-EPP, cnpj 03.919.614/0001-60, especie CARGA
+  CAMINHONETE, carroceria CARROCERIA ABERTA, marca I/TOYOTA HILUX CS4X2, eixos 2,
+  categoria PARTICULAR -> tipo **Van/Furgao**. `npm test` (87).
+  O render do pdfjs nesses PDFs e pesado (a pagina tem ~3.600 operadores de vetor):
+  o botao mostra "Lendo PDF (OCR)...".
 - **Tela de cadastro de NCM saiu de `src/routes`** (aviso do TanStack por arquivo sem
   `Route`) para `src/components/erp/ncm-fiscal-cadastro.tsx`. `npm test` (81).
 - **Tela de Veiculos sem rolagem fora**: a pagina virou coluna flex com altura da viewport
