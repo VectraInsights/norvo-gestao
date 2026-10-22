@@ -859,15 +859,17 @@ function Veiculos() {
                 Identificação
               </div>
               <div className="space-y-1">
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-[1fr_1.5fr_1fr] gap-1.5">
                   <div>
                     <Label className="text-[10px] text-muted-foreground">Placa *</Label>
                     <Input
-                      className="uppercase h-7 text-xs text-left"
+                      className="uppercase h-7 text-xs text-left font-mono"
                       value={form.placa}
-                      onChange={(e) =>
-                        set("placa", e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase())
-                      }
+                      onChange={(e) => {
+                        let v = e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+                        if (v.length > 3) v = v.slice(0, 3) + "-" + v.slice(3);
+                        set("placa", v);
+                      }}
                     />
                     {placaDuplicada && (
                       <p className="mt-0.5 text-[10px] leading-tight text-destructive">
@@ -888,7 +890,7 @@ function Veiculos() {
                   <div>
                     <Label className="text-[10px] text-muted-foreground">Status *</Label>
                     <Select value={form.status} onValueChange={(v) => set("status", v)}>
-                      <SelectTrigger className="h-7 text-xs">
+                      <SelectTrigger className="h-7 text-xs text-left">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1009,7 +1011,7 @@ function Veiculos() {
                 Documentação
               </div>
               <div className="space-y-1">
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-[1fr_1.5fr_1fr] gap-1.5">
                   <div>
                     <Label className="text-[10px] text-muted-foreground">RENAVAM *</Label>
                     <Input
@@ -1036,7 +1038,7 @@ function Veiculos() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="space-y-1">
                   <div>
                     <Label className="text-[10px] text-muted-foreground">RNTRC</Label>
                 <Popover
@@ -1183,7 +1185,7 @@ function Veiculos() {
                   <div>
                     <Label className="text-[10px] text-muted-foreground">Categoria *</Label>
                     <Select value={form.categoria} onValueChange={(v) => set("categoria", v)}>
-                      <SelectTrigger className="h-7 text-xs">
+                      <SelectTrigger className="h-7 text-xs text-left">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

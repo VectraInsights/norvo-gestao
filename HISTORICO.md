@@ -6768,3 +6768,9 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
   cadastro/edição de veículo (`frota.veiculos.tsx`) estava em tela cheia
   (`w-screen h-screen max-w-none max-h-none`). Mudado para um modal centralizado
   (`inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] ... max-h-[90vh] rounded-2xl sm:p-6 overflow-y-auto`), seguindo o mesmo padrão do modal de cancelamento de CTe e de outras telas do app.
+
+- **Ajustes finais no cadastro de Veículos (22/10)**:
+  - **Placa com hífen**: campo da placa agora formata automaticamente como `xxx-xxxx` (ex: ABC-1234).
+  - **Chassi mais largo**: a coluna do chassi no grid de documentação agora ocupa 1.5fr para caber os 17 caracteres inteiros sem cortar.
+  - **RNTRC em largura total**: o campo RNTRC saiu do grid de 3 colunas e agora ocupa toda a extensão da linha.
+  - Modal centralizado (já commitado em 5bb0399): cadastro/edição em modal `w-[560px]` centralizado.
