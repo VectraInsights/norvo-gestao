@@ -45,9 +45,32 @@ describe("valorSobRotulo", () => {
 describe("tipoVeiculoDoCrlv", () => {
   it("caminhão com baú é Truck (não Cavalo Mecânico)", () => {
     expect(tipoVeiculoDoCrlv("CARGA CAMINHAO", "CARROCERIA FECHADA")).toBe("Truck");
-    // Caminhonete (picape): é leve — não é caminhão nem cavalo de carreta.
-    expect(tipoVeiculoDoCrlv("CARGA CAMINHONETE", "CARROCERIA ABERTA")).toBe("Van/Furgão");
     expect(tipoVeiculoDoCrlv("ESPECIAL CAMINHAO", "CAR.FECH/MEC.OPER")).toBe("Truck");
+  });
+
+  it("caminhonete (picape) é Caminhonete — não é Van nem Truck", () => {
+    expect(tipoVeiculoDoCrlv("CARGA CAMINHONETE", "CARROCERIA ABERTA")).toBe("Caminhonete");
+    expect(tipoVeiculoDoCrlv("CARGA CAMINHONETE", "")).toBe("Caminhonete");
+  });
+
+  it("picape continua Caminhonete mesmo com espécie genérica (o modelo desempata)", () => {
+    expect(
+      tipoVeiculoDoCrlv("CARGA CAMINHAO", "CARROCERIA ABERTA", "I/TOYOTA HILUX CS4X2"),
+    ).toBe("Caminhonete");
+    expect(tipoVeiculoDoCrlv("CARGA CAMINHAO", "", "GM S10 2.8")).toBe("Caminhonete");
+  });
+
+  it("ônibus e microônibus são tipos próprios", () => {
+    expect(tipoVeiculoDoCrlv("PASSAGEIRO MICROONIBUS", "NÃO APLICÁVEL")).toBe(
+      "Microônibus",
+    );
+    expect(tipoVeiculoDoCrlv("PASSAGEIRO ONIBUS", "NÃO APLICÁVEL")).toBe("Onibus");
+    expect(tipoVeiculoDoCrlv("PASSAGEIRO AUTOMOVEL", "NÃO APLICÁVEL")).toBe("Automóvel");
+    expect(tipoVeiculoDoCrlv("PASSAGEIRO MOTOCICLETA", "")).toBe("Motocicleta");
+  });
+
+  it("bitrem é Bitrem (e não Carreta)", () => {
+    expect(tipoVeiculoDoCrlv("CARGA BITREM", "")).toBe("Bitrem");
   });
 
   it("cavalo de carreta (sem carroceria) é Cavalo Mecânico", () => {
@@ -61,9 +84,9 @@ describe("tipoVeiculoDoCrlv", () => {
     expect(tipoVeiculoDoCrlv("CARGA SEMI-REBOQUE", "CARROCERIA FECHADA")).toBe("Carreta");
   });
 
-  it("passageiro é Van/Furgão", () => {
-    expect(tipoVeiculoDoCrlv("PASSAGEIRO MICROONIBUS", "NÃO APLICÁVEL")).toBe("Van/Furgão");
-    expect(tipoVeiculoDoCrlv("PASSAGEIRO AUTOMOVEL", "NÃO APLICÁVEL")).toBe("Van/Furgão");
+  it("passageiro é Automóvel (e van/furgão quando o CRLV diz van)", () => {
+    expect(tipoVeiculoDoCrlv("VAN", "NÃO APLICÁVEL")).toBe("Van/Furgão");
+    expect(tipoVeiculoDoCrlv("UTILITARIO", "")).toBe("Van/Furgão");
   });
 
   it("nomes explícitos têm prioridade", () => {

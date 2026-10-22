@@ -127,7 +127,21 @@ function formVazio() {
   };
 }
 
-const TIPOS_PADRAO = ["3/4", "Bitrem", "Cavalo Mecânico", "Carreta", "Toco", "Truck", "Van/Furgão"];
+const TIPOS_PADRAO = [
+  "3/4",
+  "Automóvel",
+  "Bitrem",
+  "Caminhonete",
+  "Carreta",
+  "Cavalo Mecânico",
+  "Microônibus",
+  "Motocicleta",
+  "Onibus",
+  "SUV",
+  "Toco",
+  "Truck",
+  "Van/Furgão",
+];
 const CATEGORIAS = ["Particular", "Aluguel", "Agregado", "Terceiro"];
 
 function Veiculos() {
@@ -470,13 +484,15 @@ function Veiculos() {
       }
       // Tipo do veículo: pelo rótulo ESPÉCIE / TIPO do CRLV (texto livre tipo
       // "PASSAGEIRO MICROONIBUS" ou "CARGA CAMINHAO", que nenhuma palavra-chave
-      // antiga pegava). No caso genérico, a CARROCERIA desempata: com baú é
-      // Truck, sem carroceria é o cavalo de uma carreta.
+      // antiga pegava). No caso genérico, a MARCA desempata (picape é Caminhonete)
+      // e, sem ela, a CARROCERIA: com baú é Truck, sem carroceria é o cavalo de
+      // uma carreta.
       const especieRotulo = valorSobRotulo(itens, "ESPÉCIE / TIPO");
       const carroceriaRotulo = valorSobRotulo(itens, "CARROCERIA");
+      const marcaRotulo = valorSobRotulo(itens, "MARCA / MODELO / VERSÃO");
       const especieVal =
-        tipoVeiculoDoCrlv(especieRotulo, carroceriaRotulo) ||
-        tipoVeiculoDoCrlv(valorSobRotulo(itens, "MARCA / MODELO / VERSÃO"), carroceriaRotulo) ||
+        tipoVeiculoDoCrlv(especieRotulo, carroceriaRotulo, marcaRotulo) ||
+        tipoVeiculoDoCrlv("", carroceriaRotulo, marcaRotulo) ||
         (dadosBloco.includes("SEMI-REBOQUE")
           ? "Carreta"
           : dadosBloco.includes("TRACAO") ||
@@ -486,9 +502,11 @@ function Veiculos() {
               dadosBloco.includes("CARGA CAMINHAO") ||
               dadosBloco.includes("CARGA CAMINHÃO")
             ? "Cavalo Mecânico"
-            : dadosBloco.includes("CARGA")
-              ? "Carreta"
-              : "");
+            : dadosBloco.includes("CAMINHONETE")
+              ? "Caminhonete"
+              : dadosBloco.includes("CARGA")
+                ? "Carreta"
+                : "");
       const updates: Partial<typeof form> = {};
       if (veioDeOcr && dadosOcr) {
         // ---- CRLV IMPRESSO: cada campo vem de um RECORTE da imagem (com os rótulos
@@ -503,7 +521,7 @@ function Veiculos() {
         if (o.marca) updates.marca_modelo = o.marca.slice(0, 60);
         if (o.eixos) updates.quantidade_eixos = o.eixos;
         if (o.categoria) updates.categoria = o.categoria.toLowerCase();
-        const tpOcr = tipoVeiculoDoCrlv(o.especie, o.carroceria);
+        const tpOcr = tipoVeiculoDoCrlv(o.especie, o.carroceria, o.marca);
         if (tpOcr) updates.tipo = tpOcr;
       } else {
         // ---- CRLV DIGITAL: regex + leitura por rótulo (coordenada) ----

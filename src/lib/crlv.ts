@@ -43,54 +43,86 @@ export function valorSobRotulo(itens: ItemTexto[], rotulo: string): string {
   return "";
 }
 
+/** Normaliza um texto de CRLV para comparação: sem acento, maiúsculo. */
+const normTipo = (s: string) =>
+  String(s || "")
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+
+/**
+ * Modelos que definem o tipo quando a ESPÉCIE do CRLV é genérica (o CRLV às vezes
+ * escreve só "CARGA CAMINHAO" para uma picape).
+ */
+const MODELOS_CAMINHONETE = [
+  "HILUX",
+  "SAVEIRO",
+  "RANGER",
+  "STRADA",
+  "TAILGATE",
+  "S10",
+  "H100",
+  "FRONTIER",
+  "D-MAX",
+  "MARAJUN",
+];
+
+/**
+ * Tipo pelo MODELO (marca/modelo do CRLV), quando a espécie não é clara.
+ *
+ * Uma picape (Hilux, Saveiro, Ranger...) é "Caminhonete" — não é van, não é
+ * caminhão. A lista é curta e só entra quando a espécie é genérica.
+ */
+export function tipoPeloModelo(marca: string): string {
+  const m = normTipo(marca);
+  if (!m) return "";
+  if (MODELOS_CAMINHONETE.some((x) => m.includes(x))) return "Caminhonete";
+  return "";
+}
+
 /**
  * Tipo de veículo a partir do texto do CRLV.
  *
- * O CRLV descreve a espécie em texto livre ("CARGA CAMINHAO", "CARGA SEMI-REBOQUE",
- * "PASSAGEIRO AUTOMOVEL", "TRACAO CAMINHAO TRATOR"...) e o cadastro usa os tipos da
+ * O CRLV descreve a espécie em texto livre ("CARGA CAMINHAO", "CARGA CAMINHONETE",
+ * "TRACAO CAMINHAO TRATOR", "PASSAGEIRO AUTOMOVEL"...) e o cadastro usa os tipos da
  * lista padrão.
  *
  * `carroceria` desempata o caso genérico: "CARGA CAMINHAO" COM carroceria (baú) é um
  * caminhão com carga própria (Truck); SEM carroceria é o cavalo de uma carreta
  * (Cavalo Mecânico).
+ *
+ * `marca` (marca/modelo) só entra quando a espécie é genérica — é o que separa uma
+ * picape (Caminhonete) de um caminhão.
  */
-export function tipoVeiculoDoCrlv(especie: string, carroceria = ""): string {
-  const t = String(especie || "")
-    .toUpperCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ");
-  const c = String(carroceria || "")
-    .toUpperCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ");
-  if (!t) return "";
-  if (
-    t.includes("SEMI-REBOQUE") ||
-    t.includes("REBOQUE") ||
-    t.includes("CARRETA") ||
-    t.includes("BITREM")
-  )
+export function tipoVeiculoDoCrlv(
+  especie: string,
+  carroceria = "",
+  marca = "",
+): string {
+  const t = normTipo(especie);
+  const c = normTipo(carroceria);
+  if (!t) return tipoPeloModelo(marca);
+  if (t.includes("BITREM")) return "Bitrem";
+  if (t.includes("SEMI-REBOQUE") || t.includes("REBOQUE") || t.includes("CARRETA"))
     return "Carreta";
   if (t.includes("CAVALO")) return "Cavalo Mecânico";
+  // "TRACAO CAMINHAO TRATOR" é o cavalo (cavalo mecânico) da carreta.
+  if (t.includes("TRACAO") && t.includes("TRATOR")) return "Cavalo Mecânico";
   if (t.includes("TOCO")) return "Toco";
   if (t.includes("3/4")) return "3/4";
   if (t.includes("TRUCK")) return "Truck";
-  if (
-    t.includes("PASSAGEIRO") ||
-    t.includes("MICROONIBUS") ||
-    t.includes("MINIBUS") ||
-    t.includes("ONIBUS") ||
-    t.includes("VAN") ||
-    t.includes("UTILITARIO") ||
-    t.includes("FURGAO") ||
-    // Caminhonete (picape/SUV de carga): é leve, não é caminhão nem carreta.
-    t.includes("CAMINHONETE")
-  )
+  // Caminhonete (picape: Hilux, Saveiro, Ranger) — é leve: não é van nem caminhão.
+  if (t.includes("CAMINHONETE")) return "Caminhonete";
+  if (t.includes("MICROONIBUS") || t.includes("MINIBUS")) return "Microônibus";
+  if (t.includes("ONIBUS")) return "Onibus";
+  if (t.includes("MOTOCICLETA")) return "Motocicleta";
+  if (t.includes("PASSAGEIRO")) return "Automóvel";
+  if (t.includes("VAN") || t.includes("UTILITARIO") || t.includes("FURGAO"))
     return "Van/Furgão";
-  // Genérico ("CARGA CAMINHAO" / "CAMINHAO" / "CARGA"): a carroceria diz se é
-  // caminhão com baú (Truck) ou cavalo de carreta (sem carroceria).
+  // Espécie genérica: o modelo (marca) desempata, senão a carroceria decide.
+  const porModelo = tipoPeloModelo(marca);
+  if (porModelo) return porModelo;
   if (t.includes("CAMINHAO") || t.includes("CARGA")) {
     const semCorpo =
       !c ||

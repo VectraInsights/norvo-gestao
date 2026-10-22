@@ -6676,6 +6676,23 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
   campo fica vazio para conferir, em vez de vir "SR/RANDON" e "LGP TRANSPORTES".
   O render do pdfjs在这些 PDFs e lento (~20s em 1x, o PDF tem ~3.600 operadores de
   vetor): o botao mostra "Lendo PDF (OCR)…".
+- **Tipos de veiculo ampliados e classificacao corrigida (22/10)** - o dono apontou que
+  uma Hilux (caminhonete) nao e "Van/Furgao". Mudancas:
+  - **Lista de tipos da tela de Veiculos** (`TIPOS_PADRAO`) foi de 7 para 13:
+    3/4, Automóvel, Bitrem, Caminhonete, Carreta, Cavalo Mecânico, Microônibus,
+    Motocicleta, Onibus, SUV, Toco, Truck, Van/Furgão. (Os nomes antigos foram
+    mantidos, entao nenhum registro salvo fica com tipo orfao.)
+  - **`tipoVeiculoDoCrlv(especie, carroceria, marca)`** (src/lib/crlv.ts) reclassifica
+    pela ESPECIE do CRLV, na ordem: Bitrem -> Carreta (semi-reboque) -> Cavalo
+    Mecânico (CAVALO ou "TRACAO CAMINHAO TRATOR") -> Toco -> 3/4 -> Truck ->
+    **Caminhonete (CARGA CAMINHONETE)** -> Microônibus -> Onibus -> Motocicleta ->
+    Automóvel (PASSAGEIRO) -> Van/Furgão. O generico ("CARGA CAMINHAO") continua
+    decidindo pela CARROCERIA (com baú = Truck, sem = Cavalo Mecânico).
+  - **Marca como desempate**: quando a especie e generica, o modelo decide
+    (`tipoPeloModelo`): picape (Hilux, Saveiro, Ranger, Strada, TAILGATE, S10, H100,
+    Frontier, D-Max, Marajun) = Caminhonete.
+  - Na leitura por ROTULO (CRLV digital) o tipo passa a considerar a marca
+    (MARCA / MODELO / VERSÃO) e na do OCR tambem. `npm test` (91).
 - **CRLV IMPRESSO: leitura por RECORTE (22/10)** - a leitura por OCR da pagina inteira
   errava feio (o dono reclamou: placa "QOK4089" em vez de "MQK4089", RENAVAM com o
   "codigo de seguranca", marca/modelo vazio, tipo "Truck" num caminhonete). Causas e
