@@ -6736,3 +6736,17 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
   tambem passou a rolar por dentro. Telas que precisam rolar a pagina inteira
   (Dashboard, Relatorios, hub de Configuracoes) nao foram tocadas.
 - tsc sem erro novo, `npm test` (70) e build OK.
+
+- **Dropdown de tipos de veículo com rolagem (22/10)** - o `PopoverContent` do campo
+  "Tipo" (`src/routes/_authenticated/frota.veiculos.tsx`) não limitava a altura, então
+  a lista transbordava a tela e a barra de rolagem do mouse não funcionava. Adicionado
+  `max-h-[52vh] overflow-y-auto` ao PopoverContent.
+
+- **Correção de cadastros no banco (22/10)** - auditoria dos 52 CRLVs da pasta
+  "Nova pasta" contra a tabela `veiculos` (somente leitura). Corrigidos, a pedido do dono:
+  - Tipo para **Truck** em 4 placas que estavam "Cavalo Mecânico": HHK1G23, HIJ4F62,
+    HJE0016, JOE0638 (são CARGA CAMINHÃO com carroceria, ou seja, caminhão, não cavalo).
+  - Marca/modelo em 2 placas que estavam com o placeholder "SR/RANDON SRFG CG":
+    HEH8H61 → "FIAT/DUCATO MINIBUS" e OQU0011 → "I/M.BENZ C 250 CGI COUPE".
+  - 2 placas da pasta ainda não estão cadastradas (IUS7173, DND1I40) — são novas, o
+    dono importa quando quiser.
