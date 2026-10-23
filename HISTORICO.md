@@ -6802,3 +6802,19 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
 - **CRT 1 (Simples/MEI) exige CSOSN (23/10)** - removida validação redundante no
   sefaz-cte.ts que exigia CSOSN quando emitente é Simples/MEI. O CT-e usa ICMSSN
   com CST=90 (indSN=1) e não usa o CST do percurso. Commit `fb2e2dd`.
+
+- **CIOT obrigatório na aba Transporte (23/10)** - a verificação de veículo terceirizado (CNPJ divergente do emissor) e CIOT obrigatório foi movida da aba Tributação para a aba Transporte, onde a bolinha vermelha de aviso aparece corretamente.
+
+- **Aviso CIOT obrigatório (23/10)** - quando o veículo de tração é de CNPJ divergente do emissor do CT-e, o sistema agora exibe um aviso amarelo abaixo do campo de tração: "Terceirizado" e bloqueia a emissão com "CIOT obrigatório (veículo terceirizado)" na bolinha vermelha da aba Transporte. Rascunho continua podendo ser salvo em qualquer situação.
+
+- **Mensagem simplificada (23/10)** - as mensagens de frota no campo de tração do CT-e foram simplificadas para "Frota própria" e "Terceirizado" (sem caracteres bugados).
+
+- **Boleto Sicoob (23/10)** - módulo de boleto ajustado para o Sicoob com código do cedente 193933-5, carteira 29, agência 3109, conta 11312165. Migration `20261023090000_boletos_cedente_carteira.sql` adiciona campos `codigo_cedente` e `carteira` na tabela `boletos`.
+
+- **Placa com hífen (23/10)** - a placa agora é exibida no formato `xxx-xxxx` (ex: ABC-1234) em toda a tela de Veículos (tabela, modal de edição, dialog de exclusão, campo de cadastro).
+
+- **CT-e percurso (23/10)** - múltiplas correções: percurso aplica CST/ICMS/CFOP automaticamente, CNPJ normalizado para 14 dígitos na comparação, fallback para percurso único sem tomador, aplicação independente do modal aberto, bolinha de aviso corrigida para MG/MG (isenção = 0%).
+
+- **CT-e CRT 1 (23/10)** - removida validação redundante de CSOSN para Simples/MEI. O CT-e usa ICMSSN com CST=90 (indSN=1) e não usa o CST do percurso.
+
+- **Truck não é cavalo mecânico (23/10)** - função `Traciona` corrigida para não considerar Truck como veículo que traciona reboque.

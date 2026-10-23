@@ -5967,6 +5967,9 @@ function CtePage() {
       transporte.push("motorista");
     if (!rntrcOk) transporte.push("RNTRC");
     if (!(numBR(form.vPrest) > 0)) transporte.push("valor do serviço");
+    if (isVeiculoTerceiro && !String((form as any).ciot || "").trim()) {
+      transporte.push("CIOT obrigatório (veículo terceirizado)");
+    }
     if (
       (form as any).finalidadeEmissao !== "Complemento" &&
       !String(form.seguradoraNome || "").trim()
@@ -5978,9 +5981,6 @@ function CtePage() {
     if (String(form.icmsAliq ?? "").trim() === "") trib.push("alíquota ICMS");
     if (mercadorias.length === 0) trib.push("NF-es");
     if (!aliqIcmsOk && aliqIcmsEsp !== null) trib.push(`alíquota esperada ${aliqIcmsEsp}% p/ a rota`);
-    if (isVeiculoTerceiro && !String((form as any).ciot || "").trim()) {
-      trib.push("CIOT obrigatório (veículo terceirizado)");
-    }
     return { geral, transporte, trib };
   })();
   const tabOk = (() => ({
