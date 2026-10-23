@@ -2551,7 +2551,7 @@ function CtePage() {
   // Pedágio: com cobrança (Free Flow / TAGs) os dados são obrigatórios — alimentam o MDF-e e barram a emissão
   const Traciona = (tipo: any) => {
     const t = String(tipo || "").toLowerCase();
-    return t.indexOf("cavalo") >= 0 || (t.indexOf("truck") >= 0 && t.indexOf("bitruck") < 0);
+    return t.indexOf("cavalo") >= 0;
   };
   const validarPedagio = (f: typeof emptyForm) => {
     const modo = pagtoSeguro(f.pedagioPagto) as string;
