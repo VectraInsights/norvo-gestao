@@ -5591,10 +5591,25 @@ function CtePage() {
     // Conferência estrita: só aplica com CNPJ de remetente + destinatário + tomador iguais
     const arr = lista ?? percursos;
     if (!arr || arr.length === 0) return null;
-    if (!d.remDoc || !d.destDoc || !d.tomaDoc) return null;
-    const cands = arr.filter((r) => trioPercursoOk(r, d));
-    if (cands.length === 0) return null;
-    return escolherPercurso(cands);
+    if (!d.remDoc || !d.destDoc) return null;
+
+    // 1) Tenta com tomador completo (14 dígitos)
+    if (d.tomaDoc && d.tomaDoc.length === 14) {
+      const cands = arr.filter((r) => trioPercursoOk(r, d));
+      if (cands.length > 0) return escolherPercurso(cands);
+    }
+
+    // 2) Fallback: quando há apenas UM percurso cadastrado na empresa e
+    // remetente+destinatário batem, aplica mesmo sem tomador (caso comum
+    // de empresa com rota fixa e tomador variável).
+    const porRemDest = arr.filter(
+      (r) =>
+        onlyDigitsPercurso(r.rem_cnpj) === d.remDoc &&
+        onlyDigitsPercurso(r.dest_cnpj) === d.destDoc,
+    );
+    if (porRemDest.length === 1) return porRemDest[0];
+
+    return null;
   };
   // NF sem percurso cadastrado (rem+dest+toma) — linha vermelha + bloqueio no Gerar
   const nfTemPercurso = (m: any) => {
@@ -5996,7 +6011,7 @@ function CtePage() {
       return;
     }
     const d = docsAtuais();
-    if (!d.tomaDoc || d.tomaDoc.length !== 14) return;
+    if (!d.remDoc || !d.destDoc) return; // precisa no mínimo de remetente + destinatário
     const m = matchPercurso(d);
     if (!m) return;
     const key = m.id + "|" + d.remDoc + "|" + d.destDoc + "|" + d.tomaDoc;
