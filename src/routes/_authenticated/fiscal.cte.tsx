@@ -6023,7 +6023,7 @@ function CtePage() {
 
     aplicarPercurso(m);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewDoc, form.cnpjTomador, mercadorias, selecionadas, percursos, form.icmsCST, form.icmsAliq, form.cfop]);
+  }, [viewDoc, form.cnpjTomador, mercadorias, selecionadas, percursos, percursoMatch, form.icmsCST, form.icmsAliq, form.cfop]);
   const entregaSrcRef = useRef("");
   // Entrega vinda do percurso não é sobrescrita pela NF-e (ex.: redespacho p/ outra cidade)
   const travarEntregaRef = useRef(false);
