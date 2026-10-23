@@ -5887,15 +5887,21 @@ function CtePage() {
     }
   };
   const percursoMatch = matchPercurso(docsAtuais());
-  if (percursoMatch) console.log("[CTE-PERCURSO] percursoMatch encontrado:", percursoMatch.codigo, "icmsCST=", percursoMatch.icms_cst, "icmsAliq=", percursoMatch.icms_aliq, "cfop=", percursoMatch.cfop);
   // Estado por aba p/ o dot (verde completa / vermelha faltando). Espelha as
   // exigências da emissão; Observações nunca bloqueia. Sem dots em leitura.
   // Alíquota de ICMS esperada p/ a rota (origem MG): Sul/Sudeste listado = 12%,
   // demais destinos = 7%. Fora de MG não opina (retorna null).
   const aliqIcmsEsperada = (ufIni: any, ufFim: any): number | null => {
+    const o = String(ufIni || "").toUpperCase();
     const d = String(ufFim || "").toUpperCase();
-    if (String(ufIni || "").toUpperCase() !== "MG" || !d) return null;
-    return ["SP", "RJ", "PR", "SC", "RS"].includes(d) ? 12 : 7;
+    if (!o || !d) return null;
+    // Operação interna (mesma UF): isenção de ICMS (0%)
+    if (o === d) return 0;
+    // Origem MG, destino interestadual
+    if (o === "MG") {
+      return ["SP", "RJ", "PR", "SC", "RS"].includes(d) ? 12 : 7;
+    }
+    return null; // Fora de MG não opina
   };
   // Alíquota atual x esperada p/ a rota (explica o dot vermelho da Tributação)
   const aliqIcmsNum = (() => {
@@ -6020,14 +6026,9 @@ function CtePage() {
       return;
     }
     const d = docsAtuais();
-    console.log("[CTE-PERCURSO] docsAtuais: remDoc=", d.remDoc, "destDoc=", d.destDoc, "tomaDoc=", d.tomaDoc, "mercadorias.length=", mercadorias.length, "selecionadas.size=", selecionadas.size);
     if (!d.remDoc || !d.destDoc) return; // precisa no mínimo de remetente + destinatário
     const m = matchPercurso(d);
-    if (!m) {
-      console.log("[CTE-PERCURSO] matchPercurso retornou null para", d.remDoc, d.destDoc);
-      return;
-    }
-    console.log("[CTE-PERCURSO] aplicando percurso", m.codigo, "icmsCST=", m.icms_cst, "icmsAliq=", m.icms_aliq, "cfop=", m.cfop);
+    if (!m) return;
     aplicarPercurso(m);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewDoc, form.cnpjTomador, mercadorias, selecionadas, percursos, percursoMatch]);
