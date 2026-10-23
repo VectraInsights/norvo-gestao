@@ -5593,35 +5593,29 @@ function CtePage() {
     if (!arr || arr.length === 0) return null;
     if (!d.remDoc || !d.destDoc) return null;
 
-    // CNPJs da NF-e podem vir com mais que 14 dígitos (ex: prefixos do XML).
-    // Comparamos apenas os primeiros 14 dígitos (CNPJ real) quando um for maior.
-    const cnpjMatch = (a: string, b: string) => {
-      const aa = onlyDigitsPercurso(a);
-      const bb = onlyDigitsPercurso(b);
-      if (!aa || !bb) return false;
-      const menor = aa.length <= bb.length ? aa : bb;
-      const maior = aa.length <= bb.length ? bb : aa;
-      return maior.startsWith(menor);
-    };
+    // CNPJs devem ter exatamente 14 dígitos. Normaliza ambos para comparar apenas
+    // os digitos, ignorando pontos, barras e qualquer outro caractere nao numerico.
+    const cnpj14 = (s: string) => String(s || "").replace(/\D/g, "").slice(0, 14);
+
+    const rDoc = cnpj14(d.remDoc);
+    const dDoc = cnpj14(d.destDoc);
+    const tDoc = cnpj14(d.tomaDoc || "");
 
     // 1) Tenta com tomador completo (14 dígitos)
-    if (d.tomaDoc && d.tomaDoc.length === 14) {
+    if (tDoc.length === 14) {
       const cands = arr.filter(
         (r) =>
-          cnpjMatch(r.rem_cnpj, d.remDoc) &&
-          cnpjMatch(r.dest_cnpj, d.destDoc) &&
-          cnpjMatch(r.toma_cnpj, d.tomaDoc),
+          cnpj14(r.rem_cnpj) === rDoc &&
+          cnpj14(r.dest_cnpj) === dDoc &&
+          cnpj14(r.toma_cnpj) === tDoc,
       );
       if (cands.length > 0) return escolherPercurso(cands);
     }
 
     // 2) Fallback: quando há apenas UM percurso cadastrado na empresa e
-    // remetente+destinatário batem, aplica mesmo sem tomador (caso comum
-    // de empresa com rota fixa e tomador variável).
+    // remetente+destinatário batem, aplica mesmo sem tomador.
     const porRemDest = arr.filter(
-      (r) =>
-        cnpjMatch(r.rem_cnpj, d.remDoc) &&
-        cnpjMatch(r.dest_cnpj, d.destDoc),
+      (r) => cnpj14(r.rem_cnpj) === rDoc && cnpj14(r.dest_cnpj) === dDoc,
     );
     if (porRemDest.length === 1) return porRemDest[0];
 
