@@ -7,14 +7,36 @@ import { z } from "zod";
 /**
  * Server functions para o módulo de boleto bancário (Norvo).
  *
- * Fluxo suportado:
- *   1. Gerar boleto — registra no banco local com linha digitável/código de barras.
- *   2. Processar retorno CNAB 240 do banco para baixa automática.
- *   3. Baixar boleto manualmente (marcar como pago).
- *
- * Credenciais do banco (código do cedente, carteira, chaves API) ficam
- * exclusivamente no `.env` / env vars da Vercel — nunca commitar.
+ * Suporta múltiplos bancos com configuração por empresa.
+ * Credenciais (código do cedente, carteira, chaves API) ficam no banco de dados
+ * (tabela bancos_config) — nunca commitar.
  */
+
+// ---------------------------------------------------------------------------
+// Configuração por banco
+// ---------------------------------------------------------------------------
+
+type BancoConfig = {
+  codigo: string;        // Código do banco (ex: 756 Sicoob, 341 Itaú)
+  nome: string;
+  digitoVerificador: (dados: string) => number; // Função DV específica do banco
+  nossoNumeroPrefixo: string; // Prefixo do nosso número
+};
+
+const BANCOS: Record<string, BancoConfig> = {
+  sicoob: {
+    codigo: "756",
+    nome: "Sicoob",
+    digitoVerificador: (dados) => modulo11(dados, 9, 2),
+    nossoNumeroPrefixo: "0001",
+  },
+  itau: {
+    codigo: "341",
+    nome: "Itaú",
+    digitoVerificador: (dados) => modulo11(dados, 9, 2),
+    nossoNumeroPrefixo: "0001",
+  },
+};
 
 // ---------------------------------------------------------------------------
 // Schemas de validação
@@ -27,14 +49,14 @@ const GerarBoletoInput = z.object({
   valor: z.number().positive(),
   vencimento: z.string(), // "YYYY-MM-DD"
   sacadoNome: z.string().min(1),
-  sacadoDocumento: z.string().min(11), // CPF ou CNPJ só dígitos
+  sacadoDocumento: z.string().min(11),
   sacadoLogradouro: z.string().min(1),
   sacadoNumero: z.string().min(1),
   sacadoBairro: z.string().min(1),
   sacadoCidade: z.string().min(1),
   sacadoUf: z.string().length(2),
   sacadoCep: z.string().min(8),
-  numeroDocumento: z.string().min(1), // nº do CT-e ou fatura
+  numeroDocumento: z.string().min(1),
   descricao: z.string().min(1),
 });
 
@@ -58,10 +80,6 @@ const BaixarBoletoInput = z.object({
 // Helpers
 // ---------------------------------------------------------------------------
 
-function onlyDigits(s: string): string {
-  return String(s ?? "").replace(/\D/g, "");
-}
-
 function modulo11(numero: string, base: number = 9, fatorInicial: number = 2): number {
   let soma = 0;
   let fator = fatorInicial;
@@ -73,11 +91,32 @@ function modulo11(numero: string, base: number = 9, fatorInicial: number = 2): n
   return resto > 1 ? 11 - resto : 0;
 }
 
-/**
- * Gera linha digitável do boleto (padrão Febraban simplificada).
- * Código de barras: banco(3) + moeda(1) + DV(1) + fatorVencimento(4) + valor(13) + livre(25) + ...
- * Implementação simplificada — ajustar conforme layout específico de cada banco.
- */
+function gerarNossoNumero(cfg: any): string {
+  // Nosso número sequencial baseado em timestamp
+  // Em produção, idealmente viria de faixa alocada pelo banco ou do retorno CNAB
+  const ts = Date.now().toString().slice(-6);
+  const prefixo = (BANCOS[cfg.banco as keyof typeof BANCOS]?.nossoNumeroPrefixo || "0001");
+  return `${prefixo}${ts}`;
+}
+
+function fatorVencimentoDe(dataVencimento: string): string {
+  const ref = new Date("1997-10-07");
+  const alvo = new Date(dataVencimento);
+  const diff = Math.ceil((alvo.getTime() - ref.getTime()) / (1000 * 60 * 60 * 24));
+  return String(diff).padStart(4, "0");
+}
+
+function gerarCodigoBarras(cfg: any, nossoNumero: string, valor: number, vencimento: string): string {
+  const bancoCfg = BANCOS[cfg.banco as keyof typeof BANCOS] || BANCOS.sicoob;
+  const bancoCod = bancoCfg.codigo;
+  const moeda = "9";
+  const fatorVencimento = fatorVencimentoDe(vencimento);
+  const valorStr = Number(valor).toFixed(2).replace(/\./g, "").padStart(13, "0");
+  const livre = nossoNumero.padStart(25, "0");
+  const dvGeral = bancoCfg.digitoVerificador(bancoCod + moeda + fatorVencimento + valorStr + livre);
+  return bancoCod + moeda + dvGeral + fatorVencimento + valorStr + livre;
+}
+
 function gerarLinhaDigitavel(codigoBarras: string): string {
   if (codigoBarras.length !== 44) return codigoBarras;
   const campo1 =
@@ -94,13 +133,6 @@ function gerarLinhaDigitavel(codigoBarras: string): string {
   return `${campo1} ${campo2} ${campo3} ${campo4} ${campo5}`;
 }
 
-function gerarNossoNumero(empresaId: string): string {
-  // Nosso número sequencial baseado em timestamp + prefixo
-  // Em produção, idealmente viria de faixa alocada pelo banco ou do retorno CNAB
-  const ts = Date.now().toString().slice(-6);
-  return `0001${ts}`;
-}
-
 // ---------------------------------------------------------------------------
 // Server function: gerar boleto
 // ---------------------------------------------------------------------------
@@ -108,7 +140,6 @@ function gerarNossoNumero(empresaId: string): string {
 export const gerarBoletoFn = createServerFn({ method: "POST" })
   .validator(GerarBoletoInput)
   .handler(async ({ data }) => {
-    // Busca configuração do banco da empresa
     const { data: cfg, error: cfgErr } = await supabaseAdmin
       .from("bancos_config")
       .select("*")
@@ -122,30 +153,15 @@ export const gerarBoletoFn = createServerFn({ method: "POST" })
       );
     }
 
-    // Gera nosso número (placeholder — substituir por consulta ao banco/faixa alocada)
-    const nossoNumero = gerarNossoNumero(data.empresaId);
+    const bancoCfg = BANCOS[cfg.banco as keyof typeof BANCOS];
+    if (!bancoCfg) {
+      throw new Error(`Banco "${cfg.banco}" não suportado. Configure um banco válido (sicoob, itau).`);
+    }
 
-    // Gera código de barras (44 posições, padrão Febraban)
-    const bancoCod = cfg.banco === "itau" ? "341" : "000"; // Itaú = 341
-    const moeda = "9";
-    const fatorVencimento = fatorVencimentoDe(data.vencimento);
-    const valorStr = Number(data.valor).toFixed(2).replace(/\./g, "").padStart(13, "0");
-    const livre = nossoNumero.padStart(25, "0");
-    const dvGeral = modulo11(bancoCod + moeda + fatorVencimento + valorStr + livre, 9, 2);
-    const codigoBarras = bancoCod + moeda + dvGeral + fatorVencimento + valorStr + livre;
-
+    const nossoNumero = gerarNossoNumero(cfg);
+    const codigoBarras = gerarCodigoBarras(cfg, nossoNumero, data.valor, data.vencimento);
     const linhaDigitavel = gerarLinhaDigitavel(codigoBarras);
 
-    // TODO: quando o Itaú liberar API, chamar aqui para registrar na CIP
-    // e obter url_pdf e id_transacao_banco.
-    // Exemplo:
-    // const itauResp = await fetch(`${process.env.ITAU_API_URL}/boletos`, {
-    //   method: "POST",
-    //   headers: { Authorization: `Bearer ${process.env.ITAU_API_KEY}`, "Content-Type": "application/json" },
-    //   body: JSON.stringify({ ... })
-    // });
-
-    // Insere boleto no banco (status pendente)
     const { data: boleto, error: insertErr } = await supabaseAdmin
       .from("boletos")
       .insert({
@@ -153,6 +169,8 @@ export const gerarBoletoFn = createServerFn({ method: "POST" })
         lancamento_id: data.lancamentoId,
         cte_id: data.cteId,
         banco: cfg.banco,
+        codigo_cedente: cfg.codigo_cedente,
+        carteira: cfg.carteira,
         nosso_numero: nossoNumero,
         linha_digitavel: linhaDigitavel,
         codigo_barras: codigoBarras,
@@ -168,7 +186,6 @@ export const gerarBoletoFn = createServerFn({ method: "POST" })
 
     if (insertErr) throw insertErr;
 
-    // Vincula ao lançamento financeiro se fornecido
     if (data.lancamentoId) {
       await supabaseAdmin
         .from("lancamentos_financeiros")
@@ -185,16 +202,9 @@ export const gerarBoletoFn = createServerFn({ method: "POST" })
       vencimento: boleto.vencimento,
       status: boleto.status,
       message:
-        "Boleto gerado com status pendente. Aguardando pagamento. Quando o Itaú/Sicoob liberar API, a geração será automática na CIP.",
+        "Boleto gerado com status pendente. Aguardando pagamento. Processe o arquivo de retorno CNAB para baixa automática.",
     };
   });
-
-function fatorVencimentoDe(dataVencimento: string): string {
-  const ref = new Date("1997-10-07"); // marco para fator de vencimento Febraban
-  const alvo = new Date(dataVencimento);
-  const diff = Math.ceil((alvo.getTime() - ref.getTime()) / (1000 * 60 * 60 * 24));
-  return String(diff).padStart(4, "0");
-}
 
 // ---------------------------------------------------------------------------
 // Server function: processar retorno CNAB 240
@@ -203,7 +213,6 @@ function fatorVencimentoDe(dataVencimento: string): string {
 export const processarRetornoCnabFn = createServerFn({ method: "POST" })
   .validator(ProcessarRetornoInput)
   .handler(async ({ data }) => {
-    // Decodifica base64
     const bytes = Uint8Array.from(atob(data.arquivoRetorno), (c) => c.charCodeAt(0));
     const texto = new TextDecoder("iso-8859-1").decode(bytes);
 
@@ -216,14 +225,12 @@ export const processarRetornoCnabFn = createServerFn({ method: "POST" })
     }> = [];
 
     for (const linha of linhas) {
-      // CNAB 240 — registro de retorno (tipo 3)
-      // Posições simplificadas — ajustar conforme layout exato do Sicoob/Itaú
       const tipoRegistro = linha.slice(0, 1);
       if (tipoRegistro !== "3") continue;
 
       const nossoNumero = linha.slice(110, 130).replace(/^0+/, "") || "";
       const valorPago = Number(linha.slice(130, 145)) / 100 || 0;
-      const dataPagamentoRaw = linha.slice(145, 153); // DDMMYYYY
+      const dataPagamentoRaw = linha.slice(145, 153);
       const dataPagamento =
         dataPagamentoRaw.length === 8
           ? `${dataPagamentoRaw.slice(4, 8)}-${dataPagamentoRaw.slice(2, 4)}-${dataPagamentoRaw.slice(0, 2)}`
@@ -231,7 +238,6 @@ export const processarRetornoCnabFn = createServerFn({ method: "POST" })
 
       if (!nossoNumero) continue;
 
-      // Marca boleto como pago
       const { error } = await supabaseAdmin
         .from("boletos")
         .update({
@@ -275,7 +281,6 @@ export const baixarBoletoFn = createServerFn({ method: "POST" })
 
     if (error) throw error;
 
-    // Se vinculado a lançamento financeiro, baixa o lançamento
     if (boleto?.lancamento_id) {
       await supabaseAdmin
         .from("lancamentos_financeiros")
