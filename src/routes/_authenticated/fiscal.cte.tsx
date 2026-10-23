@@ -5921,6 +5921,13 @@ function CtePage() {
   const aliqIcmsOk =
     aliqIcmsEsp === null ||
     (Number.isFinite(aliqIcmsNum) && Math.abs(aliqIcmsNum - aliqIcmsEsp) < 0.005);
+  // Veículo terceirizado (CNPJ divergente do emissor): CIOT obrigatório
+  const vvTracCiots = (veiculos || []).find(
+    (v: any) => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase(),
+  );
+  const donoDocCiot = String((vvTracCiots as any)?.proprietario_doc || "").replace(/\D/g, "");
+  const emitCnpjCiot = String((empresa as any)?.cnpj || "").replace(/\D/g, "");
+  const isVeiculoTerceiro = donoDocCiot.length > 0 && donoDocCiot !== emitCnpjCiot;
   const tabFalta: Record<string, string[]> = (() => {
     const soDig = (v: any) => String(v || "").replace(/\D/g, "");
     const numBR = (v: any) => {
@@ -5971,6 +5978,9 @@ function CtePage() {
     if (String(form.icmsAliq ?? "").trim() === "") trib.push("alíquota ICMS");
     if (mercadorias.length === 0) trib.push("NF-es");
     if (!aliqIcmsOk && aliqIcmsEsp !== null) trib.push(`alíquota esperada ${aliqIcmsEsp}% p/ a rota`);
+    if (isVeiculoTerceiro && !String((form as any).ciot || "").trim()) {
+      trib.push("CIOT obrigatório (veículo terceirizado)");
+    }
     return { geral, transporte, trib };
   })();
   const tabOk = (() => ({
