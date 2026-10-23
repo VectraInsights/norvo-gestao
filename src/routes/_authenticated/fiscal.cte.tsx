@@ -121,11 +121,10 @@ function formatarCnpjPercurso(value: unknown) {
 // CSOSN validos p/ emitente do Simples/MEI (mesma lista da validacao de emissao)
 const CSOSN_SIMPLES = ["101", "102", "103", "201", "202", "203", "300", "400", "500", "900"];
 const ehSimplesMei = (regime: unknown) => /^(simples|mei)$/i.test(String(regime || "simples"));
-// Percurso/XML podem trazer CST do regime normal ("00"); no Simples cai p/ 102
-const normalizaCst = (v: unknown, simples: boolean) => {
-  const s = String(v ?? "").padStart(3, "0");
-  if (simples) return CSOSN_SIMPLES.includes(s) ? String(v) : "102";
-  return String(v ?? "00");
+// Preserva o CST cadastrado no percurso (00, 40, etc.) sem forçar 102
+const normalizaCst = (v: unknown) => {
+  const s = String(v ?? "").trim();
+  return s || "00";
 };
 
 // Eixos da combinação (ANTT conta cavalo + carretas): tração + reboques pela placa
@@ -5888,6 +5887,7 @@ function CtePage() {
     }
   };
   const percursoMatch = matchPercurso(docsAtuais());
+  if (percursoMatch) console.log("[CTE-PERCURSO] percursoMatch encontrado:", percursoMatch.codigo, "icmsCST=", percursoMatch.icms_cst, "icmsAliq=", percursoMatch.icms_aliq, "cfop=", percursoMatch.cfop);
   // Estado por aba p/ o dot (verde completa / vermelha faltando). Espelha as
   // exigências da emissão; Observações nunca bloqueia. Sem dots em leitura.
   // Alíquota de ICMS esperada p/ a rota (origem MG): Sul/Sudeste listado = 12%,
@@ -6020,12 +6020,14 @@ function CtePage() {
       return;
     }
     const d = docsAtuais();
+    console.log("[CTE-PERCURSO] docsAtuais: remDoc=", d.remDoc, "destDoc=", d.destDoc, "tomaDoc=", d.tomaDoc, "mercadorias.length=", mercadorias.length, "selecionadas.size=", selecionadas.size);
     if (!d.remDoc || !d.destDoc) return; // precisa no mínimo de remetente + destinatário
     const m = matchPercurso(d);
-    if (!m) return;
-
-    // Sempre aplica o percurso quando encontrado, sobrescrevendo valores
-    // do formulário para garantir consistência com o percurso cadastrado.
+    if (!m) {
+      console.log("[CTE-PERCURSO] matchPercurso retornou null para", d.remDoc, d.destDoc);
+      return;
+    }
+    console.log("[CTE-PERCURSO] aplicando percurso", m.codigo, "icmsCST=", m.icms_cst, "icmsAliq=", m.icms_aliq, "cfop=", m.cfop);
     aplicarPercurso(m);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewDoc, form.cnpjTomador, mercadorias, selecionadas, percursos, percursoMatch]);
