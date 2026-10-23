@@ -6004,7 +6004,6 @@ function CtePage() {
     travarPendenteRef.current = false;
   }, [open]);
   useEffect(() => {
-    if (!open || percursos.length === 0) return;
     if (viewDoc) return; // visualização: não reescreve o doc com percurso ao vivo
     if (pularPercursoRef.current) {
       pularPercursoRef.current = false;
@@ -6022,11 +6021,9 @@ function CtePage() {
     const jaTemCFOP = String(form.cfop || "").trim();
     if (jaTemCST && jaTemAliq && jaTemCFOP) return;
 
-    // Sempre aplica quando os campos fiscais estão vazios, ignorando travas
-    // de aplicacao anterior (garante que o percurso sempre seja carregado)
     aplicarPercurso(m);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, viewDoc, form.cnpjTomador, mercadorias, selecionadas, percursos, form.icmsCST, form.icmsAliq, form.cfop]);
+  }, [viewDoc, form.cnpjTomador, mercadorias, selecionadas, percursos, form.icmsCST, form.icmsAliq, form.cfop]);
   const entregaSrcRef = useRef("");
   // Entrega vinda do percurso não é sobrescrita pela NF-e (ex.: redespacho p/ outra cidade)
   const travarEntregaRef = useRef(false);
