@@ -333,8 +333,9 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   const vICMS = Number(icms.vICMS ?? 0).toFixed(2);
   let impXml: string;
   if (crt === "1" || crt === "4") {
-    const csosn = String(icms.CST || "").padStart(3, "0");
-    if (!CSOSN_SN.includes(csosn)) throw new Error(`CRT ${crt} (Simples/MEI) exige CSOSN (101/102/103/201/202/203/300/400/500/900), recebido: ${icms.CST || "vazio"}`);
+    // Simples/MEI: CT-e usa ICMSSN com CST=90 (indSN=1).
+    // O CST do percurso (ex: 40) é de regime normal e não se aplica —
+    // a validação de CSOSN era redundante e bloqueava a emissão.
     impXml = `<imp><ICMS><ICMSSN><CST>90</CST><indSN>1</indSN></ICMSSN></ICMS></imp>`;
   }
   else if (cst === "00") impXml = `<imp><ICMS><ICMS00><CST>00</CST><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS00></ICMS></imp>`;
@@ -598,8 +599,9 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
   const vICMS = Number(icms.vICMS ?? 0).toFixed(2);
   let impXml: string;
   if (crt === "1" || crt === "4") {
-    const csosn = String(icms.CST || "").padStart(3, "0");
-    if (!CSOSN_SN.includes(csosn)) throw new Error(`CRT ${crt} (Simples/MEI) exige CSOSN (101/102/103/201/202/203/300/400/500/900), recebido: ${icms.CST || "vazio"}`);
+    // Simples/MEI: CT-e usa ICMSSN com CST=90 (indSN=1).
+    // O CST do percurso (ex: 40) é de regime normal e não se aplica —
+    // a validação de CSOSN era redundante e bloqueava a emissão.
     impXml = `<imp><ICMS><ICMSSN><CST>90</CST><indSN>1</indSN></ICMSSN></ICMS></imp>`;
   }
   else if (cst === "00") impXml = `<imp><ICMS><ICMS00><CST>00</CST><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS00></ICMS></imp>`;
