@@ -5593,9 +5593,25 @@ function CtePage() {
     if (!arr || arr.length === 0) return null;
     if (!d.remDoc || !d.destDoc) return null;
 
+    // CNPJs da NF-e podem vir com mais que 14 dígitos (ex: prefixos do XML).
+    // Comparamos apenas os primeiros 14 dígitos (CNPJ real) quando um for maior.
+    const cnpjMatch = (a: string, b: string) => {
+      const aa = onlyDigitsPercurso(a);
+      const bb = onlyDigitsPercurso(b);
+      if (!aa || !bb) return false;
+      const menor = aa.length <= bb.length ? aa : bb;
+      const maior = aa.length <= bb.length ? bb : aa;
+      return maior.startsWith(menor);
+    };
+
     // 1) Tenta com tomador completo (14 dígitos)
     if (d.tomaDoc && d.tomaDoc.length === 14) {
-      const cands = arr.filter((r) => trioPercursoOk(r, d));
+      const cands = arr.filter(
+        (r) =>
+          cnpjMatch(r.rem_cnpj, d.remDoc) &&
+          cnpjMatch(r.dest_cnpj, d.destDoc) &&
+          cnpjMatch(r.toma_cnpj, d.tomaDoc),
+      );
       if (cands.length > 0) return escolherPercurso(cands);
     }
 
@@ -5604,8 +5620,8 @@ function CtePage() {
     // de empresa com rota fixa e tomador variável).
     const porRemDest = arr.filter(
       (r) =>
-        onlyDigitsPercurso(r.rem_cnpj) === d.remDoc &&
-        onlyDigitsPercurso(r.dest_cnpj) === d.destDoc,
+        cnpjMatch(r.rem_cnpj, d.remDoc) &&
+        cnpjMatch(r.dest_cnpj, d.destDoc),
     );
     if (porRemDest.length === 1) return porRemDest[0];
 
