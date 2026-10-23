@@ -6778,3 +6778,10 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
 - **Placa com hífen em toda exibição (22/10)** - o campo Placa agora formata como `xxx-xxxx` (ex: ABC-1234) tanto ao digitar quanto ao carregar um veículo existente (`formatarPlaca` no `openEdit`). Ao salvar, o hífen é removido antes de gravar no banco, mantendo o dado limpo. A detecção de placa duplicada já ignorava o hífen via `normalizePlaca`.
 
 - **Placa com hífen em toda a tela de Veículos (22/10)** - a formatação `xxx-xxxx` da placa foi estendida para todos os lugares onde a placa é exibida: coluna da tabela de listagem, título do modal de edição ("Editar ABC-1234") e dialog de exclusão ("Excluir veículo ABC-1234?"). O hífen só aparece na visualização; ao salvar no banco ele é removido, mantendo o dado limpo.
+
+- **Módulo de boleto bancário (23/10)** - implementação inicial da emissão de boletos no Norvo, vinculada ao CT-e e contas a receber:
+  - Migration `20261022140000_boletos_itau.sql`: tabelas `bancos_config` (configuração de banco por empresa) e `boletos` (nosso número, linha digitável, código de barras, status, vínculo com lançamento/CT-e).
+  - `src/lib/boleto-server.ts`: server functions `gerarBoletoFn` (gera boleto com linha digitável/código de barras padrão Febraban), `baixarBoletoFn` (baixa boleto e lançamento vinculado), `processarRetornoCnabFn` (processa arquivo de retorno CNAB 240 para baixa automática).
+  - `src/routes/_authenticated/financeiro.boletos.tsx`: tela de listagem, geração e baixa de boletos, com dialog de processar retorno CNAB.
+  - Rota `/financeiro/boletos` adicionada ao `routeTree.gen.ts`.
+  - Integração com Itaú via API pendente — atualmente gera boleto com status "pendente" e aguarda pagamento. Quando o Itaú liberar API, a geração será automática na CIP.

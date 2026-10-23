@@ -28,6 +28,7 @@ import { Route as AuthenticatedEstoqueMovimentacoesRouteImport } from './routes/
 import { Route as AuthenticatedEstoqueProdutosRouteImport } from './routes/_authenticated/estoque.produtos'
 import { Route as AuthenticatedEstoqueRelatoriosRouteImport } from './routes/_authenticated/estoque.relatorios'
 import { Route as AuthenticatedEstoqueReposicaoRouteImport } from './routes/_authenticated/estoque.reposicao'
+import { Route as AuthenticatedFinanceiroBoletosRouteImport } from './routes/_authenticated/financeiro.boletos'
 import { Route as AuthenticatedFinanceiroCadastrosRouteImport } from './routes/_authenticated/financeiro.cadastros'
 import { Route as AuthenticatedFinanceiroConciliacaoRouteImport } from './routes/_authenticated/financeiro.conciliacao'
 import { Route as AuthenticatedFinanceiroContasRouteImport } from './routes/_authenticated/financeiro.contas'
@@ -168,6 +169,12 @@ const AuthenticatedEstoqueReposicaoRoute =
   AuthenticatedEstoqueReposicaoRouteImport.update({
     id: '/estoque/reposicao',
     path: '/estoque/reposicao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFinanceiroBoletosRoute =
+  AuthenticatedFinanceiroBoletosRouteImport.update({
+    id: '/financeiro/boletos',
+    path: '/financeiro/boletos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedFinanceiroCadastrosRoute =
@@ -399,6 +406,7 @@ export interface FileRoutesByFullPath {
   '/estoque/produtos': typeof AuthenticatedEstoqueProdutosRoute
   '/estoque/relatorios': typeof AuthenticatedEstoqueRelatoriosRoute
   '/estoque/reposicao': typeof AuthenticatedEstoqueReposicaoRoute
+  '/financeiro/boletos': typeof AuthenticatedFinanceiroBoletosRoute
   '/financeiro/cadastros': typeof AuthenticatedFinanceiroCadastrosRoute
   '/financeiro/conciliacao': typeof AuthenticatedFinanceiroConciliacaoRoute
   '/financeiro/contas': typeof AuthenticatedFinanceiroContasRoute
@@ -455,6 +463,7 @@ export interface FileRoutesByTo {
   '/estoque/produtos': typeof AuthenticatedEstoqueProdutosRoute
   '/estoque/relatorios': typeof AuthenticatedEstoqueRelatoriosRoute
   '/estoque/reposicao': typeof AuthenticatedEstoqueReposicaoRoute
+  '/financeiro/boletos': typeof AuthenticatedFinanceiroBoletosRoute
   '/financeiro/cadastros': typeof AuthenticatedFinanceiroCadastrosRoute
   '/financeiro/conciliacao': typeof AuthenticatedFinanceiroConciliacaoRoute
   '/financeiro/contas': typeof AuthenticatedFinanceiroContasRoute
@@ -513,6 +522,7 @@ export interface FileRoutesById {
   '/_authenticated/estoque/produtos': typeof AuthenticatedEstoqueProdutosRoute
   '/_authenticated/estoque/relatorios': typeof AuthenticatedEstoqueRelatoriosRoute
   '/_authenticated/estoque/reposicao': typeof AuthenticatedEstoqueReposicaoRoute
+  '/_authenticated/financeiro/boletos': typeof AuthenticatedFinanceiroBoletosRoute
   '/_authenticated/financeiro/cadastros': typeof AuthenticatedFinanceiroCadastrosRoute
   '/_authenticated/financeiro/conciliacao': typeof AuthenticatedFinanceiroConciliacaoRoute
   '/_authenticated/financeiro/contas': typeof AuthenticatedFinanceiroContasRoute
@@ -571,6 +581,7 @@ export interface FileRouteTypes {
     | '/estoque/produtos'
     | '/estoque/relatorios'
     | '/estoque/reposicao'
+    | '/financeiro/boletos'
     | '/financeiro/cadastros'
     | '/financeiro/conciliacao'
     | '/financeiro/contas'
@@ -627,6 +638,7 @@ export interface FileRouteTypes {
     | '/estoque/produtos'
     | '/estoque/relatorios'
     | '/estoque/reposicao'
+    | '/financeiro/boletos'
     | '/financeiro/cadastros'
     | '/financeiro/conciliacao'
     | '/financeiro/contas'
@@ -684,6 +696,7 @@ export interface FileRouteTypes {
     | '/_authenticated/estoque/produtos'
     | '/_authenticated/estoque/relatorios'
     | '/_authenticated/estoque/reposicao'
+    | '/_authenticated/financeiro/boletos'
     | '/_authenticated/financeiro/cadastros'
     | '/_authenticated/financeiro/conciliacao'
     | '/_authenticated/financeiro/contas'
@@ -866,6 +879,13 @@ declare module '@tanstack/react-router' {
       path: '/estoque/reposicao'
       fullPath: '/estoque/reposicao'
       preLoaderRoute: typeof AuthenticatedEstoqueReposicaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/financeiro/boletos': {
+      id: '/_authenticated/financeiro/boletos'
+      path: '/financeiro/boletos'
+      fullPath: '/financeiro/boletos'
+      preLoaderRoute: typeof AuthenticatedFinanceiroBoletosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/financeiro/cadastros': {
@@ -1135,6 +1155,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEstoqueProdutosRoute: typeof AuthenticatedEstoqueProdutosRoute
   AuthenticatedEstoqueRelatoriosRoute: typeof AuthenticatedEstoqueRelatoriosRoute
   AuthenticatedEstoqueReposicaoRoute: typeof AuthenticatedEstoqueReposicaoRoute
+  AuthenticatedFinanceiroBoletosRoute: typeof AuthenticatedFinanceiroBoletosRoute
   AuthenticatedFinanceiroCadastrosRoute: typeof AuthenticatedFinanceiroCadastrosRoute
   AuthenticatedFinanceiroConciliacaoRoute: typeof AuthenticatedFinanceiroConciliacaoRoute
   AuthenticatedFinanceiroContasRoute: typeof AuthenticatedFinanceiroContasRoute
@@ -1190,6 +1211,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEstoqueProdutosRoute: AuthenticatedEstoqueProdutosRoute,
   AuthenticatedEstoqueRelatoriosRoute: AuthenticatedEstoqueRelatoriosRoute,
   AuthenticatedEstoqueReposicaoRoute: AuthenticatedEstoqueReposicaoRoute,
+  AuthenticatedFinanceiroBoletosRoute: AuthenticatedFinanceiroBoletosRoute,
   AuthenticatedFinanceiroCadastrosRoute: AuthenticatedFinanceiroCadastrosRoute,
   AuthenticatedFinanceiroConciliacaoRoute:
     AuthenticatedFinanceiroConciliacaoRoute,
