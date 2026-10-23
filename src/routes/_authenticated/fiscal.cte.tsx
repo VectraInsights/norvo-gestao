@@ -9671,6 +9671,25 @@ function CtePage() {
                             limpar
                           </button>
                         ) : null}
+                        {form.placaVeiculo ? (() => {
+                          const vv = (veiculos || []).find(
+                            (v: any) =>
+                              String(v.placa || "").toUpperCase() ===
+                              String(form.placaVeiculo || "").toUpperCase(),
+                          );
+                          const donoDoc = String((vv as any)?.proprietario_doc || "").replace(/\D/g, "");
+                          const emitCnpj = String((empresa as any)?.cnpj || "").replace(/\D/g, "");
+                          const isTerceiro = donoDoc.length > 0 && donoDoc !== emitCnpj;
+                          return isTerceiro ? (
+                            <span className="mt-0.5 inline-flex items-center gap-1 text-[9px] font-semibold text-amber-600">
+                              {"\u26a0\ufe0f"} Ve\u00edculo de CNPJ divergente \u2014 CIOT obrigat\u00f3rio
+                            </span>
+                          ) : (
+                            <span className="mt-0.5 inline-flex items-center gap-1 text-[9px] text-emerald-600">
+                              {"\u2713"} Frota pr\u00f3pria (RNTRC {String((vv as any)?.rntrc || "").padStart(9, "0")})
+                            </span>
+                          );
+                        })() : null}
                       </div>
                       <div>
                         <Label className="text-[10px] text-foreground/80">Reboque 1</Label>
