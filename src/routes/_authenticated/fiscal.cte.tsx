@@ -6014,13 +6014,19 @@ function CtePage() {
     if (!d.remDoc || !d.destDoc) return; // precisa no mínimo de remetente + destinatário
     const m = matchPercurso(d);
     if (!m) return;
-    const key = m.id + "|" + d.remDoc + "|" + d.destDoc + "|" + d.tomaDoc;
-    if (percursoAplicadoKey.current === key || percursoAplicadoKey.current === "pick|" + m.id)
-      return;
-    percursoAplicadoKey.current = key;
+
+    // Só aplica se os campos fiscais do form estiverem vazios
+    // (evita sobrescrever edição manual do usuário)
+    const jaTemCST = String(form.icmsCST || "").trim();
+    const jaTemAliq = String(form.icmsAliq || "").trim();
+    const jaTemCFOP = String(form.cfop || "").trim();
+    if (jaTemCST && jaTemAliq && jaTemCFOP) return;
+
+    // Sempre aplica quando os campos fiscais estão vazios, ignorando travas
+    // de aplicacao anterior (garante que o percurso sempre seja carregado)
     aplicarPercurso(m);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, viewDoc, form.cnpjTomador, mercadorias, selecionadas, percursos]);
+  }, [open, viewDoc, form.cnpjTomador, mercadorias, selecionadas, percursos, form.icmsCST, form.icmsAliq, form.cfop]);
   const entregaSrcRef = useRef("");
   // Entrega vinda do percurso não é sobrescrita pela NF-e (ex.: redespacho p/ outra cidade)
   const travarEntregaRef = useRef(false);
