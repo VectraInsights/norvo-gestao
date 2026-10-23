@@ -4769,6 +4769,12 @@ function CtePage() {
           );
           if (vv && Traciona(vv.tipo) && !String(form.semiReboque1 || "").trim())
             pend.push("Placa do reboque (veiculo 1 de tracao)");
+           const donoDoc = String((vv as any)?.proprietario_doc || "").replace(/\D/g, "");
+           const emitCnpj = String((empresa as any)?.cnpj || "").replace(/\D/g, "");
+           const isTerceiro = donoDoc.length > 0 && donoDoc !== emitCnpj;
+           if (isTerceiro && !String((form as any).ciot || "").trim()) {
+             pend.push("CIOT obrigatorio (veiculo terceirizado)");
+           }
         }
         if (!(parseFloat(form.vPrest) > 0)) pend.push("Valor do servico maior que zero");
         if (!String(form.icmsCST || "").trim()) pend.push("CST do ICMS");
@@ -9682,11 +9688,11 @@ function CtePage() {
                           const isTerceiro = donoDoc.length > 0 && donoDoc !== emitCnpj;
                           return isTerceiro ? (
                             <span className="mt-0.5 inline-flex items-center gap-1 text-[9px] font-semibold text-amber-600">
-                              {"\u26a0\ufe0f"} Ve\u00edculo de CNPJ divergente \u2014 CIOT obrigat\u00f3rio
+                              Terceirizado
                             </span>
                           ) : (
                             <span className="mt-0.5 inline-flex items-center gap-1 text-[9px] text-emerald-600">
-                              {"\u2713"} Frota pr\u00f3pria (RNTRC {String((vv as any)?.rntrc || "").padStart(9, "0")})
+                              Frota própria
                             </span>
                           );
                         })() : null}
