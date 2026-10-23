@@ -6785,3 +6785,20 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
   - `src/routes/_authenticated/financeiro.boletos.tsx`: tela de listagem, geração e baixa de boletos, com dialog de processar retorno CNAB.
   - Rota `/financeiro/boletos` adicionada ao `routeTree.gen.ts`.
   - Integração com Itaú via API pendente — atualmente gera boleto com status "pendente" e aguarda pagamento. Quando o Itaú liberar API, a geração será automática na CIP.
+
+- **Boleto Sicoob com cedente e carteira (23/10)** - ajuste do módulo de boleto para o
+  Sicoob com base nos dados do PDF de Internet Banking: banco 756, cooperativa 3109,
+  código do cedente 193933-5, carteira 29, agência 3109, conta 11312165. Migration
+  `20261023090000_boletos_cedente_carteira.sql` adiciona campos `codigo_cedente` e
+  `carteira` na tabela `boletos`. `boleto-server.ts` suporta múltiplos bancos.
+- **Truck não é cavalo mecânico (23/10)** - função `Traciona` no CT-e agora só
+  considera "Cavalo Mecânico" como tração. Um Truck (caminhão com baú/carroceria)
+  não exige mais placa de reboque. Commit `99d67bb`.
+- **Percurso aplica CST/ICMS/CFOP (23/10)** - correções no matchPercurso para normalizar
+  CNPJs para 14 dígitos, fallback para percurso único sem tomador, e aplicação
+  automática independente do modal aberto. Commit `96d5e6b` e `127a082`.
+- **Bolinha de aviso corrigida para MG/MG (23/10)** - `aliqIcmsEsperada` agora retorna
+  0 (isenção) quando ufIni === ufFim (operação interna). Commit `e308905`.
+- **CRT 1 (Simples/MEI) exige CSOSN (23/10)** - removida validação redundante no
+  sefaz-cte.ts que exigia CSOSN quando emitente é Simples/MEI. O CT-e usa ICMSSN
+  com CST=90 (indSN=1) e não usa o CST do percurso. Commit `fb2e2dd`.
