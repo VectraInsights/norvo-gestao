@@ -44,6 +44,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { setSelectedEmpresaId, useSelectedEmpresaId } from "@/hooks/use-empresa";
 import { usePermissoes } from "@/hooks/use-permissoes";
 import { moduloDaRota, moduloDoItemMenu, podeAcessarRota } from "@/lib/permissoes";
+import { VERSAO_SISTEMA } from "@/lib/versao";
 import { AlterarSenhaDialog } from "@/components/erp/alterar-senha-dialog";
 import {
   DropdownMenu,
@@ -741,6 +742,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
             </div>
             <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 px-2 py-1 rounded-md border border-border/50 bg-muted/50 text-[10px] font-mono text-muted-foreground">
+                v{VERSAO_SISTEMA}
+              </div>
               <CommandPalette />
               <NotificationsBell />
               <Button
