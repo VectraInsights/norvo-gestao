@@ -6818,3 +6818,5 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
 - **CT-e CRT 1 (23/10)** - removida validação redundante de CSOSN para Simples/MEI. O CT-e usa ICMSSN com CST=90 (indSN=1) e não usa o CST do percurso.
 
 - **Truck não é cavalo mecânico (23/10)** - função `Traciona` corrigida para não considerar Truck como veículo que traciona reboque.
+
+- **CT-e — grade "Mercadorias Transportadas" (26/10)** - a lista de NF-e da aba Tributação e Carga foi refeita no padrão da grade antiga do sistema: título "Mercadorias Transportadas", colunas Modelo Doc, Chave NF-e, Desc. Mercadoria (com remetente → destinatário na segunda linha), Qtde Unit, Qtde Medida, Und. Med, Valor Frete, Valor Serviço, N. Doc, Série, Data Doc, NCM, Valor Merc. e Valor Doc, com linha de totais fixa no rodapé. Descrição da mercadoria, NCM, unidade, vProd, vFrete e espécie passam a ser lidos do XML da NF-e no import. Migration `20261026120000_cte_nfes_mercadoria.sql` adiciona essas colunas em `cte_nfes_pendentes` (o import continua funcionando antes dela, gravando só os campos antigos).
