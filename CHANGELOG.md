@@ -13,6 +13,12 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.7] - 2026-10-26
+
+### Alterado
+
+- **CT-e — grade Mercadorias Transportadas**: células mais compactas (header 7px, padding 1.5px, linha 0.5px) e tabela mínima reduzida de 1080px para 980px empilhada (920px em duas colunas). Com menos espaço vazio entre as colunas, a grade cabe em mais telas sem rolagem horizontal.
+
 ## [1.2.6] - 2026-10-26
 
 ### Corrigido

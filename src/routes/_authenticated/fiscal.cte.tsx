@@ -9090,7 +9090,7 @@ function CtePage() {
                   </div>
                 </div>
                 <div className="min-h-0 flex-1 overflow-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:h-2.5 [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-track]:bg-muted/50 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-primary/40 hover:[&::-webkit-scrollbar-thumb]:bg-primary/60 [&_.erp-table-wrap]:max-h-none [&_.erp-table-wrap]:overflow-visible">
-                  <Table className="min-w-[1210px] min-[1500px]:min-w-[1040px]">
+                  <Table className="min-w-[980px] min-[1500px]:min-w-[920px] [&_th]:h-7 [&_th]:px-1.5 [&_td]:px-1.5 [&_td]:py-0.5">
                     <TableHeader className="sticky top-0 z-10 bg-[color-mix(in_oklab,var(--color-primary)_10%,var(--color-card))]">
                       <TableRow>
                         <TableHead className="w-6">
