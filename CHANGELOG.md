@@ -13,6 +13,20 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.3] - 2026-10-26
+
+### Alterado
+
+- **CT-e — aba Tributação e Carga**: em janelas com **1500px ou mais** de largura, a grade
+  "Mercadorias Transportadas" e o card "Impostos" ficam **lado a lado** (grade à esquerda,
+  impostos numa coluna de 320px à direita); abaixo disso continua empilhado como antes.
+  Com 4+ NF-es a grade ocupa a altura disponível e rola por dentro; com até 3 notas mantém a
+  altura do próprio conteúdo.
+- **CT-e — grade**: no modo duas colunas a tabela pode comprimir até 1120px (antes 1300px),
+  sem esconder a chave da NF-e.
+- **CT-e — Impostos**: o aviso de base zerada saiu do cabeçalho e virou nota embaixo do card:
+  "informe o Valor Serviço na aba Transporte".
+
 ## [1.2.2] - 2026-10-26
 
 ### Removido

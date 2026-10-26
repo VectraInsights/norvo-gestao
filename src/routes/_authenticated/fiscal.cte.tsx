@@ -9062,9 +9062,12 @@ function CtePage() {
             </TabsContent>
 
             {/* === TAB: Doc Mercadorias === */}
-            <TabsContent value="docs" className="mt-2 min-h-0 flex-1 space-y-3 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
+            <TabsContent value="docs" className="mt-2 min-h-0 flex-1 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
+              {/* Em telas largas: grade à esquerda e Impostos em coluna à direita (painel).
+                  Abaixo de 1500px continua empilhado como antes. */}
+              <div className="flex min-h-0 flex-1 flex-col gap-3 min-[1500px]:grid min-[1500px]:grid-cols-[minmax(0,1fr)_320px] min-[1500px]:grid-rows-1 min-[1500px]:items-start min-[1500px]:gap-3">
               <Card
-                className={`overflow-hidden flex flex-col ${
+                className={`overflow-hidden flex flex-col min-[1500px]:max-h-full ${
                   mercsGrade.length > 3 ? "min-h-0 flex-1" : "shrink-0"
                 }`}
               >
@@ -9089,7 +9092,7 @@ function CtePage() {
                   </div>
                 </div>
                 <div className="min-h-0 flex-1 overflow-auto [&_.erp-table-wrap]:max-h-none">
-                  <Table className="min-w-[1300px]">
+                  <Table className="min-w-[1300px] min-[1500px]:min-w-[1120px]">
                     <TableHeader className="sticky top-0 z-10 bg-[color-mix(in_oklab,var(--color-primary)_10%,var(--color-card))]">
                       <TableRow>
                         <TableHead className="w-6">
@@ -9300,11 +9303,6 @@ function CtePage() {
                   <h5 className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                     Impostos
                   </h5>
-                  {totalPrestacao(form) <= 0 ? (
-                    <span className="ml-auto text-[9px] font-medium normal-case tracking-normal text-muted-foreground">
-                      Informe o Valor Serviço (Componentes do Frete) para calcular o ICMS
-                    </span>
-                  ) : null}
                 </div>
                 <div className="flex flex-wrap items-end gap-x-2 gap-y-2">
                   <div className="min-w-[240px] max-w-[800px] flex-1">
@@ -9471,7 +9469,14 @@ function CtePage() {
                   Somente leitura — CST e impostos vêm do Percurso (Fiscal → Percursos) e são
                   aplicados ao gerar o CT-e.
                 </p>
+                {totalPrestacao(form) <= 0 ? (
+                  <p className="text-[9px] font-medium text-amber-600 mt-1">
+                    Base zerada: informe o Valor Serviço na aba Transporte (Componentes do Frete)
+                    para o ICMS ser calculado.
+                  </p>
+                ) : null}
               </Card>
+              </div>
             </TabsContent>
 
             {/* === TAB: Seguros/Veículos === */}
