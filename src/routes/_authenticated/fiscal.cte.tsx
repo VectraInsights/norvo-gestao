@@ -2628,7 +2628,7 @@ function CtePage() {
         const { data, error } = await supabase
           .from("cte_nfes_pendentes" as any)
           .select(
-            "chave,n_nf,serie,emit_nome,emit_cnpj,emit_uf,emit_cmun,emit_xmun,emit_ie,emit_logradouro,emit_nro,emit_bairro,emit_cep,emit_fone,dest_nome,dest_cnpj,dest_uf,dest_cmun,dest_xmun,dest_ie,dest_logradouro,dest_nro,dest_bairro,dest_cep,dest_fone,valor,peso,data_emissao,tomador_nome,tomador_cnpj,tomador_uf,tomador_cmun,tomador_xmun,tomador_ie,tomador_logradouro,tomador_bairro,tomador_cep,mod_frete",
+            "chave,n_nf,serie,emit_nome,emit_cnpj,emit_uf,emit_cmun,emit_xmun,emit_ie,emit_logradouro,emit_nro,emit_bairro,emit_cep,emit_fone,dest_nome,dest_cnpj,dest_uf,dest_cmun,dest_xmun,dest_ie,dest_logradouro,dest_nro,dest_bairro,dest_cep,dest_fone,valor,peso,qvol,qtd_unit,desc_mercadoria,ncm,und_med,valor_merc,valor_frete,especificacao,data_emissao,tomador_nome,tomador_cnpj,tomador_uf,tomador_cmun,tomador_xmun,tomador_ie,tomador_logradouro,tomador_bairro,tomador_cep,mod_frete",
           )
           .eq("empresa_id", empresa!.id)
           .eq("status", "pendente")
@@ -2753,6 +2753,37 @@ function CtePage() {
     if (!pendentesDB) return;
     setMercadorias(mapearPendentes(pendentesDB as any) as any);
   };
+  // Completa os campos da grade (espécie, quantidade, valores) com o que está no banco:
+  // snapshots/rascunhos antigos foram salvos antes dessas colunas existirem.
+  useEffect(() => {
+    if (!pendentesDB) return;
+    const porChave = new Map<string, any>((pendentesDB as any[]).map((r) => [String(r.chave), r]));
+    setMercadorias((atuais) => {
+      let mudou = false;
+      const novos = atuais.map((m) => {
+        const r = porChave.get(String(m.chave));
+        if (!r) return m;
+        const patch: Record<string, any> = {};
+        if (!String((m as any).especificacao || "").trim() && r.especificacao)
+          patch.especificacao = r.especificacao;
+        if (!String((m as any).descMerc || "").trim() && r.desc_mercadoria)
+          patch.descMerc = r.desc_mercadoria;
+        if (!String((m as any).undMed || "").trim() && r.und_med) patch.undMed = r.und_med;
+        if (!String((m as any).ncm || "").trim() && r.ncm) patch.ncm = r.ncm;
+        if (!Number((m as any).qtdUnit) && Number(r.qtd_unit)) patch.qtdUnit = Number(r.qtd_unit);
+        if (!Number((m as any).valorMerc) && Number(r.valor_merc))
+          patch.valorMerc = Number(r.valor_merc);
+        if (!Number((m as any).valorFrete) && Number(r.valor_frete))
+          patch.valorFrete = Number(r.valor_frete);
+        if (!Number((m as any).qVol) && Number(r.qvol)) patch.qVol = Number(r.qvol);
+        if (Object.keys(patch).length === 0) return m;
+        mudou = true;
+        return { ...m, ...patch } as (typeof atuais)[number];
+      });
+      return mudou ? novos : atuais;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendentesDB]);
   useEffect(() => {
     if (open) return; // diálogo aberto usa mercadorias próprias (rascunho/CT-e)
     if (pendentesDB) {
@@ -4478,7 +4509,7 @@ function CtePage() {
         const { data } = await supabase
           .from("cte_nfes_pendentes" as any)
           .select(
-            "chave,n_nf,serie,emit_nome,emit_cnpj,emit_uf,emit_cmun,emit_xmun,emit_ie,emit_logradouro,emit_nro,emit_bairro,emit_cep,emit_fone,dest_nome,dest_cnpj,dest_uf,dest_cmun,dest_xmun,dest_ie,dest_logradouro,dest_nro,dest_bairro,dest_cep,dest_fone,valor,peso,data_emissao,tomador_nome,tomador_cnpj,tomador_uf,tomador_cmun,tomador_xmun,tomador_ie,tomador_logradouro,tomador_bairro,tomador_cep,mod_frete",
+            "chave,n_nf,serie,emit_nome,emit_cnpj,emit_uf,emit_cmun,emit_xmun,emit_ie,emit_logradouro,emit_nro,emit_bairro,emit_cep,emit_fone,dest_nome,dest_cnpj,dest_uf,dest_cmun,dest_xmun,dest_ie,dest_logradouro,dest_nro,dest_bairro,dest_cep,dest_fone,valor,peso,qvol,qtd_unit,desc_mercadoria,ncm,und_med,valor_merc,valor_frete,especificacao,data_emissao,tomador_nome,tomador_cnpj,tomador_uf,tomador_cmun,tomador_xmun,tomador_ie,tomador_logradouro,tomador_bairro,tomador_cep,mod_frete",
           )
           .eq("empresa_id", empresa.id)
           .in("chave", chs);
@@ -6106,9 +6137,12 @@ function CtePage() {
     (acc, m) => ({
       qtd:
         acc.qtd +
-        Number((m as any).qtdUnit ?? (m as any).qVol ?? (m as any).quantidade ?? 0),
+        (Number((m as any).qtdUnit) ||
+          Number((m as any).qVol) ||
+          Number((m as any).quantidade) ||
+          0),
       peso: acc.peso + Number((m as any).peso ?? (m as any).qtdePeso ?? 0),
-      merc: acc.merc + Number((m as any).valorMerc ?? 0),
+      merc: acc.merc + (Number((m as any).valorMerc) || Number(m.valor) || 0),
       doc: acc.doc + Number(m.valor ?? 0),
     }),
     { qtd: 0, peso: 0, merc: 0, doc: 0 },
@@ -9155,12 +9189,17 @@ function CtePage() {
                               {m.chave}
                             </TableCell>
                             <TableCell className="text-[10px] whitespace-nowrap">
-                              {(m as any).especificacao || "CAIXAS"}
+                              CAIXAS
                             </TableCell>
                             <TableCell className="text-right font-mono">
-                              {Number((m as any).qtdUnit ?? (m as any).qVol ?? 0) > 0
-                                ? fmt2((m as any).qtdUnit ?? (m as any).qVol)
-                                : "—"}
+                              {(() => {
+                                const q =
+                                  Number((m as any).qtdUnit) ||
+                                  Number((m as any).qVol) ||
+                                  Number((m as any).quantidade) ||
+                                  0;
+                                return q > 0 ? fmt2(q) : "—";
+                              })()}
                             </TableCell>
                             <TableCell className="text-right font-mono">
                               {fmt3((m as any).peso ?? (m as any).qtdePeso)}
@@ -9176,7 +9215,9 @@ function CtePage() {
                               {m.data ? dateBR(m.data) : "—"}
                             </TableCell>
                             <TableCell className="text-right font-mono">
-                              {fmt2((m as any).valorMerc)}
+                              {fmt2(
+                                Number((m as any).valorMerc) || Number(m.valor),
+                              )}
                             </TableCell>
                             <TableCell className="text-right font-mono font-semibold">
                               {brl(m.valor)}

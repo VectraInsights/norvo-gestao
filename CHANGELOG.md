@@ -13,6 +13,23 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.1.2] - 2026-10-26
+
+### Corrigido
+
+- **CT-e — grade Mercadorias Transportadas**: a consulta das NF-es pendentes não trazia as
+  colunas novas (`qvol`, `qtd_unit`, `valor_merc`, `especificacao` etc.), então Qtde Unit vinha
+  vazia e Valor Merc. vinha `0,00` mesmo com os dados gravados no banco. Agora as colunas são
+  selecionadas e a grade mostra a quantidade de volumes da nota (ex.: 23) e o valor dos produtos.
+- **CT-e — grade Mercadorias Transportadas**: snapshots/rascunhos abertos na tela passam a ser
+  completados com os dados do banco, evitando valores antigos em branco.
+
+### Alterado
+
+- **CT-e — grade Mercadorias Transportadas**: Desc. Mercadoria mostra sempre `CAIXAS`.
+- **CT-e — Valor Merc.**: quando a nota não traz o valor dos produtos, a coluna usa o valor do
+  documento como reserva.
+
 ## [1.1.1] - 2026-10-26
 
 ### Alterado
