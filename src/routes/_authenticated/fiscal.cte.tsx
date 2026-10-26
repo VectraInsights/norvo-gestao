@@ -9465,10 +9465,6 @@ function CtePage() {
                     />
                   </div>
                 </div>
-                <p className="text-[9px] text-foreground/60 mt-1">
-                  Somente leitura — CST e impostos vêm do Percurso (Fiscal → Percursos) e são
-                  aplicados ao gerar o CT-e.
-                </p>
                 {totalPrestacao(form) <= 0 ? (
                   <p className="text-[9px] font-medium text-amber-600 mt-1">
                     Base zerada: informe o Valor Serviço na aba Transporte (Componentes do Frete)

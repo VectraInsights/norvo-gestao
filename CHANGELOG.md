@@ -13,6 +13,12 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.4] - 2026-10-26
+
+### Removido
+
+- **CT-e — Impostos**: nota "Somente leitura — CST e impostos vêm do Percurso…" abaixo do card.
+
 ## [1.2.3] - 2026-10-26
 
 ### Alterado
