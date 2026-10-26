@@ -49,6 +49,19 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
   `https://github.com/VectraInsights/norvo-gestao.git`). Vale para todos os repos/diretórios.
   NUNCA commitar tokens nem colá-los na URL.
 
+## Versionamento (SemVer)
+
+- `src/lib/versao.ts` (`VERSAO_SISTEMA`) é a versão exibida ao lado da busca; o SHA do deploy
+  aparece no rodapé do menu (`__BUILD_SHA__`, injetado pelo `vite.config.ts`).
+- Regra: **MAJOR** = mudança incompatível/migração obrigatória; **MINOR** = funcionalidade
+  nova; **PATCH** = correção, ajuste visual ou de texto. Subir um dígito a cada push que altere
+  o app.
+- Toda versão publicada ganha uma seção em `CHANGELOG.md` (Keep a Changelog:
+  Adicionado/Alterado/Corrigido/Removido) e uma tag Git `vX.Y.Z`
+  (`git tag -a v1.1.0 -m "..." && git push origin v1.1.0`).
+- `HISTORICO.md` continua sendo a memória narrativa das decisões; `CHANGELOG.md` é o resumo
+  objetivo por versão.
+
 ## Autenticação
 
 - Email/senha direto via `supabase.auth` (`src/routes/auth.tsx`).
