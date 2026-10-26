@@ -6142,10 +6142,9 @@ function CtePage() {
           Number((m as any).quantidade) ||
           0),
       peso: acc.peso + Number((m as any).peso ?? (m as any).qtdePeso ?? 0),
-      merc: acc.merc + (Number((m as any).valorMerc) || Number(m.valor) || 0),
       doc: acc.doc + Number(m.valor ?? 0),
     }),
-    { qtd: 0, peso: 0, merc: 0, doc: 0 },
+    { qtd: 0, peso: 0, doc: 0 },
   );
   // CT-es autorizados compatíveis com o percurso atual (complemento/substituição)
   const ctesCompativeis = useMemo(() => {
@@ -9091,8 +9090,8 @@ function CtePage() {
                     </button>
                   </div>
                 </div>
-                <div className="min-h-0 flex-1 overflow-auto [&_.erp-table-wrap]:max-h-none">
-                  <Table className="min-w-[1300px] min-[1500px]:min-w-[1120px]">
+                <div className="min-h-0 flex-1 overflow-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:h-2.5 [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-track]:bg-muted/50 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-primary/40 hover:[&::-webkit-scrollbar-thumb]:bg-primary/60 [&_.erp-table-wrap]:max-h-none">
+                  <Table className="min-w-[1210px] min-[1500px]:min-w-[1040px]">
                     <TableHeader className="sticky top-0 z-10 bg-[color-mix(in_oklab,var(--color-primary)_10%,var(--color-card))]">
                       <TableRow>
                         <TableHead className="w-6">
@@ -9135,14 +9134,13 @@ function CtePage() {
                         <TableHead className="text-[10px] text-right">N. Doc</TableHead>
                         <TableHead className="text-[10px]">Série</TableHead>
                         <TableHead className="text-[10px]">Data Doc</TableHead>
-                        <TableHead className="text-[10px] text-right">Valor Merc.</TableHead>
                         <TableHead className="text-[10px] text-right">Valor Doc</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {mercsGrade.length === 0 ? (
                         <TableRow className="hover:bg-transparent">
-                          <TableCell colSpan={12} className="p-0">
+                          <TableCell colSpan={11} className="p-0">
                             <div className="flex flex-col items-center justify-center gap-3 px-4 py-9 text-center">
                               <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 text-primary">
                                 <FileCode className="h-5 w-5" aria-hidden="true" />
@@ -9258,11 +9256,6 @@ function CtePage() {
                             <TableCell className="text-[10px]">
                               {m.data ? dateBR(m.data) : "—"}
                             </TableCell>
-                            <TableCell className="text-right font-mono">
-                              {fmt2(
-                                Number((m as any).valorMerc) || Number(m.valor),
-                              )}
-                            </TableCell>
                             <TableCell className="text-right font-mono font-semibold">
                               {brl(m.valor)}
                             </TableCell>
@@ -9284,9 +9277,6 @@ function CtePage() {
                         </TableCell>
                         <TableCell />
                         <TableCell colSpan={3} />
-                        <TableCell className="text-right font-mono">
-                          {fmt2(totGrade.merc)}
-                        </TableCell>
                         <TableCell className="text-right font-mono">
                           {brl(totGrade.doc)}
                         </TableCell>

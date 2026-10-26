@@ -13,6 +13,20 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.5] - 2026-10-26
+
+### Removido
+
+- **CT-e — grade Mercadorias Transportadas**: coluna **Valor Merc.** (o valor de mercadoria
+  continua no XML/emissão; na tela fica só o **Valor Doc**).
+
+### Alterado
+
+- **CT-e — grade**: com uma coluna a menos a tabela ficou mais estreita (1210px empilhada,
+  1040px no modo duas colunas), então na maioria das telas não há mais rolagem horizontal.
+- **CT-e — grade**: a barra de rolagem (horizontal e vertical) agora tem estilo próprio e
+  fica sempre visível no rodapé da grade, acima do total — mesmo com muitas notas.
+
 ## [1.2.4] - 2026-10-26
 
 ### Removido
