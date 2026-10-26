@@ -9063,7 +9063,11 @@ function CtePage() {
 
             {/* === TAB: Doc Mercadorias === */}
             <TabsContent value="docs" className="mt-2 min-h-0 flex-1 space-y-3 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
-              <Card className="overflow-hidden flex min-h-0 flex-1 flex-col">
+              <Card
+                className={`overflow-hidden flex flex-col ${
+                  mercsGrade.length > 3 ? "min-h-0 flex-1" : "shrink-0"
+                }`}
+              >
                 <div className="flex items-center justify-between gap-2 border-b border-primary/20 bg-primary/8 px-3 py-1.5 shrink-0">
                   <div className="flex items-center gap-1.5">
                     <Package className="h-3.5 w-3.5 text-primary" />

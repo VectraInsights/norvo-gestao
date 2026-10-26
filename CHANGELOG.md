@@ -13,6 +13,15 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.1.3] - 2026-10-26
+
+### Alterado
+
+- **CT-e — aba Tributação e Carga**: com até 3 NF-es a grade `Mercadorias Transportadas` passa a ter
+  altura do próprio conteúdo, e o card de Impostos sobe para logo abaixo — acaba o vão em branco
+  quando o CT-e tem uma nota só. Com 4 ou mais notas a grade continua ocupando o espaço
+  disponível, com rolagem interna.
+
 ## [1.1.2] - 2026-10-26
 
 ### Corrigido
