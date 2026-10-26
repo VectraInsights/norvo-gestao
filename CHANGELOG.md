@@ -13,6 +13,24 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.1.1] - 2026-10-26
+
+### Alterado
+
+- **CT-e — grade Mercadorias Transportadas**: a chave da NF-e aparece sempre completa (sem
+  truncar) e a coluna Desc. Mercadoria mostra a espécie da carga (`CAIXAS`), não mais o
+  remetente/destinatário.
+- **CT-e — grade Mercadorias Transportadas**: "Qtde Unit" passou a ser a quantidade dos itens da
+  nota (soma de `det/prod/qCom`), em vez da quantidade de volumes.
+- **CT-e — grade Mercadorias Transportadas**: removidas as colunas NCM, Valor Frete e Valor
+  Serviço (e seus totais).
+
+### Corrigido
+
+- **CT-e — Qtde Unit**: o valor agora é gravado em `qtd_unit` (migration `20261026130000`), então
+  permanece após recarregar a tela. Notas importadas antes disso precisam ser reimportadas para
+  preencher a coluna.
+
 ## [1.1.0] - 2026-10-26
 
 ### Adicionado

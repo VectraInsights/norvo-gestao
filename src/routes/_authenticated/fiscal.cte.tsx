@@ -658,6 +658,7 @@ function CtePage() {
       especificacao?: string;
       quantidade?: number;
       qtdePeso?: number;
+      qtdUnit?: number;
     }>
   >(() => {
     // Volta do percurso: mercadorias restauradas junto (o snapshot é a única
@@ -2130,6 +2131,7 @@ function CtePage() {
       valorFrete: 0,
       valorServico: 0,
       especificacao: "",
+      qtdUnit: Number(manualNfe.qtde.replace(",", ".")) || 0,
       data: manualNfe.data,
       tomador: dest,
       tomadorCnpj: manualNfe.destCnpj.replace(/\\D/g, ""),
@@ -2745,6 +2747,7 @@ function CtePage() {
       valorMerc: Number((r as any).valor_merc ?? 0),
       valorFrete: Number((r as any).valor_frete ?? 0),
       especificacao: (r as any).especificacao || "",
+      qtdUnit: Number((r as any).qtd_unit ?? 0),
     }));
   const sincronizarEmbarque = () => {
     if (!pendentesDB) return;
@@ -3716,6 +3719,11 @@ function CtePage() {
           );
         const valor = parseFloat(vNF) || 0;
         const modFrete = doc.querySelector("transp > modFrete")?.textContent || "";
+        // Quantidade unitária = soma das quantidades dos itens da NF-e (det/prod/qCom)
+        const qtdUnit = Array.from(doc.querySelectorAll("det > prod > qCom")).reduce(
+          (a, e) => a + (parseFloat(e.textContent || "") || 0),
+          0,
+        );
         // Dados da mercadoria (paridade com a grade antiga "Mercadorias Transportadas")
         const espVol = (doc.querySelector("transp > vol > esp")?.textContent || "").trim();
         const primeiroProd = doc.querySelector("det > prod");
@@ -3835,6 +3843,7 @@ function CtePage() {
           valor_merc: vProd || null,
           valor_frete: vFreteNfe || null,
           especificacao: especificacao || null,
+          qtd_unit: qtdUnit || null,
         };
         const jaExiste = statusPorChave.has(chaveNorm);
         // Se já existe (qualquer status pendente), ATUALIZA em vez de inserir:
@@ -3906,6 +3915,7 @@ function CtePage() {
           valorMerc: vProd,
           valorFrete: vFreteNfe,
           especificacao,
+          qtdUnit,
         };
         queueContato({
           cnpj: emitCnpj,
@@ -4231,6 +4241,7 @@ function CtePage() {
           valorFrete: Number(r.valorFrete ?? 0),
           valorServico: Number(r.valorServico ?? 0),
           especificacao: r.especificacao || "",
+          qtdUnit: Number(r.qtdUnit ?? r.quantidade ?? 0),
         }));
         setMercadorias(mapped);
         setSelecionadas(new Set(parsed.chavesNFe || []));
@@ -4651,6 +4662,7 @@ function CtePage() {
           valorMerc: Number((m as any).valorMerc ?? 0),
           valorFrete: Number((m as any).valorFrete ?? 0),
           especificacao: (m as any).especificacao || "",
+          qtdUnit: Number((m as any).qtdUnit ?? (m as any).quantidade ?? 0),
         }));
       const proximo = 1;
       const { data: novoDoc, error } = await supabase.from("cte_documentos" as any).insert({
@@ -6092,14 +6104,14 @@ function CtePage() {
     });
   const totGrade = mercsGrade.reduce(
     (acc, m) => ({
-      qtd: acc.qtd + Number((m as any).qVol ?? (m as any).quantidade ?? 0),
+      qtd:
+        acc.qtd +
+        Number((m as any).qtdUnit ?? (m as any).qVol ?? (m as any).quantidade ?? 0),
       peso: acc.peso + Number((m as any).peso ?? (m as any).qtdePeso ?? 0),
-      frete: acc.frete + Number((m as any).valorFrete ?? 0),
-      servico: acc.servico + Number((m as any).valorServico ?? 0),
       merc: acc.merc + Number((m as any).valorMerc ?? 0),
       doc: acc.doc + Number(m.valor ?? 0),
     }),
-    { qtd: 0, peso: 0, frete: 0, servico: 0, merc: 0, doc: 0 },
+    { qtd: 0, peso: 0, merc: 0, doc: 0 },
   );
   // CT-es autorizados compatíveis com o percurso atual (complemento/substituição)
   const ctesCompativeis = useMemo(() => {
@@ -9039,7 +9051,7 @@ function CtePage() {
                   </div>
                 </div>
                 <div className="min-h-0 flex-1 overflow-auto [&_.erp-table-wrap]:max-h-none">
-                  <Table className="min-w-[1240px]">
+                  <Table className="min-w-[1300px]">
                     <TableHeader className="sticky top-0 z-10 bg-[color-mix(in_oklab,var(--color-primary)_10%,var(--color-card))]">
                       <TableRow>
                         <TableHead className="w-6">
@@ -9079,12 +9091,9 @@ function CtePage() {
                         <TableHead className="text-[10px] text-right">Qtde Unit</TableHead>
                         <TableHead className="text-[10px] text-right">Qtde Medida</TableHead>
                         <TableHead className="text-[10px]">Und. Med</TableHead>
-                        <TableHead className="text-[10px] text-right">Valor Frete</TableHead>
-                        <TableHead className="text-[10px] text-right">Valor Serviço</TableHead>
                         <TableHead className="text-[10px] text-right">N. Doc</TableHead>
                         <TableHead className="text-[10px]">Série</TableHead>
                         <TableHead className="text-[10px]">Data Doc</TableHead>
-                        <TableHead className="text-[10px]">NCM</TableHead>
                         <TableHead className="text-[10px] text-right">Valor Merc.</TableHead>
                         <TableHead className="text-[10px] text-right">Valor Doc</TableHead>
                       </TableRow>
@@ -9093,7 +9102,7 @@ function CtePage() {
                       {mercsGrade.length === 0 ? (
                         <TableRow>
                           <TableCell
-                            colSpan={15}
+                            colSpan={12}
                             className="text-center text-xs text-muted-foreground py-8"
                           >
                             Nenhuma NF-e importada
@@ -9140,28 +9149,17 @@ function CtePage() {
                               {String(m.chave).replace(/\D/g, "").length === 44 ? "NFe" : "—"}
                             </TableCell>
                             <TableCell
-                              className="font-mono text-[9px] max-w-[120px] truncate"
+                              className="font-mono text-[9px] whitespace-nowrap"
                               title={m.chave}
                             >
                               {m.chave}
                             </TableCell>
-                            <TableCell className="max-w-[260px]">
-                              <div
-                                className="truncate font-medium"
-                                title={(m as any).descMerc || (m as any).especificacao || ""}
-                              >
-                                {(m as any).descMerc || (m as any).especificacao || "—"}
-                              </div>
-                              <div
-                                className="truncate text-[9px] text-muted-foreground"
-                                title={`${m.emit} → ${m.dest}`}
-                              >
-                                {m.emit} → {m.dest}
-                              </div>
+                            <TableCell className="text-[10px] whitespace-nowrap">
+                              {(m as any).especificacao || "CAIXAS"}
                             </TableCell>
                             <TableCell className="text-right font-mono">
-                              {Number((m as any).qVol ?? (m as any).quantidade ?? 0) > 0
-                                ? fmt2((m as any).qVol ?? (m as any).quantidade)
+                              {Number((m as any).qtdUnit ?? (m as any).qVol ?? 0) > 0
+                                ? fmt2((m as any).qtdUnit ?? (m as any).qVol)
                                 : "—"}
                             </TableCell>
                             <TableCell className="text-right font-mono">
@@ -9170,21 +9168,12 @@ function CtePage() {
                             <TableCell className="text-[10px] text-muted-foreground">
                               {(m as any).undMed || "UN"}
                             </TableCell>
-                            <TableCell className="text-right font-mono">
-                              {fmt2((m as any).valorFrete)}
-                            </TableCell>
-                            <TableCell className="text-right font-mono">
-                              {fmt2((m as any).valorServico)}
-                            </TableCell>
                             <TableCell className="text-right font-mono font-semibold text-primary">
                               {m.nNF}
                             </TableCell>
                             <TableCell className="text-[10px]">{m.serie}</TableCell>
                             <TableCell className="text-[10px]">
                               {m.data ? dateBR(m.data) : "—"}
-                            </TableCell>
-                            <TableCell className="font-mono text-[9px] text-muted-foreground">
-                              {(m as any).ncm || "—"}
                             </TableCell>
                             <TableCell className="text-right font-mono">
                               {fmt2((m as any).valorMerc)}
@@ -9209,14 +9198,7 @@ function CtePage() {
                           {fmt3(totGrade.peso)}
                         </TableCell>
                         <TableCell />
-                        <TableCell className="text-right font-mono">
-                          {fmt2(totGrade.frete)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {fmt2(totGrade.servico)}
-                        </TableCell>
                         <TableCell colSpan={3} />
-                        <TableCell />
                         <TableCell className="text-right font-mono">
                           {fmt2(totGrade.merc)}
                         </TableCell>
