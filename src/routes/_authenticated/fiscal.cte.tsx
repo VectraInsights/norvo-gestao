@@ -6120,19 +6120,14 @@ function CtePage() {
       minimumFractionDigits: 3,
       maximumFractionDigits: 3,
     });
-  const mercsGrade = (
-    selecionadas.size > 0
-      ? mercadorias.filter((m) => selecionadas.has(m.chave))
-      : [...mercadorias]
-  )
-    .slice()
-    .sort((a, b) => {
+  const mercsGrade = [...mercadorias].sort((a, b) => {
       const na = parseInt(String(a.nNF || ""), 10);
       const nb = parseInt(String(b.nNF || ""), 10);
       if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
       return String(a.nNF || "").localeCompare(String(b.nNF || ""), "pt-BR", { numeric: true });
     });
-  const totGrade = mercsGrade.reduce(
+  const totBase = selecionadas.size > 0 ? mercadorias.filter((m) => selecionadas.has(m.chave)) : mercsGrade;
+  const totGrade = totBase.reduce(
     (acc, m) => ({
       qtd:
         acc.qtd +
@@ -9078,7 +9073,7 @@ function CtePage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] text-muted-foreground">
-                      {mercsGrade.length} de {mercadorias.length} NF-e(s) na grade
+                      {totBase.length} de {mercadorias.length} NF-e(s) na grade
                     </span>
                     <button
                       type="button"
@@ -9268,7 +9263,7 @@ function CtePage() {
                     de totais vive fora da área de rolagem — junto com a barra horizontal. */}
                 <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-t border-primary/20 bg-primary/10 px-3 py-1.5 text-[11px] font-semibold">
                   <span className="text-[9px] uppercase tracking-wide text-primary/80">
-                    Total — {mercsGrade.length} NF-e(s)
+                    Total — {totBase.length} NF-e(s)
                   </span>
                   <span className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-0.5">
                     <span className="text-[10px] font-normal text-muted-foreground">

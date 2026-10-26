@@ -13,6 +13,12 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.8] - 2026-10-26
+
+### Corrigido
+
+- **CT-e — grade Mercadorias Transportadas**: desmarcar uma nota fazia ela sumir da tela. Agora a grade sempre exibe todas as NF-e; a marcação controla apenas o que entra no total e na emissão. O rodapé mostra o total de selecionadas quando houver seleção.
+
 ## [1.2.7] - 2026-10-26
 
 ### Alterado
