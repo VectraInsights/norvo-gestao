@@ -13,6 +13,17 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.1] - 2026-10-26
+
+### Corrigido
+
+- **CT-e — Resumo da carga**: o card agora aparece com qualquer quantidade de NF-es (antes só
+  com até 3, então um CT-e de 33 notas não mostrava o resumo). A grade continua compacta quando
+  há até 3 notas e passa a dividir o espaço com o resumo quando há mais.
+- **CT-e — Impostos**: o rótulo "Crédito outorgado/presumido (R$)" cabia em duas linhas e
+  aumentava a altura da linha dos campos; virou "Crédito outorg./presum. (R$)" em uma linha (com
+  o texto completo no tooltip) e o campo ganhou largura para o valor.
+
 ## [1.2.0] - 2026-10-26
 
 ### Adicionado

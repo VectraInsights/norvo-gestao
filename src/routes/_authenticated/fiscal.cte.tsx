@@ -9293,8 +9293,8 @@ function CtePage() {
                 </div>
               </Card>
 
-              {/* Resumo da carga: ocupa o espaço quando o CT-e tem poucas NF-es */}
-              {mercsGrade.length > 0 && mercsGrade.length <= 3 ? (
+              {/* Resumo da carga: totais das NF-es do CT-e */}
+              {mercsGrade.length > 0 ? (
                 <Card className="p-2.5 shrink-0">
                   <div className="mb-2 flex items-center gap-1.5">
                     <Package className="h-3.5 w-3.5 text-primary" />
@@ -9409,9 +9409,12 @@ function CtePage() {
                       
                     />
                   </div>
-                  <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-foreground/80">
-                      Crédito outorgado/presumido (R$)
+                  <div className="w-[160px] shrink-0">
+                    <Label
+                      className="text-[10px] text-foreground/80 whitespace-nowrap"
+                      title="Crédito outorgado/presumido (R$)"
+                    >
+                      Crédito outorg./presum. (R$)
                     </Label>
                     <MoneyInput
                       className="h-7 text-xs bg-muted/50 text-muted-foreground"
