@@ -13,6 +13,16 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.0] - 2026-10-26
+
+### Adicionado
+
+- **CT-e — Resumo da carga**: com até 3 NF-es, um card logo abaixo da grade mostra NF-e(s),
+  volumes, peso, valor de mercadoria, valor do documento e ICMS destacado (valor + alíquota),
+  preenchendo o espaço que antes ficava em branco.
+- **CT-e — estado vazio da grade**: quando não há NF-e, a grade exibe um convite com os botões
+  **Importar XML** (direto na aba) e **NF-e manual**.
+
 ## [1.1.3] - 2026-10-26
 
 ### Alterado

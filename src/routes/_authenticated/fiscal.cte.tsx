@@ -9138,12 +9138,49 @@ function CtePage() {
                     </TableHeader>
                     <TableBody>
                       {mercsGrade.length === 0 ? (
-                        <TableRow>
-                          <TableCell
-                            colSpan={12}
-                            className="text-center text-xs text-muted-foreground py-8"
-                          >
-                            Nenhuma NF-e importada
+                        <TableRow className="hover:bg-transparent">
+                          <TableCell colSpan={12} className="p-0">
+                            <div className="flex flex-col items-center justify-center gap-3 px-4 py-9 text-center">
+                              <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 text-primary">
+                                <FileCode className="h-5 w-5" aria-hidden="true" />
+                              </div>
+                              <div>
+                                <p className="text-xs font-semibold">Nenhuma NF-e no CT-e</p>
+                                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                  Importe os XMLs das notas ou lance uma NF-e manual.
+                                </p>
+                              </div>
+                              <div className="flex flex-wrap items-center justify-center gap-2">
+                                <label
+                                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 ${
+                                    isParsing ? "pointer-events-none opacity-60" : ""
+                                  }`}
+                                >
+                                  <UploadCloud className="h-3.5 w-3.5" />
+                                  {isParsing ? "Importando…" : "Importar XML"}
+                                  <input
+                                    type="file"
+                                    accept=".xml"
+                                    multiple
+                                    className="hidden"
+                                    disabled={isParsing}
+                                    onChange={(e) => {
+                                      if (isParsing) return;
+                                      if (e.target.files) handleImportNFeXml(e.target.files);
+                                      e.currentTarget.value = "";
+                                    }}
+                                  />
+                                </label>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 text-[11px]"
+                                  onClick={() => setManualNfeOpen(true)}
+                                >
+                                  <Plus className="h-3.5 w-3.5" /> NF-e manual
+                                </Button>
+                              </div>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ) : (
@@ -9255,6 +9292,46 @@ function CtePage() {
                   </Table>
                 </div>
               </Card>
+
+              {/* Resumo da carga: ocupa o espaço quando o CT-e tem poucas NF-es */}
+              {mercsGrade.length > 0 && mercsGrade.length <= 3 ? (
+                <Card className="p-2.5 shrink-0">
+                  <div className="mb-2 flex items-center gap-1.5">
+                    <Package className="h-3.5 w-3.5 text-primary" />
+                    <h5 className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                      Resumo da carga
+                    </h5>
+                    <span className="ml-auto text-[10px] text-muted-foreground">
+                      Totais das NF-e desta aba
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { rotulo: "NF-e(s)", valor: String(mercsGrade.length) },
+                      { rotulo: "Volumes", valor: fmt2(totGrade.qtd) },
+                      { rotulo: "Peso (kg)", valor: fmt3(totGrade.peso) },
+                      { rotulo: "Valor merc.", valor: brl(totGrade.merc) },
+                      { rotulo: "Valor doc.", valor: brl(totGrade.doc) },
+                      {
+                        rotulo: "ICMS destacado",
+                        valor: `${brl(Number(form.icmsValor) || 0)} · ${fmt2(
+                          Number(form.icmsAliq) || 0,
+                        )}%`,
+                      },
+                    ].map((c) => (
+                      <div
+                        key={c.rotulo}
+                        className="min-w-[132px] flex-1 rounded-lg border border-border/60 bg-muted/40 px-3 py-1.5"
+                      >
+                        <div className="text-[9px] uppercase tracking-wide text-muted-foreground">
+                          {c.rotulo}
+                        </div>
+                        <div className="font-mono text-xs font-semibold">{c.valor}</div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              ) : null}
 
               {/* Tributação (fundida nesta aba) */}
               <Card className="overflow-hidden p-3 shrink-0">
