@@ -10,7 +10,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -9090,7 +9089,7 @@ function CtePage() {
                     </button>
                   </div>
                 </div>
-                <div className="min-h-0 flex-1 overflow-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:h-2.5 [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-track]:bg-muted/50 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-primary/40 hover:[&::-webkit-scrollbar-thumb]:bg-primary/60 [&_.erp-table-wrap]:max-h-none">
+                <div className="min-h-0 flex-1 overflow-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:h-2.5 [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-track]:bg-muted/50 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-primary/40 hover:[&::-webkit-scrollbar-thumb]:bg-primary/60 [&_.erp-table-wrap]:max-h-none [&_.erp-table-wrap]:overflow-visible">
                   <Table className="min-w-[1210px] min-[1500px]:min-w-[1040px]">
                     <TableHeader className="sticky top-0 z-10 bg-[color-mix(in_oklab,var(--color-primary)_10%,var(--color-card))]">
                       <TableRow>
@@ -9263,26 +9262,34 @@ function CtePage() {
                         ))
                       )}
                     </TableBody>
-                    <TableFooter className="sticky bottom-0 z-10 border-t border-primary/20 bg-primary/10">
-                      <TableRow className="text-[11px] font-semibold hover:bg-transparent">
-                        <TableCell
-                          colSpan={4}
-                          className="text-[9px] uppercase tracking-wide text-primary/80"
-                        >
-                          Total — {mercsGrade.length} NF-e(s)
-                        </TableCell>
-                        <TableCell className="text-right font-mono">{fmt2(totGrade.qtd)}</TableCell>
-                        <TableCell className="text-right font-mono">
-                          {fmt3(totGrade.peso)}
-                        </TableCell>
-                        <TableCell />
-                        <TableCell colSpan={3} />
-                        <TableCell className="text-right font-mono">
-                          {brl(totGrade.doc)}
-                        </TableCell>
-                      </TableRow>
-                    </TableFooter>
                   </Table>
+                </div>
+                {/* Total fixo: o <tfoot> com sticky não funciona no Chrome, então a linha
+                    de totais vive fora da área de rolagem — junto com a barra horizontal. */}
+                <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-t border-primary/20 bg-primary/10 px-3 py-1.5 text-[11px] font-semibold">
+                  <span className="text-[9px] uppercase tracking-wide text-primary/80">
+                    Total — {mercsGrade.length} NF-e(s)
+                  </span>
+                  <span className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-0.5">
+                    <span className="text-[10px] font-normal text-muted-foreground">
+                      Qtde{" "}
+                      <b className="ml-1 font-mono text-[11px] text-foreground">
+                        {fmt2(totGrade.qtd)}
+                      </b>
+                    </span>
+                    <span className="text-[10px] font-normal text-muted-foreground">
+                      Peso{" "}
+                      <b className="ml-1 font-mono text-[11px] text-foreground">
+                        {fmt3(totGrade.peso)}
+                      </b>
+                    </span>
+                    <span className="text-[10px] font-normal text-muted-foreground">
+                      Valor doc.{" "}
+                      <b className="ml-1 font-mono text-[11px] text-foreground">
+                        {brl(totGrade.doc)}
+                      </b>
+                    </span>
+                  </span>
                 </div>
               </Card>
 

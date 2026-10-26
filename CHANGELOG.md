@@ -13,6 +13,18 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.6] - 2026-10-26
+
+### Corrigido
+
+- **CT-e — grade Mercadorias Transportadas**: a barra de rolagem horizontal ficava no wrapper
+  interno da tabela (`erp-table-wrap`), que cresce com o número de linhas — por isso ela só
+  aparecia depois da última NF-e. A rolagem passou para o container da grade: a barra fica
+  sempre visível no rodapé do card.
+- **CT-e — total da grade**: a linha de total estava num `<tfoot>` com `sticky`, que o Chrome
+  não fixa — ela desaparecia ao rolar. Virou uma barra fixa abaixo da grade (sempre visível,
+  logo abaixo da barra de rolagem) com total de NF-e(s), Qtde, Peso e Valor doc.
+
 ## [1.2.5] - 2026-10-26
 
 ### Removido
