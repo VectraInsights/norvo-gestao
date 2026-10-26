@@ -13,6 +13,20 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.2] - 2026-10-26
+
+### Removido
+
+- **CT-e — Resumo da carga**: o card repetia os totais que já aparecem no rodapé da grade
+  (volumes, peso, valor merc., valor doc.), então foi removido. A grade continua compacta com
+  até 3 NF-es e o card de Impostos sobe logo abaixo.
+
+### Alterado
+
+- **CT-e — Impostos**: quando a base de cálculo está zerada, o cabeçalho avisa que é preciso
+  informar o Valor Serviço em "Componentes do Frete" — o ICMS incide sobre o valor do serviço,
+  não sobre a mercadoria, por isso a alíquota de 7% aparecia com ICMS `0,00`.
+
 ## [1.2.1] - 2026-10-26
 
 ### Corrigido

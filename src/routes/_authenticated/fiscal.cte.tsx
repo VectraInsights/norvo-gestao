@@ -9293,46 +9293,6 @@ function CtePage() {
                 </div>
               </Card>
 
-              {/* Resumo da carga: totais das NF-es do CT-e */}
-              {mercsGrade.length > 0 ? (
-                <Card className="p-2.5 shrink-0">
-                  <div className="mb-2 flex items-center gap-1.5">
-                    <Package className="h-3.5 w-3.5 text-primary" />
-                    <h5 className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
-                      Resumo da carga
-                    </h5>
-                    <span className="ml-auto text-[10px] text-muted-foreground">
-                      Totais das NF-e desta aba
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { rotulo: "NF-e(s)", valor: String(mercsGrade.length) },
-                      { rotulo: "Volumes", valor: fmt2(totGrade.qtd) },
-                      { rotulo: "Peso (kg)", valor: fmt3(totGrade.peso) },
-                      { rotulo: "Valor merc.", valor: brl(totGrade.merc) },
-                      { rotulo: "Valor doc.", valor: brl(totGrade.doc) },
-                      {
-                        rotulo: "ICMS destacado",
-                        valor: `${brl(Number(form.icmsValor) || 0)} · ${fmt2(
-                          Number(form.icmsAliq) || 0,
-                        )}%`,
-                      },
-                    ].map((c) => (
-                      <div
-                        key={c.rotulo}
-                        className="min-w-[132px] flex-1 rounded-lg border border-border/60 bg-muted/40 px-3 py-1.5"
-                      >
-                        <div className="text-[9px] uppercase tracking-wide text-muted-foreground">
-                          {c.rotulo}
-                        </div>
-                        <div className="font-mono text-xs font-semibold">{c.valor}</div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              ) : null}
-
               {/* Tributação (fundida nesta aba) */}
               <Card className="overflow-hidden p-3 shrink-0">
                 <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-2 flex items-center gap-1.5">
@@ -9340,6 +9300,11 @@ function CtePage() {
                   <h5 className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                     Impostos
                   </h5>
+                  {totalPrestacao(form) <= 0 ? (
+                    <span className="ml-auto text-[9px] font-medium normal-case tracking-normal text-muted-foreground">
+                      Informe o Valor Serviço (Componentes do Frete) para calcular o ICMS
+                    </span>
+                  ) : null}
                 </div>
                 <div className="flex flex-wrap items-end gap-x-2 gap-y-2">
                   <div className="min-w-[240px] max-w-[800px] flex-1">
