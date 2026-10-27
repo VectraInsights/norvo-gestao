@@ -13,6 +13,12 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.18] - 2026-10-27
+
+### Corrigido
+
+- **CT-e — grade sempre exibe todas as notas**: desmarcar uma nota nao faz ela sumir da tela. A grade exibe sempre todas as NF-e; a selecao controla apenas o que entra no total e no box de Resumo da Selecao.
+
 ## [1.2.17] - 2026-10-27
 
 ### Alterado

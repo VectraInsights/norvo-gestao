@@ -6864,3 +6864,5 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
 - **Resumo da Seleção no espaço branco abaixo da grade (27/10, v1.2.16)** - a faixa verde de totais saiu da base da caixa de notas. Agora um box de resumo aparece abaixo da grade, só quando há notas selecionadas, mostrando: NF-e(s) selecionadas de Y na grade, Qtde total com unidade, Peso total em KG, Valor total das notas, e Remetente/Destinatário (quando todos iguais).
 
 - **Resumo da seleção mostra apenas a quantidade selecionada (27/10, v1.2.17)** - o texto do box de resumo agora mostra apenas a quantidade de notas selecionadas (ex: "4 NF-e(s) selecionada(s)"), sem o "de X na grade". Assim, se há 33 notas na grade e 4 selecionadas, mostra "4 NF-e(s) selecionada(s)"; se desmarcar uma, mostra "3 NF-e(s) selecionada(s)".
+
+- **Grade do CT-e sempre exibe todas as notas (27/10, v1.2.18)** - desmarcar uma nota nao faz ela sumir da tela. A grade exibe sempre todas as NF-e; a selecao controla apenas o que entra no total e no box de Resumo da Selecao. O box mostra apenas a quantidade de notas selecionadas (ex: "4 NF-e(s) selecionada(s)").
