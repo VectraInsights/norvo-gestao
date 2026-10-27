@@ -671,6 +671,15 @@ function CtePage() {
       return Array.isArray(s?.selecionadas) ? new Set(s.selecionadas as string[]) : new Set<string>();
     },
   );
+  // selecionadasAtivas = notas que estao marcadas e somam no total.
+  // selecionadas (acima) = notas que estao na grade do CT-e (aparecem na lista).
+  // Desmarcar uma nota tira de selecionadasAtivas (para de somar) mas mantem em selecionadas (segue na grade).
+  const [selecionadasAtivas, setSelecionadasAtivas] = useState<Set<string>>(
+    () => {
+      const s = lerSnapshotCte();
+      return Array.isArray(s?.selecionadas) ? new Set(s.selecionadas as string[]) : new Set<string>();
+    },
+  );
   const [confRemetente, setConfRemetente] = useState<{ nome: string; chaves: string[] } | null>(
     null,
   );
@@ -6123,14 +6132,18 @@ function CtePage() {
       minimumFractionDigits: 3,
       maximumFractionDigits: 3,
     });
-  const mercsGrade = [...mercadorias].sort((a, b) => {
+  // A grade exibe apenas as notas selecionadas originalmente para o CT-e.
+  // Desmarcar uma nota mantem ela na grade (desmarcada); apenas para de somar no total.
+  const mercsGrade = [...mercadorias]
+    .filter((m) => selecionadas.has(m.chave))
+    .sort((a, b) => {
       const na = parseInt(String(a.nNF || ""), 10);
       const nb = parseInt(String(b.nNF || ""), 10);
       if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
       return String(a.nNF || "").localeCompare(String(b.nNF || ""), "pt-BR", { numeric: true });
     });
-  // A grade sempre exibe TODAS as notas. A selecao so controla o que soma no total.
-  const totBase = selecionadas.size > 0 ? mercadorias.filter((m) => selecionadas.has(m.chave)) : mercsGrade;
+  // A soma do total usa apenas as notas ativas (selecionadas e ainda marcadas).
+  const totBase = selecionadasAtivas.size > 0 ? mercadorias.filter((m) => selecionadasAtivas.has(m.chave)) : mercsGrade;
   const totGrade = totBase.reduce(
     (acc, m) => ({
       qtd:
@@ -7023,7 +7036,7 @@ function CtePage() {
                                     }
                                   }
                                 setSelecionadas(new Set(mercadoriasSorted.map((m) => m.chave)));
-                                } else setSelecionadas(new Set());
+                                } else { setSelecionadas(new Set()); setSelecionadasAtivas(new Set()); }
                               }}
                             />
                           </TableHead>
@@ -9094,7 +9107,7 @@ function CtePage() {
                           <input
                             type="checkbox"
                             checked={
-                              mercadorias.length > 0 && selecionadas.size === mercadorias.length
+                              mercadorias.length > 0 && selecionadas.size === mercadorias.length && selecionadasAtivas.size === mercadorias.length
                             }
                             onChange={(e) => {
                               if (e.target.checked) {
@@ -9117,7 +9130,8 @@ function CtePage() {
                                   return;
                                 }
                                 setSelecionadas(new Set(mercadorias.map((m) => m.chave)));
-                              } else setSelecionadas(new Set());
+                                setSelecionadasAtivas(new Set(mercadorias.map((m) => m.chave)));
+                              } else { setSelecionadas(new Set()); setSelecionadasAtivas(new Set()); }
                             }}
                           />
                         </TableHead>
@@ -9192,28 +9206,16 @@ function CtePage() {
                                 type="checkbox"
                                 checked={selecionadas.has(m.chave)}
                                 onChange={(e) => {
-                                  const next = new Set(selecionadas);
                                   if (e.target.checked) {
-                                    next.add(m.chave);
-                                    const sel = mercadorias.filter((x) => next.has(x.chave));
-                                    const red = (form as any).modoEmbarque === "simplificado";
-                                    const emits = new Set(sel.map((x) => x.emitCnpj || x.emit));
-                                    const dests = new Set(sel.map((x) => x.destCnpj || x.dest));
-                                    const tomads = new Set(
-                                      sel.map((x) => x.tomadorCnpj || x.tomador),
-                                    );
-                                    if (red && emits.size > 1) {
-                                      toast.error("Remetentes diferentes");
+                                    setSelecionadas((prev) => new Set([...prev, m.chave]));
+                                    setSelecionadasAtivas((prev) => new Set([...prev, m.chave]));
+                                  } else {
+                                    setSelecionadasAtivas((prev) => {
+                                      const next = new Set(prev);
                                       next.delete(m.chave);
-                                    } else if (!red && dests.size > 1) {
-                                      toast.error("CT-e não pode ter destinatários diferentes");
-                                      next.delete(m.chave);
-                                    } else if (tomads.size > 1) {
-                                      toast.error("No simplificado, o CT-e exige o mesmo tomador");
-                                      next.delete(m.chave);
-                                    }
-                                  } else next.delete(m.chave);
-                                  setSelecionadas(next);
+                                      return next;
+                                    });
+                                  }
                                 }}
                               />
                             </TableCell>

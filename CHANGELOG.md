@@ -13,6 +13,12 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.19] - 2026-10-27
+
+### Corrigido
+
+- **CT-e — grade exibe apenas as notas selecionadas para o CT-e**: a lista mostra somente as notas escolhidas originalmente para fazer o CT-e (notas do embarque que não foram selecionadas não aparecem). Desmarcar uma nota mantém ela na grade (desmarcada); apenas para de somar no total. A seleção ativa controla o que entra no total e no box de Resumo da Seleção.
+
 ## [1.2.18] - 2026-10-27
 
 ### Corrigido
