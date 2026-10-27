@@ -9267,46 +9267,29 @@ function CtePage() {
                     </TableBody>
                   </Table>
                 </div>
-                {/* Total fixo: tabela espelhada para alinhar coluna a coluna com a grade.
-                    O <tfoot> sticky não funciona no Chrome, então a linha de totais vive
-                    fora da área de rolagem — junto com a barra horizontal. */}
-                <div className="flex shrink-0 flex-col border-t border-primary/20 bg-primary/10 text-[11px] font-semibold">
-                  <div className="flex items-center gap-x-3 px-3 py-1">
-                    <span className="text-[9px] uppercase tracking-wide text-primary/80">
-                      Total — {totBase.length} NF-e(s)
-                    </span>
+                {/* Total fixo: tudo na faixa verde, ao lado da barra de rolagem.
+                    Qtde com sua unidade (UN/KG etc.) e Peso sempre em KG. */}
+                <div className="flex shrink-0 items-center justify-between border-t border-primary/20 bg-primary/10 px-3 py-1.5 text-[11px] font-semibold">
+                  <span className="text-[9px] uppercase tracking-wide text-primary/80">
+                    Total — {totBase.length} NF-e(s)
+                  </span>
+                  <div className="ml-auto flex items-center gap-x-6 font-mono text-right">
+                    <div className="flex items-center gap-x-1">
+                      {fmt2(totGrade.qtd)}{" "}
+                      <span className="text-muted-foreground">
+                        {(() => {
+                          const uns = totBase.map((m) => String((m as any).undMed || "UN").toUpperCase());
+                          const unica = new Set(uns);
+                          return unica.size === 1 ? uns[0] : "—";
+                        })()}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-x-1">
+                      {fmt3(totGrade.peso)}{" "}
+                      <span className="text-muted-foreground">KG</span>
+                    </div>
+                    <span className="font-semibold">{brl(totGrade.doc)}</span>
                   </div>
-                  {/* Und. comum da grade: mostra a unidade quando todas as selecionadas são iguais, senão "—" */}
-                  {(() => {
-                    const uns = totBase.map((m) => String((m as any).undMed || "UN").toUpperCase());
-                    const unica = new Set(uns);
-                    return unica.size === 1 ? uns[0] : "—";
-                  })()}
-                  <Table className="min-w-[980px] min-[1500px]:min-w-[920px] [&_th]:h-7 [&_th]:px-1.5 [&_td]:px-1.5 [&_td]:py-0.5 [&_td]:border-0 [&_tr]:border-0">
-                    <TableBody>
-                      <TableRow className="text-[11px] font-semibold">
-                        <TableCell colSpan={4} className="px-1.5" />
-                        <TableCell className="text-right font-mono px-1.5 py-0.5">
-                          {fmt2(totGrade.qtd)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono px-1.5 py-0.5">
-                          {fmt3(totGrade.peso)}
-                        </TableCell>
-                        <TableCell className="text-center font-mono px-1.5 py-0.5 text-muted-foreground">
-                          {(() => {
-                            const uns = totBase.map((m) => String((m as any).undMed || "UN").toUpperCase());
-                            const unica = new Set(uns);
-                            return unica.size === 1 ? uns[0] : "—";
-                          })()}
-                        </TableCell>
-                        <TableCell colSpan={2} className="px-1.5" />
-                        <TableCell colSpan={1} className="px-1.5" />
-                        <TableCell className="text-right font-mono font-semibold px-1.5 py-0.5">
-                          {brl(totGrade.doc)}
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
                 </div>
               </Card>
 

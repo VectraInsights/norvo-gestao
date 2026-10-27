@@ -6854,3 +6854,5 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
 - **Grade do CT-e: mostra apenas notas selecionadas (27/10, v1.2.11)** - desmarcar uma nota faz ela sumir da tela imediatamente. Só as notas marcadas aparecem na grade e somam no total. Quando não há seleção, todas as NF-e da grade aparecem. Ao salvar rascunho/emitir, as notas selecionadas saem da lista de emissão (ficam reservadas em cte_nfes_pendentes com status rascunho) e só voltam ao cancelar ou excluir o rascunho.
 
 - **Impostos abaixo da grade em todas as telas (27/10, v1.2.12)** - o painel de Tributação/Carga voltou para abaixo da grade de Mercadorias Transportadas, empilhado, em vez de ficar em coluna ao lado em telas >= 1500px. Com isso a grade ganha mais altura quando há poucas notas selecionadas.
+
+- **Totais do CT-e na faixa verde com unidades corretas (27/10, v1.2.13)** - Qtde, Peso e Valor doc. ficam todos na mesma faixa verde do rodapé da grade, com a unidade ao lado de cada valor (Qtde com UN/KG etc. da nota, Peso sempre em KG). Antes apareciam em uma tabela espelhada separada, com a unidade no lugar errado.

@@ -13,13 +13,13 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
-## [1.2.12] - 2026-10-27
+## [1.2.13] - 2026-10-27
 
 ### Alterado
 
-- **CT-e — layout da aba Doc Mercadorias**: o painel de Impostos voltou para abaixo da grade, em todas as telas, em vez de ficar em coluna ao lado em telas >= 1500px. Assim a grade ganha mais altura quando há poucas notas.
+- **CT-e — totais na faixa verde**: Qtde, Peso e Valor doc. ficam todos na mesma faixa verde do rodapé, com a unidade ao lado de cada valor (Qtde com UN/KG etc. da nota, Peso sempre em KG).
 
-## [1.2.11] - 2026-10-27
+## [1.2.12] - 2026-10-27
 
 ### Corrigido
 
