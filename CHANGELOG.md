@@ -13,17 +13,13 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
-## [1.2.10] - 2026-10-27
-
-### Alterado
-
-- **CT-e — total da grade**: acrescentada a unidade (UN / KG etc.) alinhada coluna a coluna sob a grade, ao lado de Qtde, Peso e Valor doc.
+## [1.2.11] - 2026-10-27
 
 ### Corrigido
 
-- **CT-e — emissão com notas não selecionadas**: antes, se nenhum item estivesse marcado, a emissão usava todas as NF-e da grade. Agora a emissão é bloqueada com erro ("Selecione pelo menos uma NF-e na grade antes de emitir o CT-e") quando a seleção estiver vazia, impedindo que notas não selecionadas venham no CT-e.
+- **CT-e — grade mostra apenas as selecionadas**: desmarcar uma nota faz ela sumir da tela imediatamente. Só as notas marcadas aparecem na grade e somam no total. Quando não há seleção, todas as NF-e da grade aparecem.
 
-## [1.2.9] - 2026-10-27
+## [1.2.10] - 2026-10-27
 
 ### Corrigido
 

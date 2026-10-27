@@ -6123,13 +6123,19 @@ function CtePage() {
       minimumFractionDigits: 3,
       maximumFractionDigits: 3,
     });
-  const mercsGrade = [...mercadorias].sort((a, b) => {
+  const mercsGrade = (
+    selecionadas.size > 0
+      ? mercadorias.filter((m) => selecionadas.has(m.chave))
+      : [...mercadorias]
+  )
+    .slice()
+    .sort((a, b) => {
       const na = parseInt(String(a.nNF || ""), 10);
       const nb = parseInt(String(b.nNF || ""), 10);
       if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
       return String(a.nNF || "").localeCompare(String(b.nNF || ""), "pt-BR", { numeric: true });
     });
-  const totBase = selecionadas.size > 0 ? mercadorias.filter((m) => selecionadas.has(m.chave)) : mercsGrade;
+  const totBase = mercsGrade;
   const totGrade = totBase.reduce(
     (acc, m) => ({
       qtd:
