@@ -13,6 +13,12 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.24] - 2026-10-27
+
+### Corrigido
+
+- **Snapshot do embarque inclui selecionadas para o CT-e**: ao gerar o CT-e da tela de NF Embarque, o snapshot agora grava as chaves selecionadas em `selecionadas` (além de `chaves`). Assim, ao abrir o CT-e, as notas originalmente escolhidas aparecem marcadas na grade e já somam no total. Antes, apenas `chaves` era gravado, fazendo `selecionadas` iniciar vazio e as notas aparecerem desmarcadas.
+
 ## [1.2.23] - 2026-10-27
 
 ### Corrigido

@@ -7337,6 +7337,7 @@ function CtePage() {
                                 tomaNome: p0.tomador || "",
                                 returnTo: "/fiscal/cte",
                                 chaves: sel.map((m) => m.chave),
+                                selecionadas: sel.map((m) => m.chave),
                               }),
                             );
                           } catch {}

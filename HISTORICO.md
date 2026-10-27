@@ -6876,3 +6876,5 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
 - **Notas CT-e carregam desmarcadas e nada soma por padrão (27/10, v1.2.22)** - selecionadasAtivas começa vazio (nenhuma nota ativa ao carregar). O totBase retorna vazio quando nenhuma nota está ativa, então nada soma no total inicialmente. O usuário escolhe quais notas quer marcar para somar.
 
 - **Notas CT-e carregam selecionadas por padrão e somam no total (27/10, v1.2.23)** - selecionadasAtivas inicia com as mesmas chaves de selecionadas (as notas escolhidas originalmente para o CT-e), então elas aparecem marcadas na grade e ja somam no total ao carregar. Desmarcar uma nota mantem ela na grade, apenas para de somar. Marcar de novo volta a somar.
+
+- **Snapshot do embarque inclui selecionadas para o CT-e (27/10, v1.2.24)** - ao gerar o CT-e da tela de NF Embarque, o snapshot grava as chaves selecionadas em `selecionadas` (além de `chaves`). Assim, ao abrir o CT-e, as notas originalmente escolhidas aparecem marcadas na grade e já somam no total.
