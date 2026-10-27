@@ -13,6 +13,12 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.15] - 2026-10-27
+
+### Alterado
+
+- **CT-e — resumo da seleção no espaço branco**: a faixa verde de totais saiu da base da caixa de notas. Agora o resumo (Qtde, Peso, Valor doc. com unidades) fica no rodapé interno do card da grade. Quando há poucas notas, sobra espaço em branco acima e o resumo fica fixo embaixo; quando há muitas, a tabela faz scroll e o resumo fica visível no rodapé.
+
 ## [1.2.14] - 2026-10-27
 
 ### Alterado

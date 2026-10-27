@@ -6858,3 +6858,5 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
 - **Totais do CT-e na faixa verde com unidades corretas (27/10, v1.2.13)** - Qtde, Peso e Valor doc. ficam todos na mesma faixa verde do rodapé da grade, com a unidade ao lado de cada valor (Qtde com UN/KG etc. da nota, Peso sempre em KG). Antes apareciam em uma tabela espelhada separada, com a unidade no lugar errado.
 
 - **Grade do CT-e sempre com espaço abaixo (27/10, v1.2.14)** - o card da grade agora ocupa sempre o espaço disponível (`min-h-0 flex-1`), independente de quantas notas estão selecionadas. Antes, com 1, 2 ou 3 notas, o card encolhia (`shrink-0`) e os Impostos ficavam colados na grade. Agora sempre fica com espaço em branco abaixo e os Impostos no rodapé.
+
+- **Resumo da seleção no espaço branco do card da grade (27/10, v1.2.15)** - a faixa verde de totais saiu da base da caixa de notas. Agora o resumo (Qtde com unidade, Peso em KG, Valor doc.) fica no rodapé interno do card da grade. Quando há poucas notas, sobra espaço em branco acima e o resumo fica fixo embaixo; quando há muitas, a tabela faz scroll e o resumo fica visível no rodapé.

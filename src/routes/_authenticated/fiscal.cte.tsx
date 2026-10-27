@@ -9090,8 +9090,9 @@ function CtePage() {
                     </button>
                   </div>
                 </div>
-                <div className="min-h-0 flex-1 overflow-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:h-2.5 [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-track]:bg-muted/50 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-primary/40 hover:[&::-webkit-scrollbar-thumb]:bg-primary/60 [&_.erp-table-wrap]:max-h-none [&_.erp-table-wrap]:overflow-visible">
-                  <Table className="min-w-[980px] min-[1500px]:min-w-[920px] [&_th]:h-7 [&_th]:px-1.5 [&_td]:px-1.5 [&_td]:py-0.5">
+                <div className="flex flex-col min-h-0 flex-1">
+                  <div className="min-h-0 flex-1 overflow-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:h-2.5 [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-track]:bg-muted/50 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-primary/40 hover:[&::-webkit-scrollbar-thumb]:bg-primary/60 [&_.erp-table-wrap]:max-h-none [&_.erp-table-wrap]:overflow-visible">
+                    <Table className="min-w-[980px] min-[1500px]:min-w-[920px] [&_th]:h-7 [&_th]:px-1.5 [&_td]:px-1.5 [&_td]:py-0.5">
                     <TableHeader className="sticky top-0 z-10 bg-[color-mix(in_oklab,var(--color-primary)_10%,var(--color-card))]">
                       <TableRow>
                         <TableHead className="w-6">
@@ -9265,30 +9266,34 @@ function CtePage() {
                     </TableBody>
                   </Table>
                 </div>
-                {/* Total fixo: tudo na faixa verde, ao lado da barra de rolagem.
-                    Qtde com sua unidade (UN/KG etc.) e Peso sempre em KG. */}
-                <div className="flex shrink-0 items-center justify-between border-t border-primary/20 bg-primary/10 px-3 py-1.5 text-[11px] font-semibold">
-                  <span className="text-[9px] uppercase tracking-wide text-primary/80">
-                    Total — {totBase.length} NF-e(s)
-                  </span>
-                  <div className="ml-auto flex items-center gap-x-6 font-mono text-right">
-                    <div className="flex items-center gap-x-1">
-                      {fmt2(totGrade.qtd)}{" "}
-                      <span className="text-muted-foreground">
-                        {(() => {
-                          const uns = totBase.map((m) => String((m as any).undMed || "UN").toUpperCase());
-                          const unica = new Set(uns);
-                          return unica.size === 1 ? uns[0] : "—";
-                        })()}
-                      </span>
+                {/* Resumo da seleção: fica no rodapé interno do card da grade.
+                    Quando há poucas notas, sobra espaço em branco acima. Quando há
+                    muitas, a tabela faz scroll e este resumo fica fixo embaixo. */}
+                <div className="shrink-0 border-t border-primary/20 bg-primary/10 px-3 py-1.5 text-[11px] font-semibold">
+                  <div className="flex items-center justify-between gap-x-4">
+                    <span className="text-[9px] uppercase tracking-wide text-primary/80">
+                      Total — {totBase.length} NF-e(s) selecionada(s)
+                    </span>
+                    <div className="ml-auto flex items-center gap-x-6 font-mono text-right">
+                      <div className="flex items-center gap-x-1">
+                        {fmt2(totGrade.qtd)}{" "}
+                        <span className="text-muted-foreground">
+                          {(() => {
+                            const uns = totBase.map((m) => String((m as any).undMed || "UN").toUpperCase());
+                            const unica = new Set(uns);
+                            return unica.size === 1 ? uns[0] : "—";
+                          })()}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-x-1">
+                        {fmt3(totGrade.peso)}{" "}
+                        <span className="text-muted-foreground">KG</span>
+                      </div>
+                      <span className="font-semibold">{brl(totGrade.doc)}</span>
                     </div>
-                    <div className="flex items-center gap-x-1">
-                      {fmt3(totGrade.peso)}{" "}
-                      <span className="text-muted-foreground">KG</span>
-                    </div>
-                    <span className="font-semibold">{brl(totGrade.doc)}</span>
                   </div>
                 </div>
+              </div>
               </Card>
 
               {/* Tributação (fundida nesta aba) */}
