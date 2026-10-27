@@ -13,13 +13,13 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
-## [1.2.13] - 2026-10-27
+## [1.2.14] - 2026-10-27
 
 ### Alterado
 
-- **CT-e — totais na faixa verde**: Qtde, Peso e Valor doc. ficam todos na mesma faixa verde do rodapé, com a unidade ao lado de cada valor (Qtde com UN/KG etc. da nota, Peso sempre em KG).
+- **CT-e — grade sempre com espaço abaixo**: o card da grade agora ocupa sempre o espaço disponível (`min-h-0 flex-1`), independente de ter 1, 2, 3 ou mais notas selecionadas. Assim fica sempre com espaço em branco abaixo e os Impostos não colam na caixa de cima.
 
-## [1.2.12] - 2026-10-27
+## [1.2.13] - 2026-10-27
 
 ### Corrigido
 

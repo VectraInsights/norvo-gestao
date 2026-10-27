@@ -6856,3 +6856,5 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
 - **Impostos abaixo da grade em todas as telas (27/10, v1.2.12)** - o painel de Tributação/Carga voltou para abaixo da grade de Mercadorias Transportadas, empilhado, em vez de ficar em coluna ao lado em telas >= 1500px. Com isso a grade ganha mais altura quando há poucas notas selecionadas.
 
 - **Totais do CT-e na faixa verde com unidades corretas (27/10, v1.2.13)** - Qtde, Peso e Valor doc. ficam todos na mesma faixa verde do rodapé da grade, com a unidade ao lado de cada valor (Qtde com UN/KG etc. da nota, Peso sempre em KG). Antes apareciam em uma tabela espelhada separada, com a unidade no lugar errado.
+
+- **Grade do CT-e sempre com espaço abaixo (27/10, v1.2.14)** - o card da grade agora ocupa sempre o espaço disponível (`min-h-0 flex-1`), independente de quantas notas estão selecionadas. Antes, com 1, 2 ou 3 notas, o card encolhia (`shrink-0`) e os Impostos ficavam colados na grade. Agora sempre fica com espaço em branco abaixo e os Impostos no rodapé.
