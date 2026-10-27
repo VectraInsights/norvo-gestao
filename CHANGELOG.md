@@ -13,13 +13,13 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.12] - 2026-10-27
+
+### Alterado
+
+- **CT-e — layout da aba Doc Mercadorias**: o painel de Impostos voltou para abaixo da grade, em todas as telas, em vez de ficar em coluna ao lado em telas >= 1500px. Assim a grade ganha mais altura quando há poucas notas.
+
 ## [1.2.11] - 2026-10-27
-
-### Corrigido
-
-- **CT-e — grade mostra apenas as selecionadas**: desmarcar uma nota faz ela sumir da tela imediatamente. Só as notas marcadas aparecem na grade e somam no total. Quando não há seleção, todas as NF-e da grade aparecem.
-
-## [1.2.10] - 2026-10-27
 
 ### Corrigido
 

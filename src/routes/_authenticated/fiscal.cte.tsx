@@ -9065,11 +9065,10 @@ function CtePage() {
 
             {/* === TAB: Doc Mercadorias === */}
             <TabsContent value="docs" className="mt-2 min-h-0 flex-1 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
-              {/* Em telas largas: grade à esquerda e Impostos em coluna à direita (painel).
-                  Abaixo de 1500px continua empilhado como antes. */}
-              <div className="flex min-h-0 flex-1 flex-col gap-3 min-[1500px]:grid min-[1500px]:grid-cols-[minmax(0,1fr)_320px] min-[1500px]:grid-rows-1 min-[1500px]:items-start min-[1500px]:gap-3">
+              {/* Impostos sempre abaixo da grade, em todas as telas. */}
+              <div className="flex min-h-0 flex-1 flex-col gap-3">
               <Card
-                className={`overflow-hidden flex flex-col min-[1500px]:max-h-full ${
+                className={`overflow-hidden flex flex-col ${
                   mercsGrade.length > 3 ? "min-h-0 flex-1" : "shrink-0"
                 }`}
               >
