@@ -9259,32 +9259,33 @@ function CtePage() {
                     </TableBody>
                   </Table>
                 </div>
-                {/* Total fixo: o <tfoot> com sticky não funciona no Chrome, então a linha
-                    de totais vive fora da área de rolagem — junto com a barra horizontal. */}
-                <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-t border-primary/20 bg-primary/10 px-3 py-1.5 text-[11px] font-semibold">
-                  <span className="text-[9px] uppercase tracking-wide text-primary/80">
-                    Total — {totBase.length} NF-e(s)
-                  </span>
-                  <span className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-0.5">
-                    <span className="text-[10px] font-normal text-muted-foreground">
-                      Qtde{" "}
-                      <b className="ml-1 font-mono text-[11px] text-foreground">
-                        {fmt2(totGrade.qtd)}
-                      </b>
+                {/* Total fixo: tabela espelhada para alinhar coluna a coluna com a grade.
+                    O <tfoot> sticky não funciona no Chrome, então a linha de totais vive
+                    fora da área de rolagem — junto com a barra horizontal. */}
+                <div className="flex shrink-0 flex-col border-t border-primary/20 bg-primary/10 text-[11px] font-semibold">
+                  <div className="flex items-center gap-x-3 px-3 py-1">
+                    <span className="text-[9px] uppercase tracking-wide text-primary/80">
+                      Total — {totBase.length} NF-e(s)
                     </span>
-                    <span className="text-[10px] font-normal text-muted-foreground">
-                      Peso{" "}
-                      <b className="ml-1 font-mono text-[11px] text-foreground">
-                        {fmt3(totGrade.peso)}
-                      </b>
-                    </span>
-                    <span className="text-[10px] font-normal text-muted-foreground">
-                      Valor doc.{" "}
-                      <b className="ml-1 font-mono text-[11px] text-foreground">
-                        {brl(totGrade.doc)}
-                      </b>
-                    </span>
-                  </span>
+                  </div>
+                  <Table className="min-w-[980px] min-[1500px]:min-w-[920px] [&_th]:h-7 [&_th]:px-1.5 [&_td]:px-1.5 [&_td]:py-0.5 [&_td]:border-0 [&_tr]:border-0">
+                    <TableBody>
+                      <TableRow className="text-[11px] font-semibold">
+                        <TableCell colSpan={4} className="px-1.5" />
+                        <TableCell className="text-right font-mono px-1.5 py-0.5">
+                          {fmt2(totGrade.qtd)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono px-1.5 py-0.5">
+                          {fmt3(totGrade.peso)}
+                        </TableCell>
+                        <TableCell colSpan={3} className="px-1.5" />
+                        <TableCell colSpan={2} className="px-1.5" />
+                        <TableCell className="text-right font-mono font-semibold px-1.5 py-0.5">
+                          {brl(totGrade.doc)}
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
                 </div>
               </Card>
 

@@ -13,6 +13,12 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.9] - 2026-10-27
+
+### Alterado
+
+- **CT-e — total da grade**: a barra de totais agora é uma tabela espelhada com as mesmas colunas da grade, alinhando Qtde, Peso e Valor doc. coluna a coluna sob a tabela principal, em vez de valores soltos em sequência.
+
 ## [1.2.8] - 2026-10-26
 
 ### Corrigido
