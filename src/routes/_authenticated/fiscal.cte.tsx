@@ -4779,6 +4779,9 @@ function CtePage() {
 
         const chaves =
           selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map((m) => m.chave);
+        if (selecionadas.size === 0) {
+          throw new Error("Selecione pelo menos uma NF-e na grade antes de emitir o CT-e");
+        }
         // Uma NF-e = um CT-e: barra na hora se a NF-e já foi autorizada ou está em outro rascunho
         const bloq = chavesBloqueadas(chaves, editingRascunhoId);
         if (bloq.length > 0) {
@@ -9268,6 +9271,12 @@ function CtePage() {
                       Total — {totBase.length} NF-e(s)
                     </span>
                   </div>
+                  {/* Und. comum da grade: mostra a unidade quando todas as selecionadas são iguais, senão "—" */}
+                  {(() => {
+                    const uns = totBase.map((m) => String((m as any).undMed || "UN").toUpperCase());
+                    const unica = new Set(uns);
+                    return unica.size === 1 ? uns[0] : "—";
+                  })()}
                   <Table className="min-w-[980px] min-[1500px]:min-w-[920px] [&_th]:h-7 [&_th]:px-1.5 [&_td]:px-1.5 [&_td]:py-0.5 [&_td]:border-0 [&_tr]:border-0">
                     <TableBody>
                       <TableRow className="text-[11px] font-semibold">
@@ -9278,8 +9287,15 @@ function CtePage() {
                         <TableCell className="text-right font-mono px-1.5 py-0.5">
                           {fmt3(totGrade.peso)}
                         </TableCell>
-                        <TableCell colSpan={3} className="px-1.5" />
+                        <TableCell className="text-center font-mono px-1.5 py-0.5 text-muted-foreground">
+                          {(() => {
+                            const uns = totBase.map((m) => String((m as any).undMed || "UN").toUpperCase());
+                            const unica = new Set(uns);
+                            return unica.size === 1 ? uns[0] : "—";
+                          })()}
+                        </TableCell>
                         <TableCell colSpan={2} className="px-1.5" />
+                        <TableCell colSpan={1} className="px-1.5" />
                         <TableCell className="text-right font-mono font-semibold px-1.5 py-0.5">
                           {brl(totGrade.doc)}
                         </TableCell>
