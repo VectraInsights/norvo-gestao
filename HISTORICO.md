@@ -6868,3 +6868,5 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
 - **Grade do CT-e sempre exibe todas as notas (27/10, v1.2.18)** - desmarcar uma nota nao faz ela sumir da tela. A grade exibe sempre todas as NF-e; a selecao controla apenas o que entra no total e no box de Resumo da Selecao. O box mostra apenas a quantidade de notas selecionadas (ex: "4 NF-e(s) selecionada(s)").
 
 - **Grade do CT-e exibe apenas notas selecionadas para o CT-e (27/10, v1.2.19)** - a grade mostra somente as notas escolhidas originalmente para fazer o CT-e; notas do embarque não selecionadas não aparecem. Desmarcar uma nota mantém ela na grade (desmarcada) e apenas retira do total. Two-state: `selecionadas` = notas na grade, `selecionadasAtivas` = notas que somam no total.
+
+- **Fluxo de seleção CT-e / NF Embarque (27/10, v1.2.20)** - "Selecionar Todos" na grade do CT-e seleciona apenas as notas que estão na grade (as originalmente escolhidas para o CT-e), não todas as 33 do embarque. "Deselecionar Todos" tira do total mas mantém as notas na grade. Ao sair do CT-e via ESC/X, todas as notas são deselecionadas no NF Embarque.

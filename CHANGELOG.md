@@ -13,6 +13,12 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.20] - 2026-10-27
+
+### Corrigido
+
+- **CT-e — fluxo de seleção entre embarque e CT-e**: "Selecionar Todos" na grade do CT-e seleciona apenas as notas que estão na grade (as originalmente escolhidas para o CT-e), não todas as 33 do embarque. "Deselecionar Todos" tira do total mas mantém as notas na grade (não apaga a listagem). Ao sair do CT-e via ESC/X, todas as notas são deselecionadas no NF Embarque, não deixando resíduos de seleção.
+
 ## [1.2.19] - 2026-10-27
 
 ### Corrigido

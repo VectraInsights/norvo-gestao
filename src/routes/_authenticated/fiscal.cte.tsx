@@ -2817,8 +2817,11 @@ function CtePage() {
   }, [pendentesDB, open]);
 
   // Fechar o diálogo SEM salvar (ESC/X/Cancelar): restaura a lista de embarque
+  // e deseleciona todas as notas do NF Embarque para não deixar resíduos.
   const fecharDialogo = () => {
     setOpen(false);
+    setSelecionadas(new Set());
+    setSelecionadasAtivas(new Set());
     sincronizarEmbarque();
   };
   // Motoristas (cargo contém Motorista), Veículos e Seguradoras para menus tipo CFOP
@@ -9107,15 +9110,15 @@ function CtePage() {
                           <input
                             type="checkbox"
                             checked={
-                              mercadorias.length > 0 && selecionadas.size === mercadorias.length && selecionadasAtivas.size === mercadorias.length
+                              mercsGrade.length > 0 && selecionadasAtivas.size === mercsGrade.length
                             }
                             onChange={(e) => {
                               if (e.target.checked) {
                                 const red = (form as any).modoEmbarque === "simplificado";
-                                const emits = new Set(mercadorias.map((m) => m.emitCnpj || m.emit));
-                                const dests = new Set(mercadorias.map((m) => m.destCnpj || m.dest));
+                                const emits = new Set(mercsGrade.map((m) => m.emitCnpj || m.emit));
+                                const dests = new Set(mercsGrade.map((m) => m.destCnpj || m.dest));
                                 const tomads = new Set(
-                                  mercadorias.map((m) => m.tomadorCnpj || m.tomador),
+                                  mercsGrade.map((m) => m.tomadorCnpj || m.tomador),
                                 );
                                 if (red && emits.size > 1) {
                                   toast.error("Remetentes diferentes");
@@ -9129,9 +9132,13 @@ function CtePage() {
                                   toast.error("No simplificado, selecione NF-es do mesmo tomador");
                                   return;
                                 }
-                                setSelecionadas(new Set(mercadorias.map((m) => m.chave)));
-                                setSelecionadasAtivas(new Set(mercadorias.map((m) => m.chave)));
-                              } else { setSelecionadas(new Set()); setSelecionadasAtivas(new Set()); }
+                                const todas = new Set(mercsGrade.map((m) => m.chave));
+                                setSelecionadas(todas);
+                                setSelecionadasAtivas(todas);
+                              } else {
+                                // Deselecionar todos: tira do total mas mantem na grade
+                                setSelecionadasAtivas(new Set());
+                              }
                             }}
                           />
                         </TableHead>
