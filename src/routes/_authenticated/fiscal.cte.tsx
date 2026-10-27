@@ -9206,12 +9206,12 @@ function CtePage() {
                           <TableRow
                             key={m.chave}
                             className="text-[11px]"
-                            data-selected={selecionadas.has(m.chave)}
+                            data-selected={selecionadasAtivas.has(m.chave)}
                           >
                             <TableCell>
                               <input
                                 type="checkbox"
-                                checked={selecionadas.has(m.chave)}
+                                checked={selecionadasAtivas.has(m.chave)}
                                 onChange={(e) => {
                                   if (e.target.checked) {
                                     setSelecionadas((prev) => new Set([...prev, m.chave]));

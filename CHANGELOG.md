@@ -13,6 +13,12 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.21] - 2026-10-27
+
+### Corrigido
+
+- **CT-e — checkbox individual permite desmarcar e selecionar novamente**: o `checked` do checkbox individual agora reflete `selecionadasAtivas` (o que está ativo/marcado), não `selecionadas` (o que aparece na grade). Assim, desmarcar uma nota tira ela do total e o checkbox fica realmente desmarcado, permitindo selecioná-la novamente depois. A nota continua visível na grade enquanto estiver em `selecionadas`.
+
 ## [1.2.20] - 2026-10-27
 
 ### Corrigido
