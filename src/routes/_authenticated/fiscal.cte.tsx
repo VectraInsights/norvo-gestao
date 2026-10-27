@@ -674,9 +674,12 @@ function CtePage() {
   // selecionadasAtivas = notas que estao marcadas e somam no total.
   // selecionadas (acima) = notas que estao na grade do CT-e (aparecem na lista).
   // Desmarcar uma nota tira de selecionadasAtivas (para de somar) mas mantem em selecionadas (segue na grade).
-  // Ao carregar, nenhuma nota está ativa (só entra no total se o usuário marcar).
+  // Ao carregar, as notas selecionadas para o CT-e ja estao ativas (marcadas e somando).
   const [selecionadasAtivas, setSelecionadasAtivas] = useState<Set<string>>(
-    () => new Set<string>(),
+    () => {
+      const s = lerSnapshotCte();
+      return Array.isArray(s?.selecionadas) ? new Set(s.selecionadas as string[]) : new Set<string>();
+    },
   );
   const [confRemetente, setConfRemetente] = useState<{ nome: string; chaves: string[] } | null>(
     null,

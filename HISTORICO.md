@@ -6874,3 +6874,5 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
 - **Checkbox individual CT-e permite desmarcar e selecionar novamente (27/10, v1.2.21)** - o checked do checkbox individual agora reflete selecionadasAtivas (o que esta ativo/marcado), nao selecionadas (o que aparece na grade). Assim, desmarcar uma nota tira ela do total e o checkbox fica realmente desmarcado, permitindo seleciona-la novamente depois. A nota continua visível na grade enquanto estiver em selecionadas.
 
 - **Notas CT-e carregam desmarcadas e nada soma por padrão (27/10, v1.2.22)** - selecionadasAtivas começa vazio (nenhuma nota ativa ao carregar). O totBase retorna vazio quando nenhuma nota está ativa, então nada soma no total inicialmente. O usuário escolhe quais notas quer marcar para somar.
+
+- **Notas CT-e carregam selecionadas por padrão e somam no total (27/10, v1.2.23)** - selecionadasAtivas inicia com as mesmas chaves de selecionadas (as notas escolhidas originalmente para o CT-e), então elas aparecem marcadas na grade e ja somam no total ao carregar. Desmarcar uma nota mantem ela na grade, apenas para de somar. Marcar de novo volta a somar.

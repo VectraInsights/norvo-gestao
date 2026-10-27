@@ -13,13 +13,13 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
-## [1.2.22] - 2026-10-27
+## [1.2.23] - 2026-10-27
 
 ### Corrigido
 
-- **CT-e — notas carregam desmarcadas e nada soma por padrão**: `selecionadasAtivas` começa vazio (nenhuma nota ativa ao carregar). O `totBase` retorna vazio quando nenhuma nota está ativa, então nada soma no total inicialmente. O usuário escolhe quais notas quer marcar para somar.
+- **CT-e — notas carregam selecionadas por padrão e somam no total**: `selecionadasAtivas` inicia com as mesmas chaves de `selecionadas` (as notas escolhidas originalmente para o CT-e), então elas aparecem marcadas na grade e já somam no total ao carregar. Desmarcar uma nota mantém ela na grade, apenas para de somar. Marcar de novo volta a somar.
 
-## [1.2.21] - 2026-10-27
+## [1.2.22] - 2026-10-27
 
 ### Corrigido
 
