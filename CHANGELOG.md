@@ -13,13 +13,13 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
-## [1.2.16] - 2026-10-27
+## [1.2.17] - 2026-10-27
 
 ### Alterado
 
-- **CT-e — Resumo da Seleção no espaço branco**: a faixa verde de totais saiu da base da caixa de notas. Agora um box de resumo aparece abaixo da grade, só quando há notas selecionadas, mostrando: NF-e(s) selecionadas de Y na grade, Qtde total com unidade, Peso total em KG, Valor total das notas, e Remetente/Destinatário (quando todos iguais).
+- **CT-e — resumo mostra só as selecionadas**: o texto do box de resumo agora mostra apenas a quantidade de notas selecionadas (ex: "4 NF-e(s) selecionada(s)"), sem o "de X na grade". Assim, se há 33 notas na grade e 4 selecionadas, mostra "4 NF-e(s) selecionada(s)"; se desmarcar uma, mostra "3 NF-e(s) selecionada(s)".
 
-## [1.2.15] - 2026-10-27
+## [1.2.16] - 2026-10-27
 
 ### Alterado
 

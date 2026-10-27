@@ -9275,7 +9275,7 @@ function CtePage() {
                         Resumo da seleção
                       </span>
                       <span className="text-muted-foreground">
-                        {" " + totBase.length + " de " + mercadorias.length + " NF-e(s) na grade "}
+                        {totBase.length} NF-e(s) selecionada(s)
                       </span>
                     </div>
                     <div className="flex flex-wrap items-start gap-x-4 gap-y-1">
