@@ -9266,17 +9266,22 @@ function CtePage() {
                     </TableBody>
                   </Table>
                 </div>
-                {/* Resumo da seleção: fica no rodapé interno do card da grade.
-                    Quando há poucas notas, sobra espaço em branco acima. Quando há
-                    muitas, a tabela faz scroll e este resumo fica fixo embaixo. */}
-                <div className="shrink-0 border-t border-primary/20 bg-primary/10 px-3 py-1.5 text-[11px] font-semibold">
-                  <div className="flex items-center justify-between gap-x-4">
-                    <span className="text-[9px] uppercase tracking-wide text-primary/80">
-                      Total — {totBase.length} NF-e(s) selecionada(s)
-                    </span>
-                    <div className="ml-auto flex items-center gap-x-6 font-mono text-right">
-                      <div className="flex items-center gap-x-1">
-                        {fmt2(totGrade.qtd)}{" "}
+                {/* Resumo da Seleção: box abaixo da grade, só aparece quando há notas selecionadas.
+                    Ocupa o espaço branco quando há poucas notas; com muitas, fica abaixo do scroll. */}
+                {selecionadas.size > 0 && (
+                  <div className="mt-3 border border-primary/20 rounded bg-primary/5 px-3 py-2 text-[10px]">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-semibold text-primary/80 uppercase tracking-wide text-[9px]">
+                        Resumo da seleção
+                      </span>
+                      <span className="text-muted-foreground">
+                        {" " + totBase.length + " de " + mercadorias.length + " NF-e(s) na grade "}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-start gap-x-4 gap-y-1">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-muted-foreground">Qtde total</span>
+                        <span className="font-mono font-semibold">{fmt2(totGrade.qtd)}</span>
                         <span className="text-muted-foreground">
                           {(() => {
                             const uns = totBase.map((m) => String((m as any).undMed || "UN").toUpperCase());
@@ -9285,14 +9290,34 @@ function CtePage() {
                           })()}
                         </span>
                       </div>
-                      <div className="flex items-center gap-x-1">
-                        {fmt3(totGrade.peso)}{" "}
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-muted-foreground">Peso total</span>
+                        <span className="font-mono font-semibold">{fmt3(totGrade.peso)}</span>
                         <span className="text-muted-foreground">KG</span>
                       </div>
-                      <span className="font-semibold">{brl(totGrade.doc)}</span>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-muted-foreground">Valor total</span>
+                        <span className="font-mono font-semibold">{brl(totGrade.doc)}</span>
+                      </div>
                     </div>
+                    {(() => {
+                      const emits = new Set(totBase.map((m) => String((m as any).emitCnpj || m.emit || "").replace(/\D/g, "")));
+                      const dests = new Set(totBase.map((m) => String((m as any).destCnpj || m.dest || "").replace(/\D/g, "")));
+                      if (emits.size === 1 && dests.size === 1) {
+                        const m0 = totBase[0] as any;
+                        return (
+                          <div className="mt-1 pt-1 border-t border-primary/10 flex items-center gap-2 text-[9px]">
+                            <span className="text-muted-foreground">Remetente / Destinatário</span>
+                            <span className="font-mono">{m0.emit}</span>
+                            <span className="text-muted-foreground">/</span>
+                            <span className="font-mono">{m0.dest}</span>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
-                </div>
+                )}
               </div>
               </Card>
 
