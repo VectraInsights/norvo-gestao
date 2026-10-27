@@ -6872,3 +6872,5 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
 - **Fluxo de seleção CT-e / NF Embarque (27/10, v1.2.20)** - "Selecionar Todos" na grade do CT-e seleciona apenas as notas que estão na grade (as originalmente escolhidas para o CT-e), não todas as 33 do embarque. "Deselecionar Todos" tira do total mas mantém as notas na grade. Ao sair do CT-e via ESC/X, todas as notas são deselecionadas no NF Embarque.
 
 - **Checkbox individual CT-e permite desmarcar e selecionar novamente (27/10, v1.2.21)** - o checked do checkbox individual agora reflete selecionadasAtivas (o que esta ativo/marcado), nao selecionadas (o que aparece na grade). Assim, desmarcar uma nota tira ela do total e o checkbox fica realmente desmarcado, permitindo seleciona-la novamente depois. A nota continua visível na grade enquanto estiver em selecionadas.
+
+- **Notas CT-e carregam desmarcadas e nada soma por padrão (27/10, v1.2.22)** - selecionadasAtivas começa vazio (nenhuma nota ativa ao carregar). O totBase retorna vazio quando nenhuma nota está ativa, então nada soma no total inicialmente. O usuário escolhe quais notas quer marcar para somar.

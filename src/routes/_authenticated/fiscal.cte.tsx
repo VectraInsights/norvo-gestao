@@ -674,11 +674,9 @@ function CtePage() {
   // selecionadasAtivas = notas que estao marcadas e somam no total.
   // selecionadas (acima) = notas que estao na grade do CT-e (aparecem na lista).
   // Desmarcar uma nota tira de selecionadasAtivas (para de somar) mas mantem em selecionadas (segue na grade).
+  // Ao carregar, nenhuma nota está ativa (só entra no total se o usuário marcar).
   const [selecionadasAtivas, setSelecionadasAtivas] = useState<Set<string>>(
-    () => {
-      const s = lerSnapshotCte();
-      return Array.isArray(s?.selecionadas) ? new Set(s.selecionadas as string[]) : new Set<string>();
-    },
+    () => new Set<string>(),
   );
   const [confRemetente, setConfRemetente] = useState<{ nome: string; chaves: string[] } | null>(
     null,
@@ -6146,7 +6144,8 @@ function CtePage() {
       return String(a.nNF || "").localeCompare(String(b.nNF || ""), "pt-BR", { numeric: true });
     });
   // A soma do total usa apenas as notas ativas (selecionadas e ainda marcadas).
-  const totBase = selecionadasAtivas.size > 0 ? mercadorias.filter((m) => selecionadasAtivas.has(m.chave)) : mercsGrade;
+  // Se nenhuma estiver ativa, nada soma (totBase vazio).
+  const totBase = selecionadasAtivas.size > 0 ? mercadorias.filter((m) => selecionadasAtivas.has(m.chave)) : [];
   const totGrade = totBase.reduce(
     (acc, m) => ({
       qtd:

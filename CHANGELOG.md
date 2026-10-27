@@ -13,6 +13,12 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.22] - 2026-10-27
+
+### Corrigido
+
+- **CT-e — notas carregam desmarcadas e nada soma por padrão**: `selecionadasAtivas` começa vazio (nenhuma nota ativa ao carregar). O `totBase` retorna vazio quando nenhuma nota está ativa, então nada soma no total inicialmente. O usuário escolhe quais notas quer marcar para somar.
+
 ## [1.2.21] - 2026-10-27
 
 ### Corrigido
