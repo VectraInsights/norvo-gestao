@@ -13,6 +13,12 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.25] - 2026-10-27
+
+### Corrigido
+
+- **Notas vêm marcadas por padrão ao gerar CT-e**: o snapshot da tela de NF Embarque agora grava `selecionadas` junto com `chaves` antes de abrir o CT-e, então as notas escolhidas aparecem já marcadas na grade e somam no total ao carregar.
+
 ## [1.2.24] - 2026-10-27
 
 ### Corrigido
