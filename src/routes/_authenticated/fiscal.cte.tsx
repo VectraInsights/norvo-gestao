@@ -7059,6 +7059,7 @@ function CtePage() {
                                     }
                                   }
                                 setSelecionadas(new Set(mercadoriasSorted.map((m) => m.chave)));
+                                setSelecionadasAtivas(new Set(mercadoriasSorted.map((m) => m.chave)));
                                 } else { setSelecionadas(new Set()); setSelecionadasAtivas(new Set()); }
                               }}
                             />
@@ -7140,6 +7141,7 @@ function CtePage() {
                                         }
                                         next.add(m.chave);
                                         setSelecionadas(next);
+                                        setSelecionadasAtivas(next);
                                         return;
                                       }
                                       // CT-e Simplificado: várias, só do mesmo remetente + tomador
@@ -7176,6 +7178,7 @@ function CtePage() {
                                       }
                                     } else next.delete(m.chave);
                                     setSelecionadas(next);
+                                    setSelecionadasAtivas(next);
                                   }}
                                 />
                               </TableCell>
@@ -7305,6 +7308,7 @@ function CtePage() {
                           (m) => kE(m) === kE(ref) && kD(m) === kD(ref),
                         );
                         setSelecionadas(new Set(iguais.map((m) => m.chave)));
+                        setSelecionadasAtivas(new Set(iguais.map((m) => m.chave)));
                         toast.success(`${iguais.length} NF-e(s) selecionadas`);
                       }}
                     >

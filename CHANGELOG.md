@@ -13,6 +13,12 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.30] - 2026-10-27
+
+### Corrigido
+
+- **Notas selecionadas na embarque não apareciam no CT-e**: na tela de embarque, marcar um checkbox individual atualizava apenas `selecionadas`, mas o checkbox dentro do diálogo CT-e lê `selecionadasAtivas`, que nunca era preenchido. Agora toda atualização de `selecionadas` na embarque (checkbox individual, "Selecionar Todos", "Mesmo percurso") também atualiza `selecionadasAtivas`, então as notas aparecem marcadas ao abrir o CT-e.
+
 ## [1.2.29] - 2026-10-27
 
 ### Corrigido
