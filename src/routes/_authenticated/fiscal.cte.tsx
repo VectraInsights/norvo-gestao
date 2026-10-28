@@ -7432,6 +7432,20 @@ function CtePage() {
                         }));
                         setViewDoc(null);
                         setAba("geral");
+                        // Grava o snapshot com as notas selecionadas ANTES de abrir
+                        // o dialogo, para que o useEffect de restauracao nao as apague.
+                        try {
+                          localStorage.setItem(
+                            "cte_progress_snapshot",
+                            JSON.stringify({
+                              form,
+                              selecionadas: Array.from(selecionadas),
+                              mercadorias,
+                              editingRascunhoId,
+                              percursoId: null,
+                            }),
+                          );
+                        } catch {}
                         setOpen(true);
                         // Aplica o percurso na hora com dados frescos (recém-cadastrado
                         // pode ainda não estar no cache): não depende do efeito.

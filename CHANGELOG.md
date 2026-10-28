@@ -13,6 +13,12 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.28] - 2026-10-27
+
+### Corrigido
+
+- **Notas selecionadas na embarque não apareciam no CT-e**: ao clicar em "Gerar CT-e" quando todas as notas já tinham percurso, o snapshot não era gravado antes de abrir o diálogo, então o `useEffect` de restauração apagava as seleções. Agora o snapshot com `selecionadas` é gravado antes de abrir o diálogo CT-e.
+
 ## [1.2.27] - 2026-10-27
 
 ### Corrigido

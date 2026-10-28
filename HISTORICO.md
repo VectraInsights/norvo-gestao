@@ -6882,3 +6882,5 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
 - **Notas vem marcadas por padrao ao abrir o CT-e (27/10, v1.2.26)** - useEffect restaura selecionadas e selecionadasAtivas quando o dialogo abre, entao as notas escolhidas aparecem marcadas na grade e somam no total.
 
 - **Selecoes da embarque preservadas ao abrir CT-e (27/10, v1.2.27)** - o useEffect que restaura selecionadas do snapshot agora so restaura se nao houver selecao atual (selecionadas vazio). Antes, ao abrir o dialogo, o snapshot (que podia ter selecionadas: []) sobrescrevia e apagava as notas que o usuario ja havia selecionado na tela de NF Embarque. Agora as selecoes feitas na embarque sao preservadas ao abrir o CT-e.
+
+- **Snapshot gravado antes de abrir CT-e quando todas as notas tem percurso (27/10, v1.2.28)** - ao clicar em "Gerar CT-e" e todas as notas ja tiverem percurso, o codigo fazia setOpen(true) sem gravar o snapshot, entao o useEffect de restauracao lia um snapshot vazio e apagava as selecoes. Agora o snapshot com selecionadas e gravado antes de abrir o dialogo.
