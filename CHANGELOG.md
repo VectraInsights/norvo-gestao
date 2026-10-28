@@ -13,6 +13,12 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.29] - 2026-10-27
+
+### Corrigido
+
+- **Notas não apareciam no CT-e ao abrir da embarque**: o `mercadorias` dentro do diálogo CT-e ficava vazio quando aberto diretamente da tela de embarque (sem rascunho/percurso), então a grade não mostrava nada. Agora o `useEffect` de abertura também repopula `mercadorias` e `form` a partir do snapshot quando o diálogo nasce vazio.
+
 ## [1.2.28] - 2026-10-27
 
 ### Corrigido

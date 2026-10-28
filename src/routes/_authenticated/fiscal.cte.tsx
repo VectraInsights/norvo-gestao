@@ -1946,14 +1946,21 @@ function CtePage() {
   // Quando o diálogo abre (Gerar CT-e / volta do percurso), restaura as seleções do snapshot
   // para que as notas venham marcadas e somando no total. Só restaura se não houver seleção
   // atual (notas já selecionadas na tela de embarque devem ser preservadas).
+  // Também repopula mercadorias e form do snapshot quando o diálogo nasce vazio (abertura
+  // direta da embarque, sem rascunho/percurso).
   useEffect(() => {
     if (!open) return;
     const s = lerSnapshotCte();
+    if (!s) return;
     if (selecionadas.size === 0 && Array.isArray(s?.selecionadas)) {
       setSelecionadas(new Set(s.selecionadas as string[]));
       setSelecionadasAtivas(new Set(s.selecionadas as string[]));
     }
-  }, [open, selecionadas]);
+    if (Array.isArray(s?.mercadorias) && mercadorias.length === 0) {
+      setMercadorias(s.mercadorias as any);
+    }
+    if (s?.form) setForm((f) => ({ ...emptyForm, ...s.form }));
+  }, [open, selecionadas, mercadorias.length]);
   const emptyForm = {
     toma: "3",
     ieDestinatario: "",
