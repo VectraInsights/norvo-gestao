@@ -6880,3 +6880,5 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
 - **Snapshot do embarque inclui selecionadas para o CT-e (27/10, v1.2.24)** - ao gerar o CT-e da tela de NF Embarque, o snapshot grava as chaves selecionadas em `selecionadas` (além de `chaves`). Assim, ao abrir o CT-e, as notas originalmente escolhidas aparecem marcadas na grade e já somam no total.
 
 - **Notas vem marcadas por padrao ao abrir o CT-e (27/10, v1.2.26)** - useEffect restaura selecionadas e selecionadasAtivas quando o dialogo abre, entao as notas escolhidas aparecem marcadas na grade e somam no total.
+
+- **Selecoes da embarque preservadas ao abrir CT-e (27/10, v1.2.27)** - o useEffect que restaura selecionadas do snapshot agora so restaura se nao houver selecao atual (selecionadas vazio). Antes, ao abrir o dialogo, o snapshot (que podia ter selecionadas: []) sobrescrevia e apagava as notas que o usuario ja havia selecionado na tela de NF Embarque. Agora as selecoes feitas na embarque sao preservadas ao abrir o CT-e.

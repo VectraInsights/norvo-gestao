@@ -13,7 +13,13 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
-## [1.2.25] - 2026-10-27
+## [1.2.27] - 2026-10-27
+
+### Corrigido
+
+- **Notas selecionadas na embarque não eram preservadas ao abrir CT-e**: o `useEffect` que restaura seleções do snapshot agora só restaura se não houver seleção atual, evitando apagar as notas que o usuário selecionou na tela de NF Embarque antes de gerar o CT-e.
+
+## [1.2.26] - 2026-10-27
 
 ### Corrigido
 
