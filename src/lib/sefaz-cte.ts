@@ -159,9 +159,10 @@ export function formUfsDoXml(xml: string, form: any): any {
   return f;
 }
 
-// CSOSN do Simples Nacional (CRT 1 e MEI 4): o <ICMS> vira <ICMSSN> com CST 90 + indSN 1
+// Simples Nacional (CRT 1) e MEI (CRT 4): o <ICMS> vira <ICMSSN> com CST 90 + indSN 1.
 // (XSD oficial 4.00: ICMSSN so aceita CST=90 e indSN=1; nao existe CSOSN no CT-e).
-const CSOSN_SN = ["101", "102", "103", "201", "202", "203", "300", "400", "500", "900"];
+// O CST do percurso e de regime normal e nao se aplica ao Simples — por isso nao ha
+// validacao de CSOSN aqui (ela era redundante e bloqueava a emissao).
 
 // RTC fase 2 (atrás de flag por empresa em input.rtc.fase2).
 export function rtcFase2(input: unknown): boolean {

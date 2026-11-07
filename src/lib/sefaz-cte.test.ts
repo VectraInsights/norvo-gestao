@@ -293,11 +293,27 @@ describe("<ICMSSN> no Simples Nacional (CRT 1/4)", () => {
     }
   });
 
-  it("CRT 1 sem CSOSN lança erro claro (não gera XML inválido)", () => {
-    expect(() => buildNormal({
+  it("CRT 1 ignora CST de regime normal e emite ICMSSN (sem exigir CSOSN)", () => {
+    // O CST do percurso (ex: 00) é de regime normal e não se aplica ao Simples:
+    // o CT-e usa <ICMSSN> com CST 90. A antiga validação de CSOSN era redundante
+    // e travava a emissão no Simples/MEI (commit fb2e2dd).
+    const xml = buildNormal({
       emit: { ...(baseCte().emit as any), crt: "1" },
       icms: { CST: "00", vBC: 4404, pICMS: 0, vICMS: 0 },
-    })).toThrow(/CSOSN/);
+    });
+
+    expect(xml).toContain("<ICMSSN><CST>90</CST><indSN>1</indSN></ICMSSN>");
+    expect(xml).not.toContain("<ICMS00>");
+  });
+
+  it("CRT 4 (MEI) também emite ICMSSN com CST 90", () => {
+    const xml = buildNormal({
+      emit: { ...(baseCte().emit as any), crt: "4" },
+      icms: { CST: "00", vBC: 4404, pICMS: 0, vICMS: 0 },
+    });
+
+    expect(xml).toContain("<ICMSSN><CST>90</CST><indSN>1</indSN></ICMSSN>");
+    expect(xml).not.toContain("<ICMS00>");
   });
 
   it("CRT 3 mantém <ICMS00> (sem regressão)", () => {

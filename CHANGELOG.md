@@ -13,6 +13,18 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.31] - 2026-11-07
+
+### Corrigido
+
+- **Versão exibida**: `src/lib/versao.ts` estava em `1.2.24` enquanto o histórico já tinha publicado a 1.2.30 — a versão mostrada ao lado da busca não refletia o deploy. Alinhada para `1.2.31`.
+- **Testes**: o teste "CRT 1 sem CSOSN lança erro claro" falhava desde o commit `fb2e2dd` (remoção da validação de CSOSN, que travava a emissão do CT-e no Simples/MEI). Substituído por testes que cobrem o comportamento atual: `<ICMSSN>` com CST 90 em CRT 1 e CRT 4.
+- **Documentação**: `HISTORICO.md` tinha 31 linhas corrompidas por 24 commits que gravaram acentos em codificação errada (o byte original virava `EF BF BD`, ou seja, o caractere era perdido de verdade). 10 linhas foram restauradas byte-exatas do histórico git e as outras 21 reconstruídas pelo contexto e confirmadas no código-fonte do mesmo commit.
+
+### Removido
+
+- **CT-e**: lista `CSOSN_SN` sem uso no gerador de XML (a validação correspondente foi removida em `fb2e2dd`).
+
 ## [1.2.30] - 2026-10-27
 
 ### Corrigido

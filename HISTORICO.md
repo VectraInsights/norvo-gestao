@@ -94,7 +94,7 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
     Hobby bloqueia deploys de commits cujo email não está associado à conta GitHub.
 13. **Incidente de env vars na Vercel** — ao tirar o `.env` do repo, o site quebrou em produção
     ("Algo saiu do trilho"): as chaves públicas só existiam no arquivo versionado. Corrigido
-    cadastrando as 6 vars no dashboard da Vercel. Lição: TODA env var que o app l�� deve existir
+    cadastrando as 6 vars no dashboard da Vercel. Lição: TODA env var que o app lê deve existir
     no painel da Vercel; `.env` local serve só para desenvolvimento.
 14. **"Confirm email" verificado DESATIVADO** — `mailer_autoconfirm: true` confirmado via
     Management API (22/08/2026); AGENTS.md dizia o contrário e foi corrigido.
@@ -176,7 +176,7 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
       editável; gera ordem de compra rascunho (fornecedor obrigatório, conta/depósito/
       previsão opcionais). Receber a OC segue gerando entrada + conta a pagar.
     - `/estoque/relatorios`: valor em estoque, consumo 12m valorado ao CUSTO PADRÃO (o
-      trigger de venda grava PREÇO de venda em custo_unitario — n��o usar), giro anual,
+      trigger de venda grava PREÇO de venda em custo_unitario — não usar), giro anual,
       curva ABC 80/95 e itens parados (janela 60/90/180d). Tudo calculado no front.
     - Movimentações: dialog "Transferir" via RPC + coluna Depósito; opção "transferencia"
       removida do form simples (era inerte — trigger dá delta 0).
@@ -246,7 +246,7 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
     - Migração aplicada localmente via pooler (`scripts/apply-migration.cjs`, usa env
       DATABASE_URL); teste da automação/trigger rodou em transação revertida.
 
-## Registro de manutenção ��� 24/08/2026 (tarde): adiantamentos e extrato
+## Registro de manutenção — 24/08/2026 (tarde): adiantamentos e extrato
 
 - **Geração imediata**: ao cadastrar adiantamento recorrente, a 1ª conta a pagar nasce na
   hora (UI chama a função de geração; `GRANT EXECUTE` para authenticated na migration
@@ -759,7 +759,7 @@ Mudanças no código (commits `df2d23b` cf / `fb0dff8` vercel):
 ## CT-e: correção ordem toma + logging detalhado SEFAZ - 03/09/2026
 
 Analisando o XSD do CTeSimp (`cteTiposBasico_v4.00.xsd`), o `<toma>` tem ordem estrita:
-`toma → indIEToma → CNPJ/CPF → IE(opt) → xNome ��� enderToma → fone(opt) → email(opt)`
+`toma → indIEToma → CNPJ/CPF → IE(opt) → xNome → enderToma → fone(opt) → email(opt)`
 
 O XML rejeitado tinha `<fone>` ANTES de `<enderToma>` — violação de schema (cStat 225).
 
@@ -1005,7 +1005,7 @@ Abas na ordem Eagle: **Geral, Tributação, Carga, Veículos, Status, Observaç�
   Data Declaração, Situação (somente leitura, pós-transmissão).
 - **Observações**: 3 campos vinculados ao form (Gerais, Anulação/Substituição, Globalizado).
 - Novos campos persistem no rascunho (JSON do form); transmissão SEFAZ inalterada
-  (CTeSimp MG: Normal/Rodoviário — demais op��ões ficam salvas no rascunho).
+  (CTeSimp MG: Normal/Rodoviário — demais opções ficam salvas no rascunho).
 
 Commits: CF `d6cb74b` + Vercel `e75e0bf`
 
@@ -1166,7 +1166,7 @@ Commits: CF `a597ac9` + Vercel `0de9ce3`
 ## CT-e: trava silenciosa + toast fantasma (08/09/2026)
 
 - 900011 autorizado mas com toast de erro e sem linha de rejeitado: 2º clique
-  concorrente ca��a no else e mostrava "Rejeitado" sem ter rejeição real.
+  concorrente caía no else e mostrava "Rejeitado" sem ter rejeição real.
 - Fix: trava retorna `{ignored:true}` e onSuccess ignora em silêncio (sem toast).
 
 Commits: CF `4c42487` + Vercel `aeb82d3`
@@ -1266,7 +1266,7 @@ Commits: CF `306e41e`/`704ae0b`/`e385e7d` + Vercel `35f81a2`/`553b1f7`/`f85081c`
 ## CT-e: abas fundidas + Transporte (08/09/2026)
 
 - Tributação e Carga fundidas em **Tributação e Carga** após Veículos; aba
-  Veículos renomeada **Transporte**. Ordem: Geral, Veículos���Transporte,
+  Veículos renomeada **Transporte**. Ordem: Geral, Veículos→Transporte,
   Tributação e Carga, Status, Observações.
 
 Commits: CF `59f2cd0`/`8188bf2` + Vercel `633f32d`/`272145e`
@@ -1421,21 +1421,21 @@ Commits CF `4b9e2aa..437fb22` + Vercel espelhos + Worker redeployado a cada muda
 
 ## Assistente AI no Worker, fora da Vercel (14/09/2026)
 
-- `/api/ai/chat` atendido so onde ha binding AI (Worker): sem binding, 404 direto em vez de 500 � a Vercel nao queima mais function num caminho morto. SEFAZ (`/api/sefaz`, `/api/sefaz-cron`) intocada.
+- `/api/ai/chat` atendido so onde ha binding AI (Worker): sem binding, 404 direto em vez de 500 — a Vercel nao queima mais function num caminho morto. SEFAZ (`/api/sefaz`, `/api/sefaz-cron`) intocada.
 - Front chama via `VITE_AI_URL` (absoluto; vazio = mesma origem no Worker); CORS restrito (vercel.app, workers.dev, localhost) + preflight OPTIONS.
 - `wrangler.jsonc`: `"bindings"` nao e campo valido (wrangler ignorava com warning) ? `"ai": {"binding": "AI"}`; binding `env.AI` ativo no deploy.
-- Handler lia `response.response.tool_calls` (formato OpenAI) e quebrava: Workers AI/llama retorna `{ response, tool_calls: [{ name, arguments }] }` no topo � parse refeito nos dois formatos + eco do turno no estilo da doc. Chat testado de ponta a ponta no Worker.
+- Handler lia `response.response.tool_calls` (formato OpenAI) e quebrava: Workers AI/llama retorna `{ response, tool_calls: [{ name, arguments }] }` no topo — parse refeito nos dois formatos + eco do turno no estilo da doc. Chat testado de ponta a ponta no Worker.
 - Env do Worker chega via `globalThis.__env__` (o entry nitro chama o handler so com `request`).
-- MDF-e auditado: o proxy `/api/sefaz` nunca importou `sefaz-mdf-server`; so a pagina `/fiscal/mdf` usa (serverFn sob demanda) � nada a cortar sem perder funcao.
+- MDF-e auditado: o proxy `/api/sefaz` nunca importou `sefaz-mdf-server`; so a pagina `/fiscal/mdf` usa (serverFn sob demanda) — nada a cortar sem perder funcao.
 - `routeTree.gen.ts` regenerado no build (faltava `/fiscal/percursos` no manifesto commitado).
 
-PENDENTE (dashboard Vercel): criar env `VITE_AI_URL=https://norvo-gestao-cf.sptn201169.workers.dev` + Redeploy � sem ela o chat no site principal responde "disponivel apenas no Worker".
+PENDENTE (dashboard Vercel): criar env `VITE_AI_URL=https://norvo-gestao-cf.sptn201169.workers.dev` + Redeploy — sem ela o chat no site principal responde "disponivel apenas no Worker".
 ---
 
 ## URL canonica = Worker; Vercel vira so API SEFAZ (14/09/2026)
 
 - `src/server.ts`: na Vercel (host `*.vercel.app`), tudo que nao for `/api/sefaz*` redireciona 308 para o Worker (preserva metodo/corpo). `/api/sefaz` e `/api/sefaz-cron` seguem normais; `/api/ai/chat` antigo passa a cair no Worker em vez de 404.
-- MDF-e validado antes: emite/consulta/encerra via proxy `/api/sefaz`, funciona servido pelo Worker � redirect nao quebra nada fiscal.
+- MDF-e validado antes: emite/consulta/encerra via proxy `/api/sefaz`, funciona servido pelo Worker — redirect nao quebra nada fiscal.
 - PENDENTE: repointar o exe Electron (desktop carrega a URL da Vercel; redirect leva ao Worker sozinho, mas o ideal e apontar direto).
 Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885`.
 ---
@@ -1478,7 +1478,7 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 
 ## Botao importar sem amarelo chapado (14/09/2026)
 
-- Labels de importacao (CT-e e veiculos) com `bg-amber-100` fixo migrados p/ tokens `accent` do tema � acompanham claro/escuro sem gritar.
+- Labels de importacao (CT-e e veiculos) com `bg-amber-100` fixo migrados p/ tokens `accent` do tema — acompanham claro/escuro sem gritar.
 ---
 
 ## HTML sem cache (14/09/2026)
@@ -1640,7 +1640,7 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 
 ## DACTE emitente: dois-pontos + valores a esquerda (15/09/2026)
 
-- Rotulo `Endere�o :`; coluna de valores 17->14mm (bairro nao encosta mais no CEP); CNPJ alinhado junto.
+- Rotulo `Endereço :`; coluna de valores 17->14mm (bairro nao encosta mais no CEP); CNPJ alinhado junto.
 ---
 
 ## Tabela CT-e: titulos centralizados (15/09/2026)
@@ -1762,7 +1762,7 @@ eed(17)) p/ canhoto encostar no rodape; tomador RUA, NUMERO - BAIRRO - CIDADE / 
 
 - DACTE: divisorias do canhoto e trecho Servico/Receber em linha continua (grade segue tracejada).
 
-- DACTE canhoto: Nome/RG no topo (espaco p/ escrita), Assinatura embaixo, Inicio em cima/T�rmino embaixo a esquerda.
+- DACTE canhoto: Nome/RG no topo (espaco p/ escrita), Assinatura embaixo, Inicio em cima/Término embaixo a esquerda.
 
 - DACTE modal: verticais entre RNTRC/CIOT/Data/Legislacao; 5 colunas do conjunto (tipo/placa/renavam/uf/rntrc) com verticais.
 
@@ -1779,7 +1779,7 @@ ntrc_lista (match CNPJ emissora); emissao bloqueada sem RNTRC (nunca ISENTO).
 
 - CTE pedagio: operadora em dropdown (8 pre-cadastradas); novos campos CNPJ Resp, Identificador VPO, Data Operacao, Saldo Cartao; CNPJ resp cai no DACTE.
 
-- Frota: coluna eiculos.tag_pedagio (migration 20260916120000); campo TAG no cadastro; CTE preenche N� TAG ao escolher a tracao.
+- Frota: coluna veiculos.tag_pedagio (migration 20260916120000); campo TAG no cadastro; CTE preenche Nº TAG ao escolher a tracao.
 
 - Vale-pedagio (Lei 10.209/Res 6.024/NT 2025.001): CNPJ resp + IDVPO obrigatorios; comprovante = IDVPO; coluna eiculos.tag_pedagio aplicada no banco.
 
@@ -1812,7 +1812,7 @@ ntrc_lista (match CNPJ emissora); emissao bloqueada sem RNTRC (nunca ISENTO).
 - DACTE visor: zoom via parametro nativo do leitor (CSS nao afeta plugin).
 - Usuarios: nome editavel no Minha conta (todos) e na tela de usuarios (admin, incl. dono).
 - Minha conta renomeado para Dados da conta (nome + senha).
-- Sidebar: mostra nome do usuario; menu fixo na viewport com rodape preso (s� o conteudo rola).
+- Sidebar: mostra nome do usuario; menu fixo na viewport com rodape preso (só o conteudo rola).
 - Homologacao: tomador SEM VALOR FISCAL com espaco (comparacoes toleram docs antigos).
 - CTe: pagina em 5 abas (embarque, aguardando envio, autorizados, rejeitados, cancelados).
 - Redespacho habilitado: selecao por remetente, tpServ 2 no XML, modo no form/rascunho.
@@ -2862,7 +2862,7 @@ Espelhado na Vercel.
   quando o proprietario e a propria empresa, usa o CNPJ
   dela; terceiro segue vazio. Espelhado.
 
-## CNPJ/CPF do proprietário + endere��o do emitente (25/09/2026)- Veículos: nova coluna `proprietario_doc` (migration
+## CNPJ/CPF do proprietário + endereço do emitente (25/09/2026)- Veículos: nova coluna `proprietario_doc` (migration
   `20260925120000`; CNPJ 14 ou CPF 11 dígitos, opcional) com campo no
   cadastro, coluna na tabela e busca; dialog de cadastro em tela cheia.
 - DAMDFE usa o doc cadastrado na coluna DOC PROPRIETÁRIO (tração e
@@ -2975,7 +2975,7 @@ Espelhado na Vercel.
   `inset-auto` + centro via translate, 320px, altura automática.
 - Espelhado na Vercel via push em main.
 
-## Respons��veis, consulta MDF-e e transbordo (25/09/2026)
+## Responsáveis, consulta MDF-e e transbordo (25/09/2026)
 
 - Novas colunas `responsavel_emissao` (CT-e/MDF-e) e
   `responsavel_encerramento` (MDF-e) — migration `20260925130000`;
@@ -3034,7 +3034,7 @@ Espelhado na Vercel.
 
 - 647: `infMDFeTransp` só vale p/ modal aquaviário (modal 3). No
   rodoviário, o transbordo sai como MDF-e normal com os CT-es do
-  manifesto origem (sele��ão por manifesto mantida como localizador).
+  manifesto origem (seleção por manifesto mantida como localizador).
 - Reenvio de transbordo marca os CT-es automaticamente (uma vez;
   desmarcar é respeitado); duplicadas entre dropdowns eliminadas.
 - Espelhado na Vercel via push em main.
@@ -5824,7 +5824,7 @@ pm run build OK.
 
 - Conciliar em lote suprime os toasts individuais (flag silent) e mostra um unico toast com a quantidade conciliada + outro com a de falhas, se houver. Conciliar individual segue com seu toast.
 
-## Conciliacao: pesquisa reflete nos cabe�alhos (13/10)
+## Conciliacao: pesquisa reflete nos cabeçalhos (13/10)
 
 - Filtro de busca separado do filtro de tipo (porBusca): Todos/Recebimentos/Pagamentos passam a mostrar a quantidade pesquisada; chip Exibindo N de M removido.
 
@@ -5837,9 +5837,9 @@ pm run build OK.
 
 - Memos iguais que so mudam o dia (09/09 x 16/09) nao casavam nem no exato nem no substring; nova assinatura normalizada (fora datas e numeros) agrupa e puxa cliente/categoria/centro. Validado em node.
 
-## Combobox com X para limpar + concilia��o liberada (13/10)
+## Combobox com X para limpar + conciliação liberada (13/10)
 
-- Combobox ganha prop allowClear (X no lugar da seta quando h� sele��o, com teclado e sem abrir o dropdown); ativado em categoria, cliente/fornecedor e centro de custo do Novo lan�amento (vale p/ preenchidos pela mem�ria). Demais usos inalterados.
+- Combobox ganha prop allowClear (X no lugar da seta quando há seleção, com teclado e sem abrir o dropdown); ativado em categoria, cliente/fornecedor e centro de custo do Novo lançamento (vale p/ preenchidos pela memória). Demais usos inalterados.
 
 ## Novo contato puxa texto digitado (13/10)
 
@@ -5867,7 +5867,7 @@ pm run build OK.
 
 ## Conta sem nome duplicado no pagar/receber (13/10)
 
-- Bradesco � Bradesco vira Bradesco: rotulo mostra so o nome quando banco vazio ou igual (novo e editar, vale p/ pagar e receber).
+- Bradesco — Bradesco vira Bradesco: rotulo mostra so o nome quando banco vazio ou igual (novo e editar, vale p/ pagar e receber).
 
 ## Buscar lancamentos: sem corte de 200 + relevancia (13/10)
 
@@ -5898,7 +5898,7 @@ pm run build OK.
 
 ## Movimentacoes estilo Conta Azul (14/10)
 
-- Aba Movimentacoes vira cartoes por dia (data + dia da semana, total e chevron) com tabela Lan�ado no sistema x Movimentado no banco: descricao+categoria, valores coloridos, selo Conciliada/Pendente, Acoes > Conciliar e rodape Totais do dia (sistema, banco, diferenca).
+- Aba Movimentacoes vira cartoes por dia (data + dia da semana, total e chevron) com tabela Lançado no sistema x Movimentado no banco: descricao+categoria, valores coloridos, selo Conciliada/Pendente, Acoes > Conciliar e rodape Totais do dia (sistema, banco, diferenca).
 - Dia passa a incluir linhas so-banco sem vinculo; pendencia do dia = lancamento em aberto ou OFX nao conciliado.
 
 ## Movimentacoes so com descricao do sistema (14/10)
@@ -5933,7 +5933,7 @@ pm run build OK.
 
 ## Importacao de planilha sem duplicate key (14/10)
 
-- duplicate key uq_categorias: planilha 'Prestacao' nao achava banco 'Presta��o' (comparacao so minusculas x unicidade sem acento) e o insert estourava. Nomes agora normalizados (sem acento/caixa/espaco duplo) em categorias e contatos; se ainda colidir (23505), recarrega e segue sem abortar.
+- duplicate key uq_categorias: planilha 'Prestacao' nao achava banco 'Prestação' (comparacao so minusculas x unicidade sem acento) e o insert estourava. Nomes agora normalizados (sem acento/caixa/espaco duplo) em categorias e contatos; se ainda colidir (23505), recarrega e segue sem abortar.
 
 ## Importacao aceita .xlsm (14/10)
 
@@ -5959,7 +5959,7 @@ pm run build OK.
 
 - Conciliacoes pendentes e total pendente seguem o mes selecionado (setembro nao vaza em outubro); Buscar lancamento trava a janela padrao no mes do extrato.
 - Conciliar com varios so com soma EXATA do banco (botao bloqueado + aviso + trava na mutacao).
-- Voltar p/ aberto ou cancelar desvincilia o extrato (igual a exclusao); reparo unico desfaz vinculos orfaos j� existentes.
+- Voltar p/ aberto ou cancelar desvincilia o extrato (igual a exclusao); reparo unico desfaz vinculos orfaos já existentes.
 
 ## Buscar com botao de periodo padrao (14/10)
 
@@ -5967,12 +5967,12 @@ pm run build OK.
 
 ## Cliente por CNPJ + setas no Buscar (14/10)
 
-- Combobox de Cliente/Fornecedor busca tambem pelo CNPJ/CPF (com ou sem mascara) e mostra o documento abaixo do nome: novo/editar lancamento (pagar+receber) e concilia��o.
+- Combobox de Cliente/Fornecedor busca tambem pelo CNPJ/CPF (com ou sem mascara) e mostra o documento abaixo do nome: novo/editar lancamento (pagar+receber) e conciliação.
 - PeriodoFilter ganha prop preset: Buscar lancamento abre com setas de navegacao ativas, igual ao pagar/receber.
 
 ## Obrigatorios do lancamento (14/10)
 
-- Emissao vira Compet�ncia (obrigatoria); obrigatorios passam a descricao, valor, compet�ncia, cliente/fornecedor e categoria (novo e editar, pagar+receber). Vencimento deixa de ser obrigatorio (vazio assume a compet�ncia).
+- Emissao vira Competência (obrigatoria); obrigatorios passam a descricao, valor, competência, cliente/fornecedor e categoria (novo e editar, pagar+receber). Vencimento deixa de ser obrigatorio (vazio assume a competência).
 
 ## CNPJ com zero na importacao (14/10)
 
@@ -5980,7 +5980,7 @@ pm run build OK.
 
 ## Delete geral + CNPJ em fundo + ordenacao (14/10)
 
-- Delete abre/executa a exclusao em: pagar/receber (lote), clientes (lote), cadastros fiscais (lote), MDF-e (rascunhos) e concilia��o do extrato; ignora digitacao e dialogos abertos.
+- Delete abre/executa a exclusao em: pagar/receber (lote), clientes (lote), cadastros fiscais (lote), MDF-e (rascunhos) e conciliação do extrato; ignora digitacao e dialogos abertos.
 - Importacao completa contatos novos via CNPJ no fundo (razao/email/tel/endereco, sem trocar o nome da planilha).
 - Clientes e fornecedores com NOME/TIPO/DOCUMENTO/CONTATO clicaveis p/ ordenar.
 
@@ -6099,7 +6099,7 @@ pm run build OK.
   sem coluna Tipo, form sem ambos). Chaves de cache separadas por tela
   (contatos-clientes, fornecedores, contatos-fiscal) p/ nunca misturar.
 - Dedupe de documento segue global (evita conflito e protege o lookup do CT-e);
-  leituras do CT-e seguem sem filtro de tipo (tomador pode ser cliente � se
+  leituras do CT-e seguem sem filtro de tipo (tomador pode ser cliente — se
   filtrar, a emissao quebra). Ambos nao e mais criavel em nenhuma tela.
 
 ## Exclusao em lote em fornecedores e percursos (15/10)
@@ -6888,3 +6888,5 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
 - **Mercadorias e form repopulados ao abrir CT-e da embarque (27/10, v1.2.29)** - quando o dialogo CT-e abria diretamente da tela de embarque (sem rascunho/percurso), o estado interno `mercadorias` ficava vazio, então a grade não mostrava nenhuma nota e nada aparecia marcado. O useEffect de abertura agora também repopula `mercadorias` e `form` a partir do snapshot quando o diálogo nasce vazio.
 
 - **Selecoes individuais na embarque nao refletiam no CT-e (27/10, v1.2.30)** - na tela de embarque, marcar um checkbox individual atualizava apenas `selecionadas`, mas o checkbox dentro do dialogo CT-e le `selecionadasAtivas`, que nunca era preenchido. Agora toda atualizacao de `selecionadas` na embarque (checkbox individual, "Selecionar Todos", "Mesmo percurso") tambem atualiza `selecionadasAtivas`, então as notas aparecem marcadas ao abrir o CT-e.
+
+- **Manutencao: versao exibida, CHANGELOG, teste do CT-e e encoding do HISTORICO (07/11/2026, v1.2.31)** - a versao em `src/lib/versao.ts` estava em `1.2.24` enquanto o historico ja tinha publicado a 1.2.30 (a versao exibida ao lado da busca nao refletia o deploy): alinhada para `1.2.31`. O teste "CRT 1 sem CSOSN lanca erro claro" falhava desde `fb2e2dd` (que removeu a validacao de CSOSN porque ela bloqueava a emissao do CT-e no Simples/MEI): foi substituido por testes que cobrem o comportamento atual (`<ICMSSN>` com CST 90 em CRT 1 e CRT 4), e a lista `CSOSN_SN`, sem uso desde aquela remocao, saiu do gerador de XML. Alem disso, o `HISTORICO.md` tinha 31 linhas corrompidas por 24 commits que gravaram acentos em codificacao errada (o byte original virava `EF BF BD`, ou seja, o caractere era perdido de verdade): 10 linhas foram restauradas byte-exatas do historico git e as outras 21 reconstruidas pelo contexto e confirmadas no codigo-fonte do mesmo commit (ex.: `doc.text("Endereço :", ...)` no DACTE e o comentario `("Bradesco — Bradesco")` em `financeiro.receber.tsx`).
