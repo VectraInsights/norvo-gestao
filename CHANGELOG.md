@@ -13,6 +13,18 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.32] - 2026-11-09
+
+### Alterado
+
+- **Formatação do repo**: `npx prettier --write .` em 128 arquivos — o repo nunca havia sido formatado (~12.200 erros `prettier/prettier` acumulados). Os 3 blobs que ainda tinham CRLF no git (`HISTORICO.md`, `vite.config.ts`, `configuracoes.index.tsx`) foram normalizados para LF, alinhando-os ao `.gitattributes` (`eol=lf`); `PROJETO.json` (dump local) e `desktop/release` entraram no `.prettierignore`.
+- **Regras do ESLint**: `no-empty` passou a aceitar `catch {}` vazio (`allowEmptyCatch` — os 149 casos são falha silenciosa intencional de melhor esforço); `@typescript-eslint/no-explicit-any` virou `warn` (~1.500 `any` legados do padrão `as never` das tabelas fora do `types.ts` — zerar exige tipagem incremental, não uma varredura cega).
+- **Lint utilizável de novo**: `npm run lint` sai com exit 0 (0 erros, 1.555 avisos) — antes 14.673 problemas escondiam erros reais no ruído. Build, testes e deploy nunca foram afetados (não há CI nem hooks).
+
+### Corrigido
+
+- **Erros de lint sem mudança de comportamento**: escapes redundantes em regex (`crlv`, `sefaz-cte`, `sefaz-mdf`, `frota.veiculos`), ternários usados como expressão viraram `if/else` (`sefaz`, `sefaz-mdf`, `financeiro.contas`, `vendas.clientes`), `do/while (true)` → `for (;;)` em `sefaz.ts`, `require()` redundante removido em `mdf-c14n.ts` (`DOMParser` já importado no topo), tipo `Function` → assinatura concreta em `ai-chat.ts`, e o `catch` que só rethrow no DACTE (`fiscal.cte.tsx`) agora loga antes de propagar — o `try` envolve ~760 linhas de montagem e a falha não deixava rastro.
+
 ## [1.2.31] - 2026-11-07
 
 ### Corrigido
