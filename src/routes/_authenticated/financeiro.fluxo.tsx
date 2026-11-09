@@ -42,7 +42,12 @@ function FluxoCaixa() {
   });
   const { data, isLoading, error } = useQuery({
     enabled: !!empresa,
-    queryKey: ["fluxo", empresa?.id, periodo.from?.getTime() ?? null, periodo.to?.getTime() ?? null] as const,
+    queryKey: [
+      "fluxo",
+      empresa?.id,
+      periodo.from?.getTime() ?? null,
+      periodo.to?.getTime() ?? null,
+    ] as const,
     queryFn: async ({ signal }): Promise<FluxoPoint[]> => {
       const hoje = startOfDay(new Date());
       const ini = periodo.from ?? hoje;
@@ -63,7 +68,12 @@ function FluxoCaixa() {
       const buckets = new Map<string, FluxoPoint>();
       for (let i = 0; i <= dias; i++) {
         const d = addDays(ini, i);
-        buckets.set(format(d, "yyyy-MM-dd"), { data: format(d, "dd/MM"), entradas: 0, saidas: 0, saldo: 0 });
+        buckets.set(format(d, "yyyy-MM-dd"), {
+          data: format(d, "dd/MM"),
+          entradas: 0,
+          saidas: 0,
+          saldo: 0,
+        });
       }
       for (const l of (data ?? []) as LancamentoRow[]) {
         const b = buckets.get(l.data_vencimento);
@@ -94,61 +104,64 @@ function FluxoCaixa() {
       </div>
       {/* KPIs compactos — mesma hierarquia secundária do Dashboard */}
       <div className="grid gap-3 sm:grid-cols-3">
-        {isLoading || !data ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i} className="rounded-2xl shadow-panel">
-              <CardContent className="flex h-[96px] items-center gap-3 p-4">
-                <Skeleton className="h-8 w-8 rounded-lg" />
-                <div className="min-w-0 flex-1">
-                  <Skeleton className="h-3 w-24 rounded-full" />
-                  <Skeleton className="mt-2 h-6 w-28 rounded-lg" />
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          [
-            {
-              label: "Entradas previstas",
-              value: brl(data.reduce((s, p) => s + p.entradas, 0)),
-              icon: ArrowUpRight,
-              tone: "text-success",
-            },
-            {
-              label: "Saídas previstas",
-              value: brl(data.reduce((s, p) => s + p.saidas, 0)),
-              icon: ArrowDownRight,
-              tone: "text-destructive",
-            },
-            {
-              label: "Saldo projetado",
-              value: brl(data.length ? data[data.length - 1].saldo : 0),
-              icon: Wallet,
-              tone: "text-foreground",
-            },
-          ].map((c) => (
-            <Card key={c.label} className="rounded-2xl bg-muted/30 shadow-panel">
-              <CardContent className="flex h-[96px] items-center gap-3 p-4">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-background shadow-sm">
-                  <c.icon className={`h-4 w-4 ${c.tone}`} aria-hidden="true" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-xs text-muted-foreground">{c.label}</span>
-                  <span className="mt-0.5 block truncate text-xl font-semibold leading-tight text-tabular">
-                    {c.value}
+        {isLoading || !data
+          ? Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="rounded-2xl shadow-panel">
+                <CardContent className="flex h-[96px] items-center gap-3 p-4">
+                  <Skeleton className="h-8 w-8 rounded-lg" />
+                  <div className="min-w-0 flex-1">
+                    <Skeleton className="h-3 w-24 rounded-full" />
+                    <Skeleton className="mt-2 h-6 w-28 rounded-lg" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          : [
+              {
+                label: "Entradas previstas",
+                value: brl(data.reduce((s, p) => s + p.entradas, 0)),
+                icon: ArrowUpRight,
+                tone: "text-success",
+              },
+              {
+                label: "Saídas previstas",
+                value: brl(data.reduce((s, p) => s + p.saidas, 0)),
+                icon: ArrowDownRight,
+                tone: "text-destructive",
+              },
+              {
+                label: "Saldo projetado",
+                value: brl(data.length ? data[data.length - 1].saldo : 0),
+                icon: Wallet,
+                tone: "text-foreground",
+              },
+            ].map((c) => (
+              <Card key={c.label} className="rounded-2xl bg-muted/30 shadow-panel">
+                <CardContent className="flex h-[96px] items-center gap-3 p-4">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-background shadow-sm">
+                    <c.icon className={`h-4 w-4 ${c.tone}`} aria-hidden="true" />
                   </span>
-                </span>
-              </CardContent>
-            </Card>
-          ))
-        )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-xs text-muted-foreground">{c.label}</span>
+                    <span className="mt-0.5 block truncate text-xl font-semibold leading-tight text-tabular">
+                      {c.value}
+                    </span>
+                  </span>
+                </CardContent>
+              </Card>
+            ))}
       </div>
       <Card className="mt-4 rounded-2xl shadow-panel">
         <CardContent className="p-4 sm:p-6">
           {error ? (
-            <p className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm leading-relaxed text-destructive">Falha ao carregar fluxo: {(error as Error).message}</p>
+            <p className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm leading-relaxed text-destructive">
+              Falha ao carregar fluxo: {(error as Error).message}
+            </p>
           ) : isLoading || !data ? (
-            <div className="h-80 animate-pulse rounded-2xl bg-muted/30" aria-label="Carregando gráfico" />
+            <div
+              className="h-80 animate-pulse rounded-2xl bg-muted/30"
+              aria-label="Carregando gráfico"
+            />
           ) : (
             <Suspense fallback={<div className="h-80 animate-pulse rounded-2xl bg-muted/30" />}>
               <FluxoChart data={data} />

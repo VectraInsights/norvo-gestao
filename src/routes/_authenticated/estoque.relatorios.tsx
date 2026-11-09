@@ -181,7 +181,14 @@ function RelatoriosEstoque() {
     return analise.abc.filter((r) => {
       if ((r.prod.nome || "").toLowerCase().includes(q)) return true;
       // Pesquisa por valor: "25,00" acha 25.00 (a partir de 2 dígitos)
-      if (qDig.length >= 2 && Number(r.valor || 0).toFixed(2).replace(/\D/g, "").includes(qDig)) return true;
+      if (
+        qDig.length >= 2 &&
+        Number(r.valor || 0)
+          .toFixed(2)
+          .replace(/\D/g, "")
+          .includes(qDig)
+      )
+        return true;
       return false;
     });
   }, [analise, busca]);
@@ -318,7 +325,9 @@ function RelatoriosEstoque() {
               <Card className="overflow-hidden shadow-panel">
                 {!filtradosParados.length ? (
                   <div className="p-6 text-sm text-muted-foreground">
-                    {busca ? "Nada encontrado para a busca." : "Nenhum item parado na janela selecionada."}
+                    {busca
+                      ? "Nada encontrado para a busca."
+                      : "Nenhum item parado na janela selecionada."}
                   </div>
                 ) : (
                   <Table className="[&_td]:px-3 [&_th]:px-3">

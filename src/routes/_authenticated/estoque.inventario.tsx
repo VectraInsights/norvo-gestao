@@ -136,7 +136,13 @@ function Inventario() {
         // Pesquisa por estoque/custo: "25,00" acha 25.00 (a partir de 2 dígitos)
         if (sDig.length >= 2) {
           for (const v of [p.estoque_atual, p.preco_custo]) {
-            if (Number(v || 0).toFixed(2).replace(/\D/g, "").includes(sDig)) return true;
+            if (
+              Number(v || 0)
+                .toFixed(2)
+                .replace(/\D/g, "")
+                .includes(sDig)
+            )
+              return true;
           }
         }
         return false;
@@ -197,7 +203,15 @@ function Inventario() {
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={(v) => setBusca(v)} />
         <div className="w-56">
-          <Combobox value={depositoId} onChange={setDepositoId} options={[{ value: "sem-deposito", label: "Sem depósito" }, ...depositos.map((d) => ({ value: d.id, label: d.nome }))]} emptyText="Nenhum item encontrado." />
+          <Combobox
+            value={depositoId}
+            onChange={setDepositoId}
+            options={[
+              { value: "sem-deposito", label: "Sem depósito" },
+              ...depositos.map((d) => ({ value: d.id, label: d.nome })),
+            ]}
+            emptyText="Nenhum item encontrado."
+          />
         </div>
         <Button
           variant={somenteDiverg ? "default" : "outline"}
@@ -263,14 +277,24 @@ function Inventario() {
                       {num(atual)} {p.unidade ?? ""}
                     </TableCell>
                     <TableCell className="text-right">
-                      <MoneyInput className="ml-auto h-8 w-32" prefix="" decimals={3} value={counts[p.id] ?? ""} onChange={(v) => setCounts((c) => ({ ...c, [p.id]: v }))} />
+                      <MoneyInput
+                        className="ml-auto h-8 w-32"
+                        prefix=""
+                        decimals={3}
+                        value={counts[p.id] ?? ""}
+                        onChange={(v) => setCounts((c) => ({ ...c, [p.id]: v }))}
+                      />
                     </TableCell>
                     <TableCell className="text-right">
                       {div ? (
                         <StatusBadge
                           status={div.diff > 0 ? "entrada" : "saida"}
                           label={`${div.diff > 0 ? "+" : ""}${num(div.diff)}`}
-                          tone={div.diff > 0 ? "bg-success/15 text-success" : "bg-destructive/10 text-destructive"}
+                          tone={
+                            div.diff > 0
+                              ? "bg-success/15 text-success"
+                              : "bg-destructive/10 text-destructive"
+                          }
                         />
                       ) : (
                         <span className="text-muted-foreground">—</span>

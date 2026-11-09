@@ -14,10 +14,19 @@ import { Combobox } from "@/components/erp/combobox";
 import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
 import { RouteErrorState } from "@/components/erp/route-error-state";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Plus, Trash2, GripVertical } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -27,26 +36,40 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { brl, dateBR } from "@/lib/format";
 import {
-  DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor,
-  useDroppable, useSensor, useSensors,
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useDroppable,
+  useSensor,
+  useSensors,
 } from "@dnd-kit/core";
 import { useDraggable } from "@dnd-kit/core";
 
 export const Route = createFileRoute("/_authenticated/vendas/crm")({
   component: CRM,
-  errorComponent: (props) => (
-    <RouteErrorState {...props} title="Erro ao carregar CRM" />
-  ),
+  errorComponent: (props) => <RouteErrorState {...props} title="Erro ao carregar CRM" />,
 });
 
 type Etapa = {
-  id: string; nome: string; ordem: number; cor: string | null;
-  ganho: boolean | null; perdido: boolean | null;
+  id: string;
+  nome: string;
+  ordem: number;
+  cor: string | null;
+  ganho: boolean | null;
+  perdido: boolean | null;
 };
 type Oport = {
-  id: string; titulo: string; descricao: string | null; valor: number;
-  probabilidade: number | null; data_prevista: string | null;
-  etapa_id: string | null; contato_id: string | null; status: string;
+  id: string;
+  titulo: string;
+  descricao: string | null;
+  valor: number;
+  probabilidade: number | null;
+  data_prevista: string | null;
+  etapa_id: string | null;
+  contato_id: string | null;
+  status: string;
   contatos?: { nome: string } | null;
 };
 
@@ -74,8 +97,11 @@ function CRM() {
     staleTime: 5 * 60_000,
     gcTime: 15 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("crm_etapas" as never)
-        .select("id,nome,ordem,cor,ganho,perdido").eq("empresa_id", empresa!.id).order("ordem");
+      const { data, error } = await supabase
+        .from("crm_etapas" as never)
+        .select("id,nome,ordem,cor,ganho,perdido")
+        .eq("empresa_id", empresa!.id)
+        .order("ordem");
       if (error) throw error;
       return (data ?? []) as unknown as Etapa[];
     },
@@ -90,9 +116,14 @@ function CRM() {
       // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
       const todas: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
-        const { data, error } = await supabase.from("crm_oportunidades" as never)
-          .select("id,titulo,descricao,valor,probabilidade,data_prevista,etapa_id,contato_id,status,contatos:clientes(nome)")
-          .eq("empresa_id", empresa!.id).order("ordem").range(ini, ini + 999);
+        const { data, error } = await supabase
+          .from("crm_oportunidades" as never)
+          .select(
+            "id,titulo,descricao,valor,probabilidade,data_prevista,etapa_id,contato_id,status,contatos:clientes(nome)",
+          )
+          .eq("empresa_id", empresa!.id)
+          .order("ordem")
+          .range(ini, ini + 999);
         if (error) throw error;
         todas.push(...((data as unknown[]) ?? []));
         if (!data || (data as unknown[]).length < 1000) break;
@@ -110,8 +141,12 @@ function CRM() {
       // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
       const todos: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
-        const { data } = await supabase.from("clientes").select("id,nome")
-          .eq("empresa_id", empresa!.id).order("nome").range(ini, ini + 999);
+        const { data } = await supabase
+          .from("clientes")
+          .select("id,nome")
+          .eq("empresa_id", empresa!.id)
+          .order("nome")
+          .range(ini, ini + 999);
         todos.push(...((data as unknown[]) ?? []));
         if (!data || (data as unknown[]).length < 1000) break;
       }
@@ -127,7 +162,14 @@ function CRM() {
       if ((o.titulo || "").toLowerCase().includes(q)) return true;
       if ((o.contatos?.nome || "").toLowerCase().includes(q)) return true;
       // Pesquisa por valor: "25,00" acha 25.00 (a partir de 2 dígitos)
-      if (qDig.length >= 2 && Number(o.valor || 0).toFixed(2).replace(/\D/g, "").includes(qDig)) return true;
+      if (
+        qDig.length >= 2 &&
+        Number(o.valor || 0)
+          .toFixed(2)
+          .replace(/\D/g, "")
+          .includes(qDig)
+      )
+        return true;
       return false;
     });
   }, [oports, busca]);
@@ -143,19 +185,32 @@ function CRM() {
     (porEtapa.get(id) ?? []).reduce((s, o) => s + Number(o.valor || 0), 0);
 
   const reset = () => {
-    setEditing(null); setTitulo(""); setDescricao(""); setValor("0");
-    setProb("50"); setDataPrev(""); setContato("none"); setEtapa(etapas[0]?.id ?? "");
+    setEditing(null);
+    setTitulo("");
+    setDescricao("");
+    setValor("0");
+    setProb("50");
+    setDataPrev("");
+    setContato("none");
+    setEtapa(etapas[0]?.id ?? "");
   };
 
   const openNew = (etapaId?: string) => {
-    reset(); if (etapaId) setEtapa(etapaId); else setEtapa(etapas[0]?.id ?? "");
+    reset();
+    if (etapaId) setEtapa(etapaId);
+    else setEtapa(etapas[0]?.id ?? "");
     setOpen(true);
   };
   const openEdit = (o: Oport) => {
-    setEditing(o); setTitulo(o.titulo); setDescricao(o.descricao ?? "");
-    setValor(String(o.valor ?? 0)); setProb(String(o.probabilidade ?? 50));
-    setDataPrev(o.data_prevista ?? ""); setContato(o.contato_id ?? "none");
-    setEtapa(o.etapa_id ?? etapas[0]?.id ?? ""); setOpen(true);
+    setEditing(o);
+    setTitulo(o.titulo);
+    setDescricao(o.descricao ?? "");
+    setValor(String(o.valor ?? 0));
+    setProb(String(o.probabilidade ?? 50));
+    setDataPrev(o.data_prevista ?? "");
+    setContato(o.contato_id ?? "none");
+    setEtapa(o.etapa_id ?? etapas[0]?.id ?? "");
+    setOpen(true);
   };
 
   const salvar = useMutation({
@@ -174,25 +229,33 @@ function CRM() {
         etapa_id: etapa,
       };
       if (editing) {
-        const { error } = await supabase.from("crm_oportunidades" as never)
-          .update(payload as never).eq("id", editing.id);
+        const { error } = await supabase
+          .from("crm_oportunidades" as never)
+          .update(payload as never)
+          .eq("id", editing.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("crm_oportunidades" as never).insert(payload as never);
+        const { error } = await supabase
+          .from("crm_oportunidades" as never)
+          .insert(payload as never);
         if (error) throw error;
       }
     },
     onSuccess: () => {
       toast.success(editing ? "Oportunidade atualizada" : "Oportunidade criada");
       qc.invalidateQueries({ queryKey: ["crm_oportunidades", empresa?.id] });
-      setOpen(false); reset();
+      setOpen(false);
+      reset();
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const excluir = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("crm_oportunidades" as never).delete().eq("id", id);
+      const { error } = await supabase
+        .from("crm_oportunidades" as never)
+        .delete()
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -207,8 +270,10 @@ function CRM() {
     mutationFn: async ({ id, etapa_id }: { id: string; etapa_id: string }) => {
       const et = etapas.find((e) => e.id === etapa_id);
       const status = et?.ganho ? "ganha" : et?.perdido ? "perdida" : "aberta";
-      const { error } = await supabase.from("crm_oportunidades" as never)
-        .update({ etapa_id, status } as never).eq("id", id);
+      const { error } = await supabase
+        .from("crm_oportunidades" as never)
+        .update({ etapa_id, status } as never)
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["crm_oportunidades", empresa?.id] }),
@@ -264,13 +329,17 @@ function CRM() {
               />
             ))}
           </div>
-          <DragOverlay>
-            {activeOp && <OportCard o={activeOp} dragging />}
-          </DragOverlay>
+          <DragOverlay>{activeOp && <OportCard o={activeOp} dragging />}</DragOverlay>
         </DndContext>
       )}
 
-      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          setOpen(v);
+          if (!v) reset();
+        }}
+      >
         <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
           <DialogHeader>
             <DialogTitle>{editing ? "Editar oportunidade" : "Nova oportunidade"}</DialogTitle>
@@ -305,8 +374,7 @@ function CRM() {
                   value={etapa}
                   onChange={setEtapa}
                   options={etapas.map((e) => ({ value: e.id, label: e.nome }))}
-                 
-                 
+
                   emptyText="Nenhum item encontrado."
                 />
               </div>
@@ -320,8 +388,7 @@ function CRM() {
                   { value: "none", label: "— sem contato —" },
                   ...contatos.map((c) => ({ value: c.id, label: c.nome })),
                 ]}
-               
-               
+
                 emptyText="Nenhum item encontrado."
                 footer={{ label: "Novo contato", onClick: () => setNovoContatoOpen(true) }}
               />
@@ -333,7 +400,9 @@ function CRM() {
                 <Trash2 className="mr-2 h-4 w-4" /> Excluir
               </Button>
             )}
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
             <Button onClick={() => salvar.mutate()} disabled={salvar.isPending}>
               {salvar.isPending ? "Salvando..." : "Salvar"}
             </Button>
@@ -351,10 +420,17 @@ function CRM() {
 }
 
 function Column({
-  etapa, oports, total, onAdd, onEdit,
+  etapa,
+  oports,
+  total,
+  onAdd,
+  onEdit,
 }: {
-  etapa: Etapa; oports: Oport[]; total: number;
-  onAdd: () => void; onEdit: (o: Oport) => void;
+  etapa: Etapa;
+  oports: Oport[];
+  total: number;
+  onAdd: () => void;
+  onEdit: (o: Oport) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: etapa.id });
   const cor = etapa.cor ?? "#64748b";
@@ -391,21 +467,25 @@ function Column({
 function DraggableCard({ o, onClick }: { o: Oport; onClick: () => void }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: o.id });
   return (
-    <div
-      ref={setNodeRef}
-      className={isDragging ? "opacity-40" : ""}
-      onClick={onClick}
-    >
+    <div ref={setNodeRef} className={isDragging ? "opacity-40" : ""} onClick={onClick}>
       <OportCard o={o} handleProps={{ ...attributes, ...listeners }} />
     </div>
   );
 }
 
 function OportCard({
-  o, dragging, handleProps,
-}: { o: Oport; dragging?: boolean; handleProps?: React.HTMLAttributes<HTMLButtonElement> }) {
+  o,
+  dragging,
+  handleProps,
+}: {
+  o: Oport;
+  dragging?: boolean;
+  handleProps?: React.HTMLAttributes<HTMLButtonElement>;
+}) {
   return (
-    <Card className={`cursor-pointer p-3 shadow-sm hover:shadow transition ${dragging ? "ring-2 ring-primary" : ""}`}>
+    <Card
+      className={`cursor-pointer p-3 shadow-sm hover:shadow transition ${dragging ? "ring-2 ring-primary" : ""}`}
+    >
       <div className="flex items-start gap-2">
         <button
           type="button"
@@ -429,7 +509,10 @@ function OportCard({
           </div>
           {typeof o.probabilidade === "number" && (
             <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
-              <div className="h-full bg-primary" style={{ width: `${Math.min(100, Math.max(0, o.probabilidade))}%` }} />
+              <div
+                className="h-full bg-primary"
+                style={{ width: `${Math.min(100, Math.max(0, o.probabilidade))}%` }}
+              />
             </div>
           )}
         </div>

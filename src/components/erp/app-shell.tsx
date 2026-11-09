@@ -137,7 +137,12 @@ export function AppShell({ children }: { children: ReactNode }) {
     queryFn: async () => (await supabase.auth.getUser()).data.user,
   });
 
-  const { data: empresas, isLoading: empresasLoading, isError: empresasErro, refetch: recarregarEmpresas } = useQuery({
+  const {
+    data: empresas,
+    isLoading: empresasLoading,
+    isError: empresasErro,
+    refetch: recarregarEmpresas,
+  } = useQuery({
     queryKey: ["empresas", "resumo"],
     staleTime: 5 * 60_000,
     gcTime: 15 * 60_000,
@@ -156,9 +161,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const selectedId = useSelectedEmpresaId();
   const nomeEmpresa = (e: any) =>
-    (e?.nome_fantasia?.trim() || e?.razao_social?.trim() || (e?.cnpj ? String(e.cnpj) : "") || "Empresa sem nome");
+    e?.nome_fantasia?.trim() ||
+    e?.razao_social?.trim() ||
+    (e?.cnpj ? String(e.cnpj) : "") ||
+    "Empresa sem nome";
   const currentEmpresa =
-    (selectedId && empresas?.find((e) => e.id === selectedId)) || empresas?.[0] as any;
+    (selectedId && empresas?.find((e) => e.id === selectedId)) || (empresas?.[0] as any);
 
   // Se o id salvo não existe mais (empresa excluída), migra para a primeira válida.
   useEffect(() => {
@@ -422,16 +430,19 @@ export function AppShell({ children }: { children: ReactNode }) {
                 >
                   {collapsed ? (
                     <span className="grid h-7 w-7 place-items-center rounded bg-primary/10 text-xs font-semibold">
-                      {(nomeEmpresa(currentEmpresa))?.[0]?.toUpperCase() ?? "?"}
+                      {nomeEmpresa(currentEmpresa)?.[0]?.toUpperCase() ?? "?"}
                     </span>
                   ) : (
                     <>
                       <div className="min-w-0">
                         <div className="truncate font-medium">
-                          {empresasLoading ? "Carregando empresas…" : nomeEmpresa(currentEmpresa) ?? "Nenhuma empresa"}
+                          {empresasLoading
+                            ? "Carregando empresas…"
+                            : (nomeEmpresa(currentEmpresa) ?? "Nenhuma empresa")}
                         </div>
                         <div className="truncate text-xs text-muted-foreground">
-                          {currentEmpresa?.cnpj ?? (empresasLoading ? "Aguarde" : "Cadastre sua empresa")}
+                          {currentEmpresa?.cnpj ??
+                            (empresasLoading ? "Aguarde" : "Cadastre sua empresa")}
                         </div>
                       </div>
                       <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
@@ -442,15 +453,24 @@ export function AppShell({ children }: { children: ReactNode }) {
               <DropdownMenuContent className="w-64" align="start">
                 <DropdownMenuLabel>Empresas</DropdownMenuLabel>
                 {empresasLoading && (
-                  <div className="px-2 py-1.5 text-xs text-muted-foreground">Carregando empresas…</div>
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                    Carregando empresas…
+                  </div>
                 )}
                 {empresasErro && (
-                  <DropdownMenuItem onSelect={(e) => { e.preventDefault(); recarregarEmpresas(); }}>
+                  <DropdownMenuItem
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      recarregarEmpresas();
+                    }}
+                  >
                     Falha ao carregar — clique para tentar de novo
                   </DropdownMenuItem>
                 )}
                 {!empresasLoading && !empresasErro && (empresas?.length ?? 0) === 0 && (
-                  <div className="px-2 py-1.5 text-xs text-muted-foreground">Nenhuma empresa encontrada</div>
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                    Nenhuma empresa encontrada
+                  </div>
                 )}
                 {(empresas ?? []).map((e) => {
                   const ativa = currentEmpresa?.id === e.id;
@@ -463,7 +483,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                 })}
                 <DropdownMenuSeparator />
                 {souSuperAdmin && (
-                  <DropdownMenuItem onSelect={() => navigate({ to: "/configuracoes", search: { secao: "empresas" } })}>
+                  <DropdownMenuItem
+                    onSelect={() =>
+                      navigate({ to: "/configuracoes", search: { secao: "empresas" } })
+                    }
+                  >
                     + Nova empresa
                   </DropdownMenuItem>
                 )}
@@ -661,7 +685,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <div className="border-t border-sidebar-border p-3">
             {!collapsed && (
-              <div className="px-3 pb-1 text-[10px] text-muted-foreground" title="Versão do código em execução">
+              <div
+                className="px-3 pb-1 text-[10px] text-muted-foreground"
+                title="Versão do código em execução"
+              >
                 v {typeof __BUILD_SHA__ !== "undefined" ? __BUILD_SHA__ : "local"}
               </div>
             )}
@@ -777,7 +804,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             {semAcesso ? (
               <Card className="mx-auto mt-10 w-full max-w-md rounded-2xl p-8 text-center shadow-panel sm:p-10">
                 <ShieldAlert className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
-                <h2 className="mb-2 text-lg font-semibold tracking-tight">Sem acesso a este módulo</h2>
+                <h2 className="mb-2 text-lg font-semibold tracking-tight">
+                  Sem acesso a este módulo
+                </h2>
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   Seu usuário não tem permissão para esta área. Solicite acesso ao administrador da
                   sua empresa.

@@ -14,8 +14,20 @@ export default defineConfig(({ mode, command }) => {
   // entre preview, produção e desenvolvimento local.
   const loadedEnv = loadEnv(mode, process.cwd(), "");
   const publicEnv = {
-    VITE_SUPABASE_URL: loadedEnv.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || loadedEnv.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || loadedEnv.SUPABASE_URL || process.env.SUPABASE_URL,
-    VITE_SUPABASE_PUBLISHABLE_KEY: loadedEnv.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || loadedEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || loadedEnv.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY,
+    VITE_SUPABASE_URL:
+      loadedEnv.VITE_SUPABASE_URL ||
+      process.env.VITE_SUPABASE_URL ||
+      loadedEnv.NEXT_PUBLIC_SUPABASE_URL ||
+      process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      loadedEnv.SUPABASE_URL ||
+      process.env.SUPABASE_URL,
+    VITE_SUPABASE_PUBLISHABLE_KEY:
+      loadedEnv.VITE_SUPABASE_PUBLISHABLE_KEY ||
+      process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+      loadedEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+      loadedEnv.SUPABASE_PUBLISHABLE_KEY ||
+      process.env.SUPABASE_PUBLISHABLE_KEY,
   };
   const envDefine: Record<string, string> = {};
   for (const [key, value] of Object.entries(publicEnv)) {
@@ -26,7 +38,6 @@ export default defineConfig(({ mode, command }) => {
   envDefine["__BUILD_SHA__"] = JSON.stringify(
     (process.env.VERCEL_GIT_COMMIT_SHA || "").slice(0, 7) || "local",
   );
-
 
   const config: UserConfig = {
     define: envDefine,

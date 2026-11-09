@@ -113,7 +113,14 @@ function Reposicao() {
     return criticos.filter((p) => {
       if ((p.nome || "").toLowerCase().includes(q)) return true;
       // Pesquisa por custo: "25,00" acha 25.00 (a partir de 2 dígitos)
-      if (qDig.length >= 2 && Number(p.preco_custo || 0).toFixed(2).replace(/\D/g, "").includes(qDig)) return true;
+      if (
+        qDig.length >= 2 &&
+        Number(p.preco_custo || 0)
+          .toFixed(2)
+          .replace(/\D/g, "")
+          .includes(qDig)
+      )
+        return true;
       return false;
     });
   }, [criticos, busca]);
@@ -307,15 +314,33 @@ function Reposicao() {
           <Card className="mb-4 grid gap-4 p-4 sm:grid-cols-4">
             <div>
               <Label>Fornecedor *</Label>
-              <Combobox value={fornecedor} onChange={setFornecedor} options={fornecedores.map((f) => ({ value: f.id, label: f.nome }))} emptyText="Nenhum item encontrado." />
+              <Combobox
+                value={fornecedor}
+                onChange={setFornecedor}
+                options={fornecedores.map((f) => ({ value: f.id, label: f.nome }))}
+                emptyText="Nenhum item encontrado."
+              />
             </div>
             <div>
               <Label>Depósito destino</Label>
-              <Combobox value={depositoId} onChange={setDepositoId} options={[{ value: "sem-deposito", label: "Sem depósito" }, ...depositos.map((d) => ({ value: d.id, label: d.nome }))]} emptyText="Nenhum item encontrado." />
+              <Combobox
+                value={depositoId}
+                onChange={setDepositoId}
+                options={[
+                  { value: "sem-deposito", label: "Sem depósito" },
+                  ...depositos.map((d) => ({ value: d.id, label: d.nome })),
+                ]}
+                emptyText="Nenhum item encontrado."
+              />
             </div>
             <div>
               <Label>Conta p/ pagamento</Label>
-              <Combobox value={contaBanco} onChange={setContaBanco} options={contas.map((c) => ({ value: c.id, label: c.nome }))} emptyText="Nenhum item encontrado." />
+              <Combobox
+                value={contaBanco}
+                onChange={setContaBanco}
+                options={contas.map((c) => ({ value: c.id, label: c.nome }))}
+                emptyText="Nenhum item encontrado."
+              />
             </div>
             <div>
               <Label>Previsão de entrega</Label>
@@ -366,7 +391,13 @@ function Reposicao() {
                         {num(p.estoque_minimo ?? 0)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <MoneyInput className="ml-auto h-8 w-28" prefix="" decimals={3} value={l.qtd} onChange={(v) => setLinhas((r) => ({ ...r, [p.id]: { ...l, qtd: v } }))} />
+                        <MoneyInput
+                          className="ml-auto h-8 w-28"
+                          prefix=""
+                          decimals={3}
+                          value={l.qtd}
+                          onChange={(v) => setLinhas((r) => ({ ...r, [p.id]: { ...l, qtd: v } }))}
+                        />
                       </TableCell>
                       <TableCell className="text-right text-tabular">{brl(custo)}</TableCell>
                       <TableCell className="text-right text-tabular">

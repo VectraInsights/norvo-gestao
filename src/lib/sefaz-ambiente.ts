@@ -64,7 +64,11 @@ export function erroSefazAmigavel(cStat: unknown, xMotivo: unknown): string {
       ? `Falha de comunicação com a SEFAZ (HTTP ${http}) — tente de novo`
       : "Falha de comunicação com a SEFAZ — tente de novo";
   }
-  msg = msg.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 300);
+  msg = msg
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 300);
   if (CSTAT_AMIGAVEL[cod] && (cod === "225" || !msg)) return `[${cod}] ${CSTAT_AMIGAVEL[cod]}`;
   if (msg) return cod ? `[${cod}] ${msg}` : msg;
   return cod ? `[${cod}] Rejeitado pela SEFAZ` : "Falha ao comunicar com a SEFAZ";

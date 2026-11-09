@@ -15,17 +15,38 @@ import { Combobox } from "@/components/erp/combobox";
 import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
 import { RouteErrorState } from "@/components/erp/route-error-state";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ShoppingCart, Plus, Trash2, Check, X } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -43,9 +64,14 @@ export const Route = createFileRoute("/_authenticated/estoque/compras")({
 });
 
 type OC = {
-  id: string; numero: number | null; status: string; total: number;
-  data_emissao: string; data_prevista: string | null;
-  fornecedor_id: string | null; observacoes: string | null;
+  id: string;
+  numero: number | null;
+  status: string;
+  total: number;
+  data_emissao: string;
+  data_prevista: string | null;
+  fornecedor_id: string | null;
+  observacoes: string | null;
   conta_bancaria_id: string | null;
   contatos?: { nome: string } | null;
 };
@@ -62,7 +88,9 @@ function Compras() {
   const [dataPrev, setDataPrev] = useState("");
   const [contaBanco, setContaBanco] = useState<string>("");
   const [obs, setObs] = useState("");
-  const [itens, setItens] = useState<ItemRow[]>([{ produto_id: "", quantidade: "1", custo_unitario: "0" }]);
+  const [itens, setItens] = useState<ItemRow[]>([
+    { produto_id: "", quantidade: "1", custo_unitario: "0" },
+  ]);
 
   const { data: ordens, isLoading } = useQuery({
     enabled: !!empresa,
@@ -73,9 +101,14 @@ function Compras() {
       // Busca em páginas para nunca cortar a lista (sem limite silencioso)
       const todas: unknown[] = [];
       for (let ini = 0; ; ini += 500) {
-        const { data, error } = await supabase.from("ordens_compra" as never)
-          .select("id,numero,status,total,data_emissao,data_prevista,fornecedor_id,observacoes,conta_bancaria_id,fornecedores:fornecedor_id(nome)")
-          .eq("empresa_id", empresa!.id).order("created_at", { ascending: false }).range(ini, ini + 499);
+        const { data, error } = await supabase
+          .from("ordens_compra" as never)
+          .select(
+            "id,numero,status,total,data_emissao,data_prevista,fornecedor_id,observacoes,conta_bancaria_id,fornecedores:fornecedor_id(nome)",
+          )
+          .eq("empresa_id", empresa!.id)
+          .order("created_at", { ascending: false })
+          .range(ini, ini + 499);
         if (error) throw error;
         todas.push(...((data as unknown[]) ?? []));
         if (!data || (data as unknown[]).length < 500) break;
@@ -93,8 +126,12 @@ function Compras() {
       // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
       const todos: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
-        const { data } = await supabase.from("fornecedores").select("id,nome")
-          .eq("empresa_id", empresa!.id).order("nome").range(ini, ini + 999);
+        const { data } = await supabase
+          .from("fornecedores")
+          .select("id,nome")
+          .eq("empresa_id", empresa!.id)
+          .order("nome")
+          .range(ini, ini + 999);
         todos.push(...((data as unknown[]) ?? []));
         if (!data || (data as unknown[]).length < 1000) break;
       }
@@ -109,8 +146,13 @@ function Compras() {
       // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
       const todos: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
-        const { data } = await supabase.from("produtos")
-          .select("id,nome,preco_custo").eq("empresa_id", empresa!.id).eq("ativo", true).order("nome").range(ini, ini + 999);
+        const { data } = await supabase
+          .from("produtos")
+          .select("id,nome,preco_custo")
+          .eq("empresa_id", empresa!.id)
+          .eq("ativo", true)
+          .order("nome")
+          .range(ini, ini + 999);
         todos.push(...((data as unknown[]) ?? []));
         if (!data || (data as unknown[]).length < 1000) break;
       }
@@ -125,7 +167,11 @@ function Compras() {
       // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
       const todos: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
-        const { data } = await supabase.from("contas_bancarias").select("id,nome").eq("empresa_id", empresa!.id).range(ini, ini + 999);
+        const { data } = await supabase
+          .from("contas_bancarias")
+          .select("id,nome")
+          .eq("empresa_id", empresa!.id)
+          .range(ini, ini + 999);
         todos.push(...((data as unknown[]) ?? []));
         if (!data || (data as unknown[]).length < 1000) break;
       }
@@ -139,7 +185,10 @@ function Compras() {
   );
 
   const reset = () => {
-    setFornecedor(""); setDataPrev(""); setContaBanco(""); setObs("");
+    setFornecedor("");
+    setDataPrev("");
+    setContaBanco("");
+    setObs("");
     setItens([{ produto_id: "", quantidade: "1", custo_unitario: "0" }]);
   };
 
@@ -150,13 +199,17 @@ function Compras() {
       const validos = itens.filter((i) => i.produto_id && Number(i.quantidade) > 0);
       if (!validos.length) throw new Error("Adicione ao menos um item");
 
-      const { data: oc, error } = await supabase.from("ordens_compra" as never).insert({
-        empresa_id: empresa.id,
-        fornecedor_id: fornecedor,
-        data_prevista: dataPrev || null,
-        conta_bancaria_id: contaBanco || null,
-        observacoes: obs || null,
-      } as never).select("id").single();
+      const { data: oc, error } = await supabase
+        .from("ordens_compra" as never)
+        .insert({
+          empresa_id: empresa.id,
+          fornecedor_id: fornecedor,
+          data_prevista: dataPrev || null,
+          conta_bancaria_id: contaBanco || null,
+          observacoes: obs || null,
+        } as never)
+        .select("id")
+        .single();
       if (error) throw error;
 
       const rows = validos.map((i) => ({
@@ -166,25 +219,34 @@ function Compras() {
         custo_unitario: Number(i.custo_unitario),
         subtotal: Number(i.quantidade) * Number(i.custo_unitario),
       }));
-      const { error: e2 } = await supabase.from("ordens_compra_itens" as never).insert(rows as never);
+      const { error: e2 } = await supabase
+        .from("ordens_compra_itens" as never)
+        .insert(rows as never);
       if (e2) throw e2;
     },
     onSuccess: () => {
       toast.success("Ordem de compra criada");
       qc.invalidateQueries({ queryKey: ["ordens_compra"] });
-      setOpen(false); reset();
+      setOpen(false);
+      reset();
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const mudarStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from("ordens_compra" as never)
-        .update({ status } as never).eq("id", id);
+      const { error } = await supabase
+        .from("ordens_compra" as never)
+        .update({ status } as never)
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: (_d, v) => {
-      toast.success(v.status === "recebida" ? "OC recebida — estoque e conta a pagar atualizados" : "Status atualizado");
+      toast.success(
+        v.status === "recebida"
+          ? "OC recebida — estoque e conta a pagar atualizados"
+          : "Status atualizado",
+      );
       qc.invalidateQueries({ queryKey: ["ordens_compra"] });
       qc.invalidateQueries({ queryKey: ["produtos"] });
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
@@ -194,7 +256,10 @@ function Compras() {
 
   const excluir = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("ordens_compra" as never).delete().eq("id", id);
+      const { error } = await supabase
+        .from("ordens_compra" as never)
+        .delete()
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -216,7 +281,14 @@ function Compras() {
     if (String(o.numero).includes(s)) return true;
     if (o.contatos?.nome?.toLowerCase().includes(s)) return true;
     // Pesquisa por valor: "25,00" acha 25.00 (a partir de 2 dígitos)
-    if (sDig.length >= 2 && Number(o.total || 0).toFixed(2).replace(/\D/g, "").includes(sDig)) return true;
+    if (
+      sDig.length >= 2 &&
+      Number(o.total || 0)
+        .toFixed(2)
+        .replace(/\D/g, "")
+        .includes(sDig)
+    )
+      return true;
     return false;
   });
 
@@ -231,17 +303,33 @@ function Compras() {
       <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={(v) => setBusca(v)} />
         <div className="flex items-center gap-2">
-          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
+          <Dialog
+            open={open}
+            onOpenChange={(v) => {
+              setOpen(v);
+              if (!v) reset();
+            }}
+          >
             <DialogTrigger asChild>
-              <PrimaryButton size="sm"><Plus className="mr-1 h-3.5 w-3.5" /> Nova ordem</PrimaryButton>
+              <PrimaryButton size="sm">
+                <Plus className="mr-1 h-3.5 w-3.5" /> Nova ordem
+              </PrimaryButton>
             </DialogTrigger>
             <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
-              <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Nova ordem de compra</DialogTitle></DialogHeader>
+              <DialogHeader className="gap-1.5 pb-1">
+                <DialogTitle className="tracking-tight">Nova ordem de compra</DialogTitle>
+              </DialogHeader>
               <div className="grid gap-4">
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div>
                     <Label>Fornecedor</Label>
-                    <Combobox value={fornecedor} onChange={setFornecedor} options={fornecedores.map((f) => ({ value: f.id, label: f.nome }))} emptyText="Nenhum item encontrado." footer={{ label: "Novo fornecedor", onClick: () => setNovoFornOpen(true) }} />
+                    <Combobox
+                      value={fornecedor}
+                      onChange={setFornecedor}
+                      options={fornecedores.map((f) => ({ value: f.id, label: f.nome }))}
+                      emptyText="Nenhum item encontrado."
+                      footer={{ label: "Novo fornecedor", onClick: () => setNovoFornOpen(true) }}
+                    />
                   </div>
                   <div>
                     <Label>Previsão de entrega</Label>
@@ -249,40 +337,94 @@ function Compras() {
                   </div>
                   <div>
                     <Label>Conta p/ pagamento</Label>
-                    <Combobox value={contaBanco} onChange={setContaBanco} options={contas.map((c) => ({ value: c.id, label: c.nome ?? "" }))} emptyText="Nenhum item encontrado." />
+                    <Combobox
+                      value={contaBanco}
+                      onChange={setContaBanco}
+                      options={contas.map((c) => ({ value: c.id, label: c.nome ?? "" }))}
+                      emptyText="Nenhum item encontrado."
+                    />
                   </div>
                 </div>
 
                 <div>
                   <div className="mb-2 flex items-center justify-between">
                     <Label>Itens</Label>
-                    <Button type="button" variant="outline" size="sm" className="h-8 rounded-lg px-3 shadow-sm active:scale-95"
-                      onClick={() => setItens((r) => [...r, { produto_id: "", quantidade: "1", custo_unitario: "0" }])}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 rounded-lg px-3 shadow-sm active:scale-95"
+                      onClick={() =>
+                        setItens((r) => [
+                          ...r,
+                          { produto_id: "", quantidade: "1", custo_unitario: "0" },
+                        ])
+                      }
+                    >
                       <Plus className="mr-1 h-3 w-3" /> Item
                     </Button>
                   </div>
                   <div className="space-y-2">
                     {itens.map((it, idx) => (
-                      <div key={idx} className="grid grid-cols-[1fr_100px_140px_auto] items-end gap-2">
-                        <Combobox value={it.produto_id} onChange={(v) => {
-                          const prod = produtos.find((p) => p.id === v);
-                          setItens((r) => r.map((x, i) => i === idx
-                            ? { ...x, produto_id: v, custo_unitario: prod?.preco_custo ? String(prod.preco_custo) : x.custo_unitario }
-                            : x));
-                        }} options={produtos.map((p) => ({ value: p.id, label: p.nome }))} emptyText="Nenhum item encontrado." />
-                        <MoneyInput prefix="" decimals={3} value={it.quantidade} onChange={(v) => setItens((r) => r.map((x, i) => i === idx ? { ...x, quantidade: v } : x))} />
-                        <MoneyInput value={it.custo_unitario}
-                          onChange={(v) => setItens((r) => r.map((x, i) => i === idx ? { ...x, custo_unitario: v } : x))} />
-                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10"
+                      <div
+                        key={idx}
+                        className="grid grid-cols-[1fr_100px_140px_auto] items-end gap-2"
+                      >
+                        <Combobox
+                          value={it.produto_id}
+                          onChange={(v) => {
+                            const prod = produtos.find((p) => p.id === v);
+                            setItens((r) =>
+                              r.map((x, i) =>
+                                i === idx
+                                  ? {
+                                      ...x,
+                                      produto_id: v,
+                                      custo_unitario: prod?.preco_custo
+                                        ? String(prod.preco_custo)
+                                        : x.custo_unitario,
+                                    }
+                                  : x,
+                              ),
+                            );
+                          }}
+                          options={produtos.map((p) => ({ value: p.id, label: p.nome }))}
+                          emptyText="Nenhum item encontrado."
+                        />
+                        <MoneyInput
+                          prefix=""
+                          decimals={3}
+                          value={it.quantidade}
+                          onChange={(v) =>
+                            setItens((r) =>
+                              r.map((x, i) => (i === idx ? { ...x, quantidade: v } : x)),
+                            )
+                          }
+                        />
+                        <MoneyInput
+                          value={it.custo_unitario}
+                          onChange={(v) =>
+                            setItens((r) =>
+                              r.map((x, i) => (i === idx ? { ...x, custo_unitario: v } : x)),
+                            )
+                          }
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10"
                           onClick={() => setItens((r) => r.filter((_, i) => i !== idx))}
-                          disabled={itens.length === 1}>
+                          disabled={itens.length === 1}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     ))}
                   </div>
                   <div className="mt-3 text-right text-sm">
-                    Total previsto: <span className="font-semibold text-tabular">{brl(totalPrevisto)}</span>
+                    Total previsto:{" "}
+                    <span className="font-semibold text-tabular">{brl(totalPrevisto)}</span>
                   </div>
                 </div>
 
@@ -292,8 +434,18 @@ function Compras() {
                 </div>
               </div>
               <DialogFooter className="gap-2">
-                <Button variant="outline" onClick={() => setOpen(false)} className="h-10 rounded-xl px-6">Cancelar</Button>
-                <Button onClick={() => criar.mutate()} disabled={criar.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+                <Button
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  className="h-10 rounded-xl px-6"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={() => criar.mutate()}
+                  disabled={criar.isPending}
+                  className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                >
                   {criar.isPending ? "Salvando…" : "Criar ordem"}
                 </Button>
               </DialogFooter>
@@ -312,11 +464,16 @@ function Compras() {
       <Card className="overflow-hidden rounded-2xl shadow-panel">
         {isLoading ? (
           <div className="space-y-2.5 p-4" aria-label="Carregando">
-            {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />
+            ))}
           </div>
         ) : lista.length === 0 ? (
-          <EmptyState icon={ShoppingCart} title="Nenhuma ordem de compra"
-            description="Registre pedidos aos fornecedores para controlar entregas, estoque e pagamentos." />
+          <EmptyState
+            icon={ShoppingCart}
+            title="Nenhuma ordem de compra"
+            description="Registre pedidos aos fornecedores para controlar entregas, estoque e pagamentos."
+          />
         ) : (
           <Table className="[&_td]:px-3 [&_th]:px-3">
             <TableHeader>
@@ -338,40 +495,67 @@ function Compras() {
                   <TableCell>{dateBR(o.data_emissao)}</TableCell>
                   <TableCell>{dateBR(o.data_prevista)}</TableCell>
                   <TableCell className="text-right text-tabular">{brl(o.total)}</TableCell>
-                  <TableCell><StatusBadge status={o.status} /></TableCell>
+                  <TableCell>
+                    <StatusBadge status={o.status} />
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       {o.status === "rascunho" && (
-                        <Button variant="outline" size="sm" className="h-8 rounded-lg px-3 shadow-sm active:scale-95"
-                          onClick={() => mudarStatus.mutate({ id: o.id, status: "enviada" })}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 rounded-lg px-3 shadow-sm active:scale-95"
+                          onClick={() => mudarStatus.mutate({ id: o.id, status: "enviada" })}
+                        >
                           Enviar
                         </Button>
                       )}
                       {(o.status === "rascunho" || o.status === "enviada") && (
-                        <Button size="sm" onClick={() => mudarStatus.mutate({ id: o.id, status: "recebida" })} className="h-8 rounded-lg px-3 shadow-sm transition-all hover:shadow-md active:scale-95">
+                        <Button
+                          size="sm"
+                          onClick={() => mudarStatus.mutate({ id: o.id, status: "recebida" })}
+                          className="h-8 rounded-lg px-3 shadow-sm transition-all hover:shadow-md active:scale-95"
+                        >
                           <Check className="mr-1 h-3 w-3" /> Receber
                         </Button>
                       )}
                       {o.status !== "cancelada" && o.status !== "recebida" && (
-                        <Button variant="ghost" size="sm" className="h-8 w-8 rounded-lg p-0"
-                          onClick={() => mudarStatus.mutate({ id: o.id, status: "cancelada" })}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 rounded-lg p-0"
+                          onClick={() => mudarStatus.mutate({ id: o.id, status: "cancelada" })}
+                        >
                           <X className="h-3 w-3" />
                         </Button>
                       )}
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent className="rounded-2xl">
                           <AlertDialogHeader>
                             <AlertDialogTitle>Excluir ordem #{o.numero}?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Os itens serão removidos. Movimentações de estoque e lançamentos já gerados NÃO serão apagados.
+                              Os itens serão removidos. Movimentações de estoque e lançamentos já
+                              gerados NÃO serão apagados.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction data-acao className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => excluir.mutate(o.id)}>Excluir</AlertDialogAction>
+                            <AlertDialogAction
+                              data-acao
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              onClick={() => excluir.mutate(o.id)}
+                            >
+                              Excluir
+                            </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>

@@ -6,8 +6,21 @@ import { Download, Printer, Upload, FileSpreadsheet, Search, X } from "lucide-re
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, parse, isValid } from "date-fns";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Combobox } from "@/components/erp/combobox";
 
 type Opt = { id: string; nome: string };
@@ -30,7 +43,6 @@ const HEADERS = [
   "Obs.",
 ];
 
-
 function parseData(v: unknown): string | null {
   if (v == null || v === "") return null;
   if (v instanceof Date && isValid(v)) return format(v, "yyyy-MM-dd");
@@ -44,7 +56,9 @@ function parseData(v: unknown): string | null {
 
 function parseValor(v: unknown): number {
   if (typeof v === "number") return v;
-  const s = String(v ?? "").replace(/[R$\s.]/g, "").replace(",", ".");
+  const s = String(v ?? "")
+    .replace(/[R$\s.]/g, "")
+    .replace(",", ".");
   const n = Number(s);
   return isNaN(n) ? 0 : n;
 }
@@ -61,7 +75,9 @@ async function buscarCnpj(digits: string): Promise<Record<string, unknown> | nul
         const d = await res.json();
         if (d && (d as { status?: string }).status !== "ERROR") return d as Record<string, unknown>;
       }
-    } catch { /* tenta a próxima */ }
+    } catch {
+      /* tenta a próxima */
+    }
   }
   return null;
 }
@@ -94,9 +110,14 @@ async function enriquecerContatos(itens: { id: string; doc: string; tabela: stri
         cidade: str(d.municipio),
         uf: str(d.uf),
       };
-      const payload = Object.fromEntries(Object.entries(patch).filter(([, v]) => v != null)) as Record<string, string>;
+      const payload = Object.fromEntries(
+        Object.entries(patch).filter(([, v]) => v != null),
+      ) as Record<string, string>;
       if (!Object.keys(payload).length) continue;
-      const { error } = await supabase.from(item.tabela).update(payload as never).eq("id", item.id);
+      const { error } = await supabase
+        .from(item.tabela)
+        .update(payload as never)
+        .eq("id", item.id);
       if (!error) ok++;
     }
   });
@@ -115,14 +136,26 @@ function docFromSheet(v: unknown): string | null {
 }
 // "Prestação  de Serviços" == "prestacao de servicos" e não tenta recriar.
 function normNome(s: string | null | undefined): string {
-  return (s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, " ").toLowerCase();
+  return (s ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
 }
 
 type Insert = {
-  empresa_id: string; tipo: "receber" | "pagar"; descricao: string; valor: number;
-  data_emissao?: string; data_vencimento: string;
-  contato_id: string | null; categoria_id: string | null; conta_bancaria_id: string | null;
-  documento: string | null; observacoes: string | null;
+  empresa_id: string;
+  tipo: "receber" | "pagar";
+  descricao: string;
+  valor: number;
+  data_emissao?: string;
+  data_vencimento: string;
+  contato_id: string | null;
+  categoria_id: string | null;
+  conta_bancaria_id: string | null;
+  documento: string | null;
+  observacoes: string | null;
 };
 
 export function LancamentosToolbar({
@@ -145,16 +178,34 @@ export function LancamentosToolbar({
   busca?: ReactNode;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
-  const [pending, setPending] = useState<{ inserts: Insert[]; criados: { categorias: number; contatos: number } } | null>(null);
+  const [pending, setPending] = useState<{
+    inserts: Insert[];
+    criados: { categorias: number; contatos: number };
+  } | null>(null);
   const [contaSel, setContaSel] = useState<string>("__none");
   const [saving, setSaving] = useState(false);
   const label = tipo === "receber" ? "receitas" : "despesas";
 
   const montarAba = (linhas: (string | number)[][]) => {
     const ws = XLSX.utils.aoa_to_sheet(linhas);
-    ws["!cols"] = [{ wch: 22 }, { wch: 22 }, { wch: 14 }, { wch: 34 }, { wch: 22 }, { wch: 26 }, { wch: 20 }, { wch: 34 }];
+    ws["!cols"] = [
+      { wch: 22 },
+      { wch: 22 },
+      { wch: 14 },
+      { wch: 34 },
+      { wch: 22 },
+      { wch: 26 },
+      { wch: 20 },
+      { wch: 34 },
+    ];
     ws["!rows"] = [{ hpt: 32 }];
-    ws["!freeze"] = { xSplit: "0", ySplit: "1", topLeftCell: "A2", activePane: "bottomLeft", state: "frozen" };
+    ws["!freeze"] = {
+      xSplit: "0",
+      ySplit: "1",
+      topLeftCell: "A2",
+      activePane: "bottomLeft",
+      state: "frozen",
+    };
 
     const BORDER = { style: "thin", color: { rgb: "E5E7EB" } };
     const border = { top: BORDER, bottom: BORDER, left: BORDER, right: BORDER };
@@ -191,9 +242,14 @@ export function LancamentosToolbar({
           (base.alignment as Record<string, unknown>).horizontal = "center";
         }
         if (c === 2) {
-          ws[ref].z = 'R$ #,##0.00;[Red]-R$ #,##0.00';
+          ws[ref].z = "R$ #,##0.00;[Red]-R$ #,##0.00";
           (base.alignment as Record<string, unknown>).horizontal = "right";
-          (base.font as Record<string, unknown>) = { name: "Calibri", sz: 11, bold: true, color: { rgb: receita ? "047857" : "B91C1C" } };
+          (base.font as Record<string, unknown>) = {
+            name: "Calibri",
+            sz: 11,
+            bold: true,
+            color: { rgb: receita ? "047857" : "B91C1C" },
+          };
         }
         ws[ref].s = base;
       }
@@ -204,16 +260,51 @@ export function LancamentosToolbar({
   const baixarModelo = () => {
     const hoje = format(new Date(), "dd/MM/yyyy");
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, montarAba([
-      HEADERS,
-      [hoje, hoje, 1500.5, "Venda pedido 123", categorias?.[0]?.nome ?? "Vendas", contatos?.[0]?.nome ?? "Cliente exemplo", "", "Receita (valor positivo)"],
-      [hoje, hoje, 2300, "Prestação de serviço", categorias?.[0]?.nome ?? "Serviços", "", "", ""],
-    ]), "Entradas");
-    XLSX.utils.book_append_sheet(wb, montarAba([
-      HEADERS,
-      [hoje, hoje, -850, "Compra fornecedor X", categorias?.[0]?.nome ?? "Fornecedores", contatos?.[0]?.nome ?? "Fornecedor exemplo", "", "Despesa (valor negativo)"],
-      [hoje, hoje, -450.75, "Conta de energia", categorias?.[0]?.nome ?? "Utilidades", "", "12.345.678/0001-99", ""],
-    ]), "Saídas");
+    XLSX.utils.book_append_sheet(
+      wb,
+      montarAba([
+        HEADERS,
+        [
+          hoje,
+          hoje,
+          1500.5,
+          "Venda pedido 123",
+          categorias?.[0]?.nome ?? "Vendas",
+          contatos?.[0]?.nome ?? "Cliente exemplo",
+          "",
+          "Receita (valor positivo)",
+        ],
+        [hoje, hoje, 2300, "Prestação de serviço", categorias?.[0]?.nome ?? "Serviços", "", "", ""],
+      ]),
+      "Entradas",
+    );
+    XLSX.utils.book_append_sheet(
+      wb,
+      montarAba([
+        HEADERS,
+        [
+          hoje,
+          hoje,
+          -850,
+          "Compra fornecedor X",
+          categorias?.[0]?.nome ?? "Fornecedores",
+          contatos?.[0]?.nome ?? "Fornecedor exemplo",
+          "",
+          "Despesa (valor negativo)",
+        ],
+        [
+          hoje,
+          hoje,
+          -450.75,
+          "Conta de energia",
+          categorias?.[0]?.nome ?? "Utilidades",
+          "",
+          "12.345.678/0001-99",
+          "",
+        ],
+      ]),
+      "Saídas",
+    );
 
     const infoRows: string[][] = [
       ["Modelo de importação — Norvo"],
@@ -249,8 +340,6 @@ export function LancamentosToolbar({
     XLSX.writeFile(wb, `Modelo_despesas_receitas_norvo.xlsx`);
   };
 
-
-
   const exportar = () => {
     const rows = (lancamentos ?? []).map((l) => ({
       Descrição: l.descricao,
@@ -266,7 +355,10 @@ export function LancamentosToolbar({
   };
 
   const importar = async (file: File) => {
-    if (!empresaId) { toast.error("Selecione uma empresa"); return; }
+    if (!empresaId) {
+      toast.error("Selecione uma empresa");
+      return;
+    }
     try {
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { cellDates: true });
@@ -274,15 +366,23 @@ export function LancamentosToolbar({
       const abas = wb.SheetNames.filter((n) => !n.toLowerCase().includes("instru"));
       const rows: { aba: string; r: Record<string, unknown>; i: number }[] = [];
       abas.forEach((aba) => {
-        const linhas = XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[aba], { defval: "" });
+        const linhas = XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[aba], {
+          defval: "",
+        });
         linhas.forEach((r, i) => rows.push({ aba, r, i }));
       });
 
       type Parsed = {
         linha: number;
-        descricao: string; valor: number; tipoLinha: "receber" | "pagar";
-        de: string; dv: string;
-        catNome: string; contatoNome: string; documento: string | null; observacoes: string | null;
+        descricao: string;
+        valor: number;
+        tipoLinha: "receber" | "pagar";
+        de: string;
+        dv: string;
+        catNome: string;
+        contatoNome: string;
+        documento: string | null;
+        observacoes: string | null;
       };
       const parsed: Parsed[] = [];
       const erros: string[] = [];
@@ -290,8 +390,18 @@ export function LancamentosToolbar({
         const linha = i + 2;
         const descricao = String(r["Descrição"] ?? "").trim();
         const valorRaw = parseValor(r["Valor"]);
-        const dv = parseData(r["Data Vencimento (dd/mm/aaaa)"] ?? r["Data Vencimento"] ?? r["Data vencimento"] ?? r["Vencimento"]);
-        const de = parseData(r["Data competência (dd/mm/aaaa)"] ?? r["Data competência"] ?? r["Competência"] ?? r["Data emissão"]);
+        const dv = parseData(
+          r["Data Vencimento (dd/mm/aaaa)"] ??
+            r["Data Vencimento"] ??
+            r["Data vencimento"] ??
+            r["Vencimento"],
+        );
+        const de = parseData(
+          r["Data competência (dd/mm/aaaa)"] ??
+            r["Data competência"] ??
+            r["Competência"] ??
+            r["Data emissão"],
+        );
         const catNome = String(r["Categoria"] ?? "").trim();
         const faltando: string[] = [];
         if (!de) faltando.push("Data competência");
@@ -300,14 +410,18 @@ export function LancamentosToolbar({
         if (!descricao) faltando.push("Descrição");
         if (!catNome) faltando.push("Categoria");
         if (faltando.length) {
-          erros.push(`${aba} · linha ${linha}: campo(s) obrigatório(s) ausente(s): ${faltando.join(", ")}`);
+          erros.push(
+            `${aba} · linha ${linha}: campo(s) obrigatório(s) ausente(s): ${faltando.join(", ")}`,
+          );
           return;
         }
         parsed.push({
           linha,
-          descricao, valor: Math.abs(valorRaw),
+          descricao,
+          valor: Math.abs(valorRaw),
           tipoLinha: valorRaw >= 0 ? "receber" : "pagar",
-          de: de!, dv: dv!,
+          de: de!,
+          dv: dv!,
           catNome,
           contatoNome: String(r["Cliente/Fornecedor"] ?? r["Contato"] ?? "").trim(),
           documento: docFromSheet(r["CNPJ/CPF"]),
@@ -316,10 +430,15 @@ export function LancamentosToolbar({
       });
 
       if (erros.length) {
-        toast.error(`Importação cancelada — ${erros.length} erro(s)`, { description: erros.slice(0, 5).join("\n") });
+        toast.error(`Importação cancelada — ${erros.length} erro(s)`, {
+          description: erros.slice(0, 5).join("\n"),
+        });
         return;
       }
-      if (!parsed.length) { toast.error("Planilha vazia"); return; }
+      if (!parsed.length) {
+        toast.error("Planilha vazia");
+        return;
+      }
 
       // Maps existentes (normalizados como a unicidade do banco)
       const mCategorias = new Map((categorias ?? []).map((o) => [normNome(o.nome), o.id]));
@@ -329,20 +448,32 @@ export function LancamentosToolbar({
       const novasCats = new Map<string, { nome: string; tipo: "receber" | "pagar" }>();
       parsed.forEach((p) => {
         const key = normNome(p.catNome);
-        if (!mCategorias.has(key)) novasCats.set(key, { nome: p.catNome.trim(), tipo: p.tipoLinha });
+        if (!mCategorias.has(key))
+          novasCats.set(key, { nome: p.catNome.trim(), tipo: p.tipoLinha });
       });
       let criadasCats = 0;
       if (novasCats.size) {
         const payload = Array.from(novasCats.values()).map((c) => ({
-          empresa_id: empresaId, nome: c.nome, tipo: c.tipo, parent_id: null,
+          empresa_id: empresaId,
+          nome: c.nome,
+          tipo: c.tipo,
+          parent_id: null,
         }));
-        const { data, error } = await supabase.from("categorias_financeiras").insert(payload).select("id,nome");
+        const { data, error } = await supabase
+          .from("categorias_financeiras")
+          .insert(payload)
+          .select("id,nome");
         if (error) {
           // Categoria já existia com outro acento/caixa (ex.: planilha "Prestacao" x banco "Prestação"):
           // recarrega e segue a importação em vez de abortar.
           if ((error as { code?: string }).code === "23505") {
-            const { data: fresh } = await supabase.from("categorias_financeiras").select("id,nome").eq("empresa_id", empresaId);
-            (fresh ?? []).forEach((c) => { if (!mCategorias.has(normNome(c.nome))) mCategorias.set(normNome(c.nome), c.id); });
+            const { data: fresh } = await supabase
+              .from("categorias_financeiras")
+              .select("id,nome")
+              .eq("empresa_id", empresaId);
+            (fresh ?? []).forEach((c) => {
+              if (!mCategorias.has(normNome(c.nome))) mCategorias.set(normNome(c.nome), c.id);
+            });
           } else throw error;
         } else {
           (data ?? []).forEach((c) => mCategorias.set(normNome(c.nome), c.id));
@@ -351,7 +482,10 @@ export function LancamentosToolbar({
       }
 
       // Criar contatos faltantes
-      const novosContatos = new Map<string, { nome: string; tipo: "cliente" | "fornecedor"; documento: string | null }>();
+      const novosContatos = new Map<
+        string,
+        { nome: string; tipo: "cliente" | "fornecedor"; documento: string | null }
+      >();
       parsed.forEach((p) => {
         if (!p.contatoNome) return;
         const key = normNome(p.contatoNome);
@@ -366,7 +500,8 @@ export function LancamentosToolbar({
       let criadosCtt = 0;
       if (novosContatos.size) {
         // A receber -> clientes; a pagar -> fornecedores (tabelas separadas por módulo).
-        const criados: { id: string; nome: string; documento: string | null; tabela: string }[] = [];
+        const criados: { id: string; nome: string; documento: string | null; tabela: string }[] =
+          [];
         for (const tipo of ["cliente", "fornecedor"] as const) {
           const tabela = tipo === "cliente" ? "clientes" : "fornecedores";
           const payload = Array.from(novosContatos.values())
@@ -399,7 +534,7 @@ export function LancamentosToolbar({
         valor: p.valor,
         data_emissao: p.de,
         data_vencimento: p.dv,
-        contato_id: p.contatoNome ? mContatos.get(normNome(p.contatoNome)) ?? null : null,
+        contato_id: p.contatoNome ? (mContatos.get(normNome(p.contatoNome)) ?? null) : null,
         categoria_id: mCategorias.get(normNome(p.catNome)) ?? null,
         conta_bancaria_id: null,
         documento: p.documento,
@@ -432,15 +567,35 @@ export function LancamentosToolbar({
         .select("descricao,data_vencimento,valor,tipo,data_emissao")
         .eq("empresa_id", empresaId)
         .in("data_vencimento", vencs);
-      const chave = (e: { descricao: string; data_vencimento: string; valor: number; tipo?: string; data_emissao?: string | null }) =>
+      const chave = (e: {
+        descricao: string;
+        data_vencimento: string;
+        valor: number;
+        tipo?: string;
+        data_emissao?: string | null;
+      }) =>
         `${e.tipo ?? ""}|${e.descricao.trim().toLowerCase()}|${e.data_vencimento}|${e.data_emissao ?? ""}|${Number(e.valor).toFixed(2)}`;
-      const existSet = new Set((existentes ?? []).map((e) => chave(e as { descricao: string; data_vencimento: string; valor: number; tipo?: string; data_emissao?: string | null })));
+      const existSet = new Set(
+        (existentes ?? []).map((e) =>
+          chave(
+            e as {
+              descricao: string;
+              data_vencimento: string;
+              valor: number;
+              tipo?: string;
+              data_emissao?: string | null;
+            },
+          ),
+        ),
+      );
       const novos: Insert[] = [];
       const duplicados: string[] = [];
       inserts.forEach((ins) => {
         const k = chave(ins);
         if (existSet.has(k)) {
-          duplicados.push(`${ins.descricao} — ${format(new Date(ins.data_vencimento), "dd/MM/yyyy")} — R$ ${ins.valor.toFixed(2)}`);
+          duplicados.push(
+            `${ins.descricao} — ${format(new Date(ins.data_vencimento), "dd/MM/yyyy")} — R$ ${ins.valor.toFixed(2)}`,
+          );
           return;
         }
         novos.push(ins);
@@ -470,27 +625,59 @@ export function LancamentosToolbar({
   return (
     <div className="mb-6 flex flex-wrap items-center gap-2.5 rounded-2xl border bg-card px-4 py-3 shadow-panel">
       {busca && <div className="min-w-[200px] flex-1">{busca}</div>}
-      <Button size="sm" variant="outline" className="h-9 rounded-xl px-3.5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={baixarModelo}>
-        <FileSpreadsheet className="mr-1.5 h-4 w-4" />Planilha modelo
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-9 rounded-xl px-3.5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+        onClick={baixarModelo}
+      >
+        <FileSpreadsheet className="mr-1.5 h-4 w-4" />
+        Planilha modelo
       </Button>
-      <Button size="sm" variant="outline" className="h-9 rounded-xl px-3.5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={exportar}>
-        <Download className="mr-1.5 h-4 w-4" />Exportar
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-9 rounded-xl px-3.5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+        onClick={exportar}
+      >
+        <Download className="mr-1.5 h-4 w-4" />
+        Exportar
       </Button>
-      <Button size="sm" variant="outline" className="h-9 rounded-xl px-3.5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={() => window.print()}>
-        <Printer className="mr-1.5 h-4 w-4" />Imprimir
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-9 rounded-xl px-3.5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+        onClick={() => window.print()}
+      >
+        <Printer className="mr-1.5 h-4 w-4" />
+        Imprimir
       </Button>
-      <Button size="sm" variant="outline" className="h-9 rounded-xl px-3.5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={() => fileRef.current?.click()}>
-        <Upload className="mr-1.5 h-4 w-4" />Importar planilha
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-9 rounded-xl px-3.5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+        onClick={() => fileRef.current?.click()}
+      >
+        <Upload className="mr-1.5 h-4 w-4" />
+        Importar planilha
       </Button>
       <input
         ref={fileRef}
         type="file"
         accept=".xlsx,.xlsm,.xls,.csv"
         className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) importar(f); }}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) importar(f);
+        }}
       />
 
-      <Dialog open={!!pending} onOpenChange={(o) => { if (!o && !saving) setPending(null); }}>
+      <Dialog
+        open={!!pending}
+        onOpenChange={(o) => {
+          if (!o && !saving) setPending(null);
+        }}
+      >
         <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Vincular conta financeira</DialogTitle>
@@ -499,7 +686,11 @@ export function LancamentosToolbar({
                 <>
                   {pending.inserts.length} lançamento(s) prontos para importar.
                   {(pending.criados.categorias > 0 || pending.criados.contatos > 0) && (
-                    <> Criados automaticamente: {pending.criados.categorias} categoria(s), {pending.criados.contatos} contato(s).</>
+                    <>
+                      {" "}
+                      Criados automaticamente: {pending.criados.categorias} categoria(s),{" "}
+                      {pending.criados.contatos} contato(s).
+                    </>
                   )}
                 </>
               ) : null}
@@ -507,11 +698,30 @@ export function LancamentosToolbar({
           </DialogHeader>
           <div className="space-y-2.5">
             <label className="text-sm font-medium">Conta financeira (opcional)</label>
-            <Combobox value={contaSel} onChange={setContaSel} options={[{ value: "__none", label: "Sem conta vinculada" }, ...((contas ?? []).map((c) => ({ value: c.id, label: c.nome })))]} emptyText="Nenhum item encontrado." />
+            <Combobox
+              value={contaSel}
+              onChange={setContaSel}
+              options={[
+                { value: "__none", label: "Sem conta vinculada" },
+                ...(contas ?? []).map((c) => ({ value: c.id, label: c.nome })),
+              ]}
+              emptyText="Nenhum item encontrado."
+            />
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" className="h-10 rounded-xl px-5" onClick={() => setPending(null)} disabled={saving}>Cancelar</Button>
-            <Button className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={confirmarImportacao} disabled={saving}>
+            <Button
+              variant="outline"
+              className="h-10 rounded-xl px-5"
+              onClick={() => setPending(null)}
+              disabled={saving}
+            >
+              Cancelar
+            </Button>
+            <Button
+              className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+              onClick={confirmarImportacao}
+              disabled={saving}
+            >
               {saving ? "Importando..." : "Confirmar importação"}
             </Button>
           </DialogFooter>

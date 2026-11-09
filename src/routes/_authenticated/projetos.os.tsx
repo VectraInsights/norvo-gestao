@@ -157,7 +157,7 @@ function OSPage() {
           .from("clientes")
           .select("id,nome")
           .eq("empresa_id", empresa!.id)
-          
+
           .order("nome")
           .range(ini, ini + 999);
         todos.push(...((data as unknown[]) ?? []));
@@ -206,7 +206,14 @@ function OSPage() {
       if ((o.projetos?.nome || "").toLowerCase().includes(q)) return true;
       if (o.numero != null && String(o.numero).includes(qNum)) return true;
       // Pesquisa por valor: "25,00" acha 25.00 (a partir de 2 dígitos)
-      if (qDig.length >= 2 && Number((o as any).valor || 0).toFixed(2).replace(/\D/g, "").includes(qDig)) return true;
+      if (
+        qDig.length >= 2 &&
+        Number((o as any).valor || 0)
+          .toFixed(2)
+          .replace(/\D/g, "")
+          .includes(qDig)
+      )
+        return true;
       return false;
     });
   }, [ordens, tab, busca]);
@@ -337,8 +344,7 @@ function OSPage() {
                         { value: "none", label: "— sem cliente —" },
                         ...clientes.map((c) => ({ value: c.id, label: c.nome })),
                       ]}
-                     
-                     
+
                       emptyText="Nenhum item encontrado."
                       footer={{ label: "Novo cliente", onClick: () => setNovoClienteOpen(true) }}
                     />
@@ -352,8 +358,7 @@ function OSPage() {
                         { value: "none", label: "— sem projeto —" },
                         ...projetos.map((p) => ({ value: p.id, label: p.nome })),
                       ]}
-                     
-                     
+
                       emptyText="Nenhum item encontrado."
                     />
                   </div>
@@ -406,10 +411,18 @@ function OSPage() {
                 </div>
               </div>
               <DialogFooter className="gap-2">
-                <Button variant="outline" onClick={() => setOpen(false)} className="h-10 rounded-xl px-6">
+                <Button
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  className="h-10 rounded-xl px-6"
+                >
                   Cancelar
                 </Button>
-                <Button onClick={() => save.mutate()} disabled={save.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+                <Button
+                  onClick={() => save.mutate()}
+                  disabled={save.isPending}
+                  className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                >
                   Salvar
                 </Button>
               </DialogFooter>
@@ -427,10 +440,18 @@ function OSPage() {
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="rounded-xl shadow-sm">
-          <TabsTrigger value="abertas" className="rounded-lg">Abertas</TabsTrigger>
-          <TabsTrigger value="concluidas" className="rounded-lg">Concluídas</TabsTrigger>
-          <TabsTrigger value="canceladas" className="rounded-lg">Canceladas</TabsTrigger>
-          <TabsTrigger value="todas" className="rounded-lg">Todas</TabsTrigger>
+          <TabsTrigger value="abertas" className="rounded-lg">
+            Abertas
+          </TabsTrigger>
+          <TabsTrigger value="concluidas" className="rounded-lg">
+            Concluídas
+          </TabsTrigger>
+          <TabsTrigger value="canceladas" className="rounded-lg">
+            Canceladas
+          </TabsTrigger>
+          <TabsTrigger value="todas" className="rounded-lg">
+            Todas
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -446,90 +467,101 @@ function OSPage() {
             <EmptyState
               icon={Wrench}
               title="Nenhuma OS"
-              description={busca ? "Nada encontrado para a busca." : "Crie sua primeira ordem de serviço."}
+              description={
+                busca ? "Nada encontrado para a busca." : "Crie sua primeira ordem de serviço."
+              }
             />
           </div>
         ) : (
           <div className="min-h-0 flex-1 overflow-y-auto [&_.erp-table-wrap]:max-h-none">
-          <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-16">Nº</TableHead>
-                <TableHead>Título</TableHead>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Projeto</TableHead>
-                <TableHead>Prioridade</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Previsão</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-                <TableHead className="w-10"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtrados.map((o) => (
-                <TableRow key={o.id}>
-                  <TableCell className="text-tabular">#{o.numero}</TableCell>
-                  <TableCell className="font-medium">{o.titulo}</TableCell>
-                  <TableCell>{o.contatos?.nome ?? "—"}</TableCell>
-                  <TableCell>
-                    {o.projetos ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <span
-                          className="h-2 w-2 rounded-full"
-                          style={{ background: o.projetos.cor ?? "#3b82f6" }}
-                        />
-                        {o.projetos.nome}
-                      </span>
-                    ) : (
-                      "—"
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <span className={PRIO_COLOR[o.prioridade]}>{PRIO_LABEL[o.prioridade]}</span>
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={o.status} label={STATUS_LABEL[o.status] ?? o.status} />
-                  </TableCell>
-                  <TableCell>{o.data_prevista ? dateBR(o.data_prevista) : "—"}</TableCell>
-                  <TableCell className="text-right text-tabular">{brl(o.valor ?? 0)}</TableCell>
-                  <TableCell>
-                    <span className="flex justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-lg"
-                        title="Editar"
-                        onClick={() => openEdit(o)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10" title="Excluir">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent className="rounded-2xl">
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Excluir OS #{o.numero}?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Esta ação não pode ser desfeita.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction data-acao className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => del.mutate(o.id)}>
-                              Excluir
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </span>
-                  </TableCell>
+            <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-16">Nº</TableHead>
+                  <TableHead>Título</TableHead>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Projeto</TableHead>
+                  <TableHead>Prioridade</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Previsão</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
+                  <TableHead className="w-10"></TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filtrados.map((o) => (
+                  <TableRow key={o.id}>
+                    <TableCell className="text-tabular">#{o.numero}</TableCell>
+                    <TableCell className="font-medium">{o.titulo}</TableCell>
+                    <TableCell>{o.contatos?.nome ?? "—"}</TableCell>
+                    <TableCell>
+                      {o.projetos ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <span
+                            className="h-2 w-2 rounded-full"
+                            style={{ background: o.projetos.cor ?? "#3b82f6" }}
+                          />
+                          {o.projetos.nome}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <span className={PRIO_COLOR[o.prioridade]}>{PRIO_LABEL[o.prioridade]}</span>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={o.status} label={STATUS_LABEL[o.status] ?? o.status} />
+                    </TableCell>
+                    <TableCell>{o.data_prevista ? dateBR(o.data_prevista) : "—"}</TableCell>
+                    <TableCell className="text-right text-tabular">{brl(o.valor ?? 0)}</TableCell>
+                    <TableCell>
+                      <span className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-lg"
+                          title="Editar"
+                          onClick={() => openEdit(o)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10"
+                              title="Excluir"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="rounded-2xl">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir OS #{o.numero}?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                data-acao
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                onClick={() => del.mutate(o.id)}
+                              >
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         )}
       </Card>

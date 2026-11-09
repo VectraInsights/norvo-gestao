@@ -41,16 +41,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  FileText,
-  Send,
-  Ban,
-  Download,
-  Plus,
-  FileDown,
-  Bookmark,
-  CheckCircle,
-} from "lucide-react";
+import { FileText, Send, Ban, Download, Plus, FileDown, Bookmark, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -207,7 +198,11 @@ function NotasEmitidas() {
 
   // Auditoria (tabela auditoria_eventos): quem criou/emitiu/cancelou
   const [trilhaOpen, setTrilhaOpen] = useState(false);
-  const registrarAuditoria = async (acao: string, descricao: string, detalhes: Record<string, any> = {}) => {
+  const registrarAuditoria = async (
+    acao: string,
+    descricao: string,
+    detalhes: Record<string, any> = {},
+  ) => {
     try {
       if (!empresa) return;
       const { data: sess } = await supabase.auth.getUser();
@@ -222,13 +217,16 @@ function NotasEmitidas() {
         entidade: "nota_emitida",
         detalhes: { ...detalhes, descricao, user_nome: nome, user_email: u.email || "" },
       } as any);
-    } catch { /* trilha indisponível: não bloqueia o fluxo */ }
+    } catch {
+      /* trilha indisponível: não bloqueia o fluxo */
+    }
   };
   const trilhaQuery = useQuery({
     enabled: trilhaOpen && !!empresa,
     queryKey: ["auditoria-emitidas", empresa?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("auditoria_eventos" as never)
+      const { data, error } = await supabase
+        .from("auditoria_eventos" as never)
         .select("id,created_at,acao,detalhes")
         .eq("empresa_id", empresa!.id as never)
         .eq("modulo", "fiscal")
@@ -525,15 +523,17 @@ function NotasEmitidas() {
         />
 
         <div className="flex shrink-0 items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setTrilhaOpen(true)}
+            className="h-9 rounded-xl px-4 active:scale-95"
+          >
             Auditoria
           </Button>
           <Dialog open={modalOpen} onOpenChange={setModalOpen}>
             <DialogTrigger asChild>
-              <PrimaryButton
-                onClick={() => setModalOpen(true)}
-                className="w-full sm:w-auto"
-              >
+              <PrimaryButton onClick={() => setModalOpen(true)} className="w-full sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" /> Nova Emissão
               </PrimaryButton>
             </DialogTrigger>
@@ -613,10 +613,18 @@ function NotasEmitidas() {
                 </div>
               </div>
               <DialogFooter className="gap-2">
-                <Button variant="outline" onClick={() => setModalOpen(false)} className="h-10 rounded-xl">
+                <Button
+                  variant="outline"
+                  onClick={() => setModalOpen(false)}
+                  className="h-10 rounded-xl"
+                >
                   Cancelar
                 </Button>
-                <Button onClick={() => criarNotaMut.mutate()} disabled={criarNotaMut.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+                <Button
+                  onClick={() => criarNotaMut.mutate()}
+                  disabled={criarNotaMut.isPending}
+                  className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                >
                   {criarNotaMut.isPending ? "Criando..." : "Criar Rascunho"}
                 </Button>
               </DialogFooter>
@@ -730,41 +738,111 @@ function NotasEmitidas() {
         <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Filtros salvos</DialogTitle>
-            <DialogDescription className="leading-relaxed">Salve uma combinação de tipo, status e busca para reutilizar depois.</DialogDescription>
+            <DialogDescription className="leading-relaxed">
+              Salve uma combinação de tipo, status e busca para reutilizar depois.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="flex gap-2">
-              <Input value={filtroSalvoNome} onChange={(event) => setFiltroSalvoNome(event.target.value)} placeholder="Nome do filtro" className="h-10 rounded-xl" />
+              <Input
+                value={filtroSalvoNome}
+                onChange={(event) => setFiltroSalvoNome(event.target.value)}
+                placeholder="Nome do filtro"
+                className="h-10 rounded-xl"
+              />
               <Button
                 disabled={!filtroSalvoNome.trim() || filtrosSalvos.salvar.isPending}
-                onClick={() => filtrosSalvos.salvar.mutate({ nome: filtroSalvoNome, filtros: { activeTab, searchTerm, statusFilter } }, { onSuccess: () => { setFiltroSalvoNome(""); toast.success("Filtro salvo"); } })}
+                onClick={() =>
+                  filtrosSalvos.salvar.mutate(
+                    { nome: filtroSalvoNome, filtros: { activeTab, searchTerm, statusFilter } },
+                    {
+                      onSuccess: () => {
+                        setFiltroSalvoNome("");
+                        toast.success("Filtro salvo");
+                      },
+                    },
+                  )
+                }
                 className="h-10 shrink-0 whitespace-nowrap rounded-xl px-4 shadow-sm"
               >
                 Salvar
               </Button>
             </div>
             <div className="space-y-2">
-              {filtrosSalvos.filtros.length === 0 ? <p className="rounded-xl bg-muted/40 px-4 py-5 text-center text-sm text-muted-foreground">Nenhum filtro salvo.</p> : filtrosSalvos.filtros.map((filtro) => (
-                <div key={filtro.id} className="flex items-center justify-between gap-2 rounded-xl border px-4 py-2.5 shadow-sm transition-all hover:shadow-md">
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium">{filtro.nome}</span>
-                  <div className="flex shrink-0 gap-1">
-                    <Button size="sm" variant="ghost" className="h-8 rounded-lg" onClick={() => { const valores = filtro.filtros as { activeTab?: string; searchTerm?: string; statusFilter?: string }; setActiveTab(valores.activeTab ?? "todas"); setSearchTerm(valores.searchTerm ?? ""); setStatusFilter(valores.statusFilter ?? "todos"); setPagina(1); setFiltrosSalvosOpen(false); }}>Aplicar</Button>
-                    <Button size="sm" variant="ghost" className="h-8 rounded-lg text-destructive" onClick={() => filtrosSalvos.excluir.mutate(filtro.id)}>Excluir</Button>
+              {filtrosSalvos.filtros.length === 0 ? (
+                <p className="rounded-xl bg-muted/40 px-4 py-5 text-center text-sm text-muted-foreground">
+                  Nenhum filtro salvo.
+                </p>
+              ) : (
+                filtrosSalvos.filtros.map((filtro) => (
+                  <div
+                    key={filtro.id}
+                    className="flex items-center justify-between gap-2 rounded-xl border px-4 py-2.5 shadow-sm transition-all hover:shadow-md"
+                  >
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                      {filtro.nome}
+                    </span>
+                    <div className="flex shrink-0 gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 rounded-lg"
+                        onClick={() => {
+                          const valores = filtro.filtros as {
+                            activeTab?: string;
+                            searchTerm?: string;
+                            statusFilter?: string;
+                          };
+                          setActiveTab(valores.activeTab ?? "todas");
+                          setSearchTerm(valores.searchTerm ?? "");
+                          setStatusFilter(valores.statusFilter ?? "todos");
+                          setPagina(1);
+                          setFiltrosSalvosOpen(false);
+                        }}
+                      >
+                        Aplicar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 rounded-lg text-destructive"
+                        onClick={() => filtrosSalvos.excluir.mutate(filtro.id)}
+                      >
+                        Excluir
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setFiltrosSalvosOpen(false)} className="h-10 rounded-xl">Fechar</Button></DialogFooter>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setFiltrosSalvosOpen(false)}
+              className="h-10 rounded-xl"
+            >
+              Fechar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!cancelarId} onOpenChange={(v) => { if (!v) { setCancelarId(null); setMotivoCancel(""); } }}>
+      <Dialog
+        open={!!cancelarId}
+        onOpenChange={(v) => {
+          if (!v) {
+            setCancelarId(null);
+            setMotivoCancel("");
+          }
+        }}
+      >
         <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Cancelar nota fiscal</DialogTitle>
             <DialogDescription className="leading-relaxed">
-              Informe o motivo do cancelamento (mínimo 15 caracteres). Esta justificativa será enviada à SEFAZ.
+              Informe o motivo do cancelamento (mínimo 15 caracteres). Esta justificativa será
+              enviada à SEFAZ.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-2 py-2">
@@ -783,12 +861,21 @@ function NotasEmitidas() {
               }}
               className="rounded-xl"
             />
-            <p className={`text-xs ${motivoCancel.trim().length < 15 ? "text-muted-foreground" : "text-primary"}`}>
+            <p
+              className={`text-xs ${motivoCancel.trim().length < 15 ? "text-muted-foreground" : "text-primary"}`}
+            >
               {motivoCancel.trim().length}/15 caracteres mínimos
             </p>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => { setCancelarId(null); setMotivoCancel(""); }} className="h-10 rounded-xl">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCancelarId(null);
+                setMotivoCancel("");
+              }}
+              className="h-10 rounded-xl"
+            >
               Voltar
             </Button>
             <Button
@@ -964,7 +1051,7 @@ function NotasEmitidas() {
         emptyText="Nenhum evento registrado ainda. Criar, emitir ou cancelar gera registros aqui."
         isLoading={trilhaQuery.isLoading}
         isError={trilhaQuery.isError}
-        events={(trilhaQuery.data ?? [])}
+        events={trilhaQuery.data ?? []}
       />
     </div>
   );

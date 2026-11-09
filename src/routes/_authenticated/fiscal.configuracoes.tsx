@@ -6,16 +6,58 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Combobox } from "@/components/erp/combobox";
-import { 
-  FolderCog, Shield, Landmark, Scale, FileText, CheckCircle2, 
-  Upload, Key, AlertTriangle, HelpCircle, Plus, Edit2, Trash2, Check 
+import {
+  FolderCog,
+  Shield,
+  Landmark,
+  Scale,
+  FileText,
+  CheckCircle2,
+  Upload,
+  Key,
+  AlertTriangle,
+  HelpCircle,
+  Plus,
+  Edit2,
+  Trash2,
+  Check,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,11 +106,41 @@ interface CFOPRule {
 }
 
 const INITIAL_CFOPS: CFOPRule[] = [
-  { id: "1", nome: "Venda de mercadoria (Estadual)", cfop: "5102", tipo: "saida", descricao: "Venda de mercadoria adquirida ou recebida de terceiros no estado." },
-  { id: "2", nome: "Venda de mercadoria (Interestadual)", cfop: "6102", tipo: "saida", descricao: "Venda de mercadoria adquirida ou recebida de terceiros para outro estado." },
-  { id: "3", nome: "Prestação de serviço (Municipal)", cfop: "5933", tipo: "saida", descricao: "Prestação de serviço tributado pelo ISSQN dentro do município." },
-  { id: "4", nome: "Devolução de compra para industrialização", cfop: "5201", tipo: "saida", descricao: "Devolução de mercadoria comprada para processo industrial." },
-  { id: "5", nome: "Compra para comercialização (Estadual)", cfop: "1102", tipo: "entrada", descricao: "Compra de mercadoria para comercialização dentro do estado." }
+  {
+    id: "1",
+    nome: "Venda de mercadoria (Estadual)",
+    cfop: "5102",
+    tipo: "saida",
+    descricao: "Venda de mercadoria adquirida ou recebida de terceiros no estado.",
+  },
+  {
+    id: "2",
+    nome: "Venda de mercadoria (Interestadual)",
+    cfop: "6102",
+    tipo: "saida",
+    descricao: "Venda de mercadoria adquirida ou recebida de terceiros para outro estado.",
+  },
+  {
+    id: "3",
+    nome: "Prestação de serviço (Municipal)",
+    cfop: "5933",
+    tipo: "saida",
+    descricao: "Prestação de serviço tributado pelo ISSQN dentro do município.",
+  },
+  {
+    id: "4",
+    nome: "Devolução de compra para industrialização",
+    cfop: "5201",
+    tipo: "saida",
+    descricao: "Devolução de mercadoria comprada para processo industrial.",
+  },
+  {
+    id: "5",
+    nome: "Compra para comercialização (Estadual)",
+    cfop: "1102",
+    tipo: "entrada",
+    descricao: "Compra de mercadoria para comercialização dentro do estado.",
+  },
 ];
 
 function RtcTab({ empresaId }: { empresaId: string }) {
@@ -78,20 +150,29 @@ function RtcTab({ empresaId }: { empresaId: string }) {
   const cfg = useQuery({
     queryKey: ["rtc-config", empresaId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("rtc_config" as never)
-        .select("fase2_ativo,cclasstrib_padrao").eq("empresa_id", empresaId).maybeSingle();
+      const { data, error } = await supabase
+        .from("rtc_config" as never)
+        .select("fase2_ativo,cclasstrib_padrao")
+        .eq("empresa_id", empresaId)
+        .maybeSingle();
       if (error) throw error;
-      return (data ?? null) as unknown as { fase2_ativo: boolean; cclasstrib_padrao: string } | null;
+      return (data ?? null) as unknown as {
+        fase2_ativo: boolean;
+        cclasstrib_padrao: string;
+      } | null;
     },
   });
   const { data: ccs } = useQuery({
     queryKey: ["cclasstrib-lista"],
     staleTime: 24 * 60 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("cclasstrib" as never)
-        .select("codigo,descricao").order("codigo").limit(1000);
+      const { data, error } = await supabase
+        .from("cclasstrib" as never)
+        .select("codigo,descricao")
+        .order("codigo")
+        .limit(1000);
       if (error) throw error;
-      return ((data ?? []) as unknown) as { codigo: string; descricao: string }[];
+      return (data ?? []) as unknown as { codigo: string; descricao: string }[];
     },
   });
   useEffect(() => {
@@ -104,9 +185,14 @@ function RtcTab({ empresaId }: { empresaId: string }) {
     mutationFn: async () => {
       const cod = cc.replace(/\D/g, "");
       if (cod.length !== 6) throw new Error("cClassTrib precisa ter 6 dígitos");
-      const { error } = await supabase.from("rtc_config" as never).upsert({
-        empresa_id: empresaId, fase2_ativo: ativo, cclasstrib_padrao: cod,
-      } as never, { onConflict: "empresa_id" });
+      const { error } = await supabase.from("rtc_config" as never).upsert(
+        {
+          empresa_id: empresaId,
+          fase2_ativo: ativo,
+          cclasstrib_padrao: cod,
+        } as never,
+        { onConflict: "empresa_id" },
+      );
       if (error) throw error;
     },
     onSuccess: () => {
@@ -119,9 +205,12 @@ function RtcTab({ empresaId }: { empresaId: string }) {
   return (
     <Card className="rounded-2xl border-muted bg-card/60 backdrop-blur-sm shadow-panel">
       <CardHeader className="pb-2">
-        <CardTitle className="text-base font-semibold tracking-tight">Reforma Tributária (IBS/CBS) — fase 2</CardTitle>
+        <CardTitle className="text-base font-semibold tracking-tight">
+          Reforma Tributária (IBS/CBS) — fase 2
+        </CardTitle>
         <CardDescription className="leading-relaxed">
-          Deixe desligado até a SEFAZ exigir. Ao ligar, o CT-e usa o cClassTrib real e libera ISUF, compras gov e split no XML.
+          Deixe desligado até a SEFAZ exigir. Ao ligar, o CT-e usa o cClassTrib real e libera ISUF,
+          compras gov e split no XML.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -132,7 +221,9 @@ function RtcTab({ empresaId }: { empresaId: string }) {
             <div className="flex items-center justify-between gap-3 rounded-xl border px-3.5 py-3">
               <div>
                 <p className="text-sm font-medium">Fase 2 ativa</p>
-                <p className="text-xs leading-relaxed text-muted-foreground">Liga cClassTrib real, ISUF, compras gov e split no XML.</p>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Liga cClassTrib real, ISUF, compras gov e split no XML.
+                </p>
               </div>
               <Switch checked={ativo} onCheckedChange={setAtivo} />
             </div>
@@ -142,15 +233,28 @@ function RtcTab({ empresaId }: { empresaId: string }) {
                 <Combobox
                   value={cc}
                   onChange={setCc}
-                  options={(ccs ?? []).map((n) => ({ value: n.codigo, label: `${n.codigo} — ${n.descricao.slice(0, 60)}` }))}
+                  options={(ccs ?? []).map((n) => ({
+                    value: n.codigo,
+                    label: `${n.codigo} — ${n.descricao.slice(0, 60)}`,
+                  }))}
                   emptyText="Nenhum item encontrado."
                 />
               ) : (
-                <Input value={cc} onChange={(e) => setCc(e.target.value.replace(/\D/g, "").slice(0, 6))} className="h-10 rounded-xl font-mono" />
+                <Input
+                  value={cc}
+                  onChange={(e) => setCc(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  className="h-10 rounded-xl font-mono"
+                />
               )}
-              <p className="text-[11px] leading-relaxed text-muted-foreground">Usado no IBS/CBS com a fase 2 ligada. Desligada, sai 000001.</p>
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                Usado no IBS/CBS com a fase 2 ligada. Desligada, sai 000001.
+              </p>
             </div>
-            <Button onClick={() => salvar.mutate()} disabled={salvar.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+            <Button
+              onClick={() => salvar.mutate()}
+              disabled={salvar.isPending}
+              className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+            >
               {salvar.isPending ? "Salvando…" : "Salvar"}
             </Button>
           </>
@@ -188,7 +292,8 @@ export function ConfigFiscais() {
     enabled: !!empresa,
     queryKey: ["nfe-config", empresa?.id],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase.from("nfe_config")
+      const { data, error } = await supabase
+        .from("nfe_config")
         .select("ambiente,serie,proximo_numero,regime_tributario,cnae,natureza_operacao")
         .eq("empresa_id", empresa!.id)
         .abortSignal(signal)
@@ -218,8 +323,11 @@ export function ConfigFiscais() {
     enabled: !!empresa,
     queryKey: ["certificado-digital", empresa?.id],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase.from("certificados_digitais" as never)
-        .select("id, empresa_id, nome, arquivo_path, arquivo_nome, thumbprint, validade, ativo, created_at")
+      const { data, error } = await supabase
+        .from("certificados_digitais" as never)
+        .select(
+          "id, empresa_id, nome, arquivo_path, arquivo_nome, thumbprint, validade, ativo, created_at",
+        )
         .eq("empresa_id", empresa!.id)
         .eq("ativo", true)
         .abortSignal(signal)
@@ -234,7 +342,11 @@ export function ConfigFiscais() {
     if (empresa?.id) {
       const savedCfops = localStorage.getItem(`norvo_cfops_${empresa.id}`);
       if (savedCfops) {
-        try { setCfops(JSON.parse(savedCfops)); } catch (e) { console.error(e); }
+        try {
+          setCfops(JSON.parse(savedCfops));
+        } catch (e) {
+          console.error(e);
+        }
       }
       const savedRates = localStorage.getItem(`norvo_rates_${empresa.id}`);
       if (savedRates) {
@@ -244,7 +356,9 @@ export function ConfigFiscais() {
           setIcmsRate(parsed.icmsRate || "18.0");
           setPisRate(parsed.pisRate || "0.65");
           setCofinsRate(parsed.cofinsRate || "3.0");
-        } catch (e) { console.error(e); }
+        } catch (e) {
+          console.error(e);
+        }
       }
     }
   }, [empresa?.id]);
@@ -256,7 +370,7 @@ export function ConfigFiscais() {
       setRegime(config.regime_tributario ?? "simples");
       setCnae(config.cnae ?? "");
       setNatOp(config.natureza_operacao ?? "Venda de mercadoria");
-      
+
       // Ajusta alíquotas padrão baseadas no regime
       if (config.regime_tributario === "lucro_presumido") {
         setIssRate("3.0");
@@ -276,29 +390,38 @@ export function ConfigFiscais() {
   const updateConfigMut = useMutation({
     mutationFn: async () => {
       if (!empresa) throw new Error("Empresa não selecionada");
-      
-      const { error } = await supabase.from("nfe_config").upsert({
-        empresa_id: empresa.id,
-        ambiente,
-        serie: parseInt(serie) || 1,
-        proximo_numero: parseInt(proximoNumero) || 1,
-        regime_tributario: regime,
-        cnae: cnae || null,
-        natureza_operacao: natOp || null
-      }, { onConflict: "empresa_id" });
+
+      const { error } = await supabase.from("nfe_config").upsert(
+        {
+          empresa_id: empresa.id,
+          ambiente,
+          serie: parseInt(serie) || 1,
+          proximo_numero: parseInt(proximoNumero) || 1,
+          regime_tributario: regime,
+          cnae: cnae || null,
+          natureza_operacao: natOp || null,
+        },
+        { onConflict: "empresa_id" },
+      );
 
       if (error) throw error;
 
       // Persistir alíquotas locais por empresa
-      localStorage.setItem(`norvo_rates_${empresa.id}`, JSON.stringify({
-        issRate, icmsRate, pisRate, cofinsRate
-      }));
+      localStorage.setItem(
+        `norvo_rates_${empresa.id}`,
+        JSON.stringify({
+          issRate,
+          icmsRate,
+          pisRate,
+          cofinsRate,
+        }),
+      );
     },
     onSuccess: () => {
       toast.success("Configurações tributárias salvas com sucesso!");
       qc.invalidateQueries({ queryKey: ["nfe-config"] });
     },
-    onError: (e: Error) => toast.error(e.message)
+    onError: (e: Error) => toast.error(e.message),
   });
 
   // Upload de certificado digital — real para Supabase Storage + tabela
@@ -324,7 +447,9 @@ export function ConfigFiscais() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const certAny = certCnpj as any;
       if (certAny?.empresa_id?.cnpj === empresa.cnpj) {
-        return toast.error("Já existe um certificado ativo para este CNPJ. Exclua o certificado anterior antes de cadastrar um novo.");
+        return toast.error(
+          "Já existe um certificado ativo para este CNPJ. Exclua o certificado anterior antes de cadastrar um novo.",
+        );
       }
     }
 
@@ -337,7 +462,9 @@ export function ConfigFiscais() {
       let thumbprint: string | null = null;
       try {
         const fileBytes = await certFile.arrayBuffer();
-        const p12Asn1 = forge.asn1.fromDer(forge.util.encode64(forge.util.binary.raw.encode(new Uint8Array(fileBytes))));
+        const p12Asn1 = forge.asn1.fromDer(
+          forge.util.encode64(forge.util.binary.raw.encode(new Uint8Array(fileBytes))),
+        );
         const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, certPassword);
         const certBags = p12.getBags({ bagType: "1.2.840.113549.1.12.10.1.3" });
         const cert = certBags["1.2.840.113549.1.12.10.1.3"]?.[0]?.cert;
@@ -347,7 +474,11 @@ export function ConfigFiscais() {
           const m = String(na.getMonth() + 1).padStart(2, "0");
           const d = String(na.getDate()).padStart(2, "0");
           validade = `${y}-${m}-${d}`;
-          thumbprint = forge.md.sha1.create().update(forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes()).digest().toHex();
+          thumbprint = forge.md.sha1
+            .create()
+            .update(forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes())
+            .digest()
+            .toHex();
         }
       } catch (e) {
         console.error("Erro ao extrair validade do certificado:", e);
@@ -360,18 +491,16 @@ export function ConfigFiscais() {
       if (uploadErr) throw uploadErr;
 
       // Inserir metadados na tabela (senha em texto plano — Worker acessa via service role)
-      const { error: insertErr } = await supabase
-        .from("certificados_digitais" as never)
-        .insert({
-          empresa_id: empresa.id,
-          nome: certFile.name.replace(/\.(pfx|p12)$/i, ""),
-          arquivo_path: storagePath,
-          arquivo_nome: certFile.name,
-          senha_cript: certPassword,
-          validade,
-          thumbprint,
-          ativo: true,
-        } as never);
+      const { error: insertErr } = await supabase.from("certificados_digitais" as never).insert({
+        empresa_id: empresa.id,
+        nome: certFile.name.replace(/\.(pfx|p12)$/i, ""),
+        arquivo_path: storagePath,
+        arquivo_nome: certFile.name,
+        senha_cript: certPassword,
+        validade,
+        thumbprint,
+        ativo: true,
+      } as never);
       if (insertErr) {
         await supabase.storage.from("certificados").remove([storagePath]);
         throw insertErr;
@@ -417,13 +546,25 @@ export function ConfigFiscais() {
 
     let nextCfops: CFOPRule[];
     if (editingCfopId) {
-      nextCfops = cfops.map(c => c.id === editingCfopId ? {
-        id: editingCfopId, nome: cfopNome, cfop: cfopValor, tipo: cfopTipo, descricao: cfopDesc
-      } : c);
+      nextCfops = cfops.map((c) =>
+        c.id === editingCfopId
+          ? {
+              id: editingCfopId,
+              nome: cfopNome,
+              cfop: cfopValor,
+              tipo: cfopTipo,
+              descricao: cfopDesc,
+            }
+          : c,
+      );
       toast.success("Regra CFOP atualizada!");
     } else {
       const novo: CFOPRule = {
-        id: String(Date.now()), nome: cfopNome, cfop: cfopValor, tipo: cfopTipo, descricao: cfopDesc
+        id: String(Date.now()),
+        nome: cfopNome,
+        cfop: cfopValor,
+        tipo: cfopTipo,
+        descricao: cfopDesc,
       };
       nextCfops = [...cfops, novo];
       toast.success("Regra CFOP adicionada com sucesso!");
@@ -443,7 +584,7 @@ export function ConfigFiscais() {
   };
 
   const executarExcluirCFOP = (rule: CFOPRule) => {
-    const nextCfops = cfops.filter(c => c.id !== rule.id);
+    const nextCfops = cfops.filter((c) => c.id !== rule.id);
     setCfops(nextCfops);
     if (empresa?.id) {
       localStorage.setItem(`norvo_cfops_${empresa.id}`, JSON.stringify(nextCfops));
@@ -465,10 +606,18 @@ export function ConfigFiscais() {
     <>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6 space-y-6 sm:mt-8">
         <TabsList className="bg-muted/80 h-auto w-full max-w-[560px] flex-wrap gap-1 rounded-xl p-1.5">
-          <TabsTrigger value="certificado" className="flex-1 text-xs sm:text-sm">Certificado Digital</TabsTrigger>
-          <TabsTrigger value="tributos" className="flex-1 text-xs sm:text-sm">Tributos e Regimes</TabsTrigger>
-          <TabsTrigger value="cfop" className="flex-1 text-xs sm:text-sm">CFOP & Naturezas</TabsTrigger>
-          <TabsTrigger value="rtc" className="flex-1 text-xs sm:text-sm">Reforma Tributária</TabsTrigger>
+          <TabsTrigger value="certificado" className="flex-1 text-xs sm:text-sm">
+            Certificado Digital
+          </TabsTrigger>
+          <TabsTrigger value="tributos" className="flex-1 text-xs sm:text-sm">
+            Tributos e Regimes
+          </TabsTrigger>
+          <TabsTrigger value="cfop" className="flex-1 text-xs sm:text-sm">
+            CFOP & Naturezas
+          </TabsTrigger>
+          <TabsTrigger value="rtc" className="flex-1 text-xs sm:text-sm">
+            Reforma Tributária
+          </TabsTrigger>
         </TabsList>
 
         {/* ABA CERTIFICADO DIGITAL */}
@@ -476,9 +625,12 @@ export function ConfigFiscais() {
           <div className="grid gap-4 sm:gap-5 md:grid-cols-3 lg:gap-6">
             <Card className="rounded-2xl md:col-span-2 border-muted bg-card/60 backdrop-blur-sm shadow-panel">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold tracking-tight">Certificado A1 (Arquivo)</CardTitle>
+                <CardTitle className="text-base font-semibold tracking-tight">
+                  Certificado A1 (Arquivo)
+                </CardTitle>
                 <CardDescription className="leading-relaxed">
-                  Faça o upload do seu certificado digital modelo A1 (extensão .pfx ou .p12). A validade padrão é de 1 ano.
+                  Faça o upload do seu certificado digital modelo A1 (extensão .pfx ou .p12). A
+                  validade padrão é de 1 ano.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -493,20 +645,45 @@ export function ConfigFiscais() {
                         <CheckCircle2 className="h-6 w-6 text-primary" />
                       </span>
                       <div className="min-w-0 flex-1 space-y-1">
-                        <h4 className="text-sm font-semibold tracking-tight text-foreground">Certificado Digital Ativo e Válido</h4>
-                        <p className="text-xs leading-relaxed text-muted-foreground">O certificado digital está pronto para autenticar e assinar suas notas fiscais.</p>
-                        
+                        <h4 className="text-sm font-semibold tracking-tight text-foreground">
+                          Certificado Digital Ativo e Válido
+                        </h4>
+                        <p className="text-xs leading-relaxed text-muted-foreground">
+                          O certificado digital está pronto para autenticar e assinar suas notas
+                          fiscais.
+                        </p>
+
                         <div className="grid grid-cols-1 gap-2 pt-3 text-xs sm:grid-cols-2 sm:gap-x-6">
-                          <div><span className="text-muted-foreground">CNPJ Associado:</span> <strong className="text-foreground">{empresa?.cnpj ?? "—"}</strong></div>
-                          <div><span className="text-muted-foreground">Empresa:</span> <strong className="text-foreground">{empresa?.nome_fantasia ?? "—"}</strong></div>
-                          <div><span className="text-muted-foreground">Arquivo:</span> <strong className="text-foreground">{certificado.arquivo_nome}</strong></div>
-                          <div><span className="text-muted-foreground">Vencimento:</span> <strong className="text-foreground">{certificado.validade ? dateBR(certificado.validade) : "—"}</strong></div>
+                          <div>
+                            <span className="text-muted-foreground">CNPJ Associado:</span>{" "}
+                            <strong className="text-foreground">{empresa?.cnpj ?? "—"}</strong>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Empresa:</span>{" "}
+                            <strong className="text-foreground">
+                              {empresa?.nome_fantasia ?? "—"}
+                            </strong>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Arquivo:</span>{" "}
+                            <strong className="text-foreground">{certificado.arquivo_nome}</strong>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Vencimento:</span>{" "}
+                            <strong className="text-foreground">
+                              {certificado.validade ? dateBR(certificado.validade) : "—"}
+                            </strong>
+                          </div>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex justify-end">
-                      <Button variant="outline" className="h-10 rounded-xl px-5 text-destructive shadow-sm hover:bg-destructive/10" onClick={() => setConfExcluirCert(certificado)}>
+                      <Button
+                        variant="outline"
+                        className="h-10 rounded-xl px-5 text-destructive shadow-sm hover:bg-destructive/10"
+                        onClick={() => setConfExcluirCert(certificado)}
+                      >
                         Excluir Certificado
                       </Button>
                     </div>
@@ -517,7 +694,9 @@ export function ConfigFiscais() {
                       <span className="grid h-14 w-14 place-items-center rounded-2xl bg-muted/60">
                         <Upload className="h-6 w-6 text-muted-foreground" />
                       </span>
-                      <p className="mt-4 text-sm font-medium text-foreground text-center">Selecione o arquivo do Certificado A1 (.pfx ou .p12)</p>
+                      <p className="mt-4 text-sm font-medium text-foreground text-center">
+                        Selecione o arquivo do Certificado A1 (.pfx ou .p12)
+                      </p>
                       <input
                         ref={certFileRef}
                         type="file"
@@ -540,10 +719,10 @@ export function ConfigFiscais() {
                       <Label htmlFor="senha-cert">Senha do Certificado</Label>
                       <div className="relative">
                         <Key className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input 
-                          id="senha-cert" 
+                        <Input
+                          id="senha-cert"
                           type={showCertPassword ? "text" : "password"}
-                          
+
                           className="h-10 rounded-xl pl-10 pr-10"
                           value={certPassword}
                           onChange={(e) => setCertPassword(e.target.value)}
@@ -555,15 +734,46 @@ export function ConfigFiscais() {
                           className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                         >
                           {showCertPassword ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                              <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                              <line x1="1" y1="1" x2="23" y2="23" />
+                            </svg>
                           ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                              <circle cx="12" cy="12" r="3" />
+                            </svg>
                           )}
                         </button>
                       </div>
                     </div>
 
-                    <Button type="submit" disabled={isUploadingCert || !certFile} className="h-10 w-full rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md sm:w-auto">
+                    <Button
+                      type="submit"
+                      disabled={isUploadingCert || !certFile}
+                      className="h-10 w-full rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md sm:w-auto"
+                    >
                       {isUploadingCert ? "Validando e Salvando..." : "Salvar Certificado"}
                     </Button>
                   </form>
@@ -573,17 +783,22 @@ export function ConfigFiscais() {
 
             <Card className="rounded-2xl border-muted bg-card/60 backdrop-blur-sm shadow-panel">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold tracking-tight">Certificado A3 (Físico)</CardTitle>
+                <CardTitle className="text-base font-semibold tracking-tight">
+                  Certificado A3 (Físico)
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 text-sm text-muted-foreground leading-relaxed">
                 <div className="flex gap-2.5 rounded-xl border border-warning/30 bg-warning/10 p-3.5 text-xs leading-relaxed text-warning-foreground shadow-sm">
                   <AlertTriangle className="h-5 w-5 shrink-0" />
                   <p>
-                    Certificados A3 (cartão/token físico) requerem a instalação do emissor local / assinador na máquina onde a nota é emitida.
+                    Certificados A3 (cartão/token físico) requerem a instalação do emissor local /
+                    assinador na máquina onde a nota é emitida.
                   </p>
                 </div>
                 <p className="text-xs leading-relaxed">
-                  Recomendamos fortemente o uso do certificado **A1 (arquivo digital)**, pois permite a emissão de notas diretamente pela nuvem, de qualquer dispositivo, de forma 100% automatizada e sem dependência de hardware conectado.
+                  Recomendamos fortemente o uso do certificado **A1 (arquivo digital)**, pois
+                  permite a emissão de notas diretamente pela nuvem, de qualquer dispositivo, de
+                  forma 100% automatizada e sem dependência de hardware conectado.
                 </p>
               </CardContent>
             </Card>
@@ -596,7 +811,8 @@ export function ConfigFiscais() {
             <CardHeader className="pb-2">
               <CardTitle className="tracking-tight">Regime Tributário e Alíquotas Padrão</CardTitle>
               <CardDescription className="leading-relaxed">
-                Defina o regime fiscal da sua empresa e configure as alíquotas de tributos que serão preenchidas automaticamente nas propostas/vendas.
+                Defina o regime fiscal da sua empresa e configure as alíquotas de tributos que serão
+                preenchidas automaticamente nas propostas/vendas.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -624,54 +840,84 @@ export function ConfigFiscais() {
 
                     <div className="grid gap-1.5">
                       <Label htmlFor="cnae">CNAE Principal</Label>
-                      <Input 
-                        id="cnae" 
-                        
-                        value={cnae} 
-                        onChange={(e) => setCnae(e.target.value)} 
+                      <Input
+                        id="cnae"
+
+                        value={cnae}
+                        onChange={(e) => setCnae(e.target.value)}
                         className="h-10 rounded-xl"
                       />
                     </div>
 
                     <div className="grid gap-1.5">
                       <Label htmlFor="nat">Natureza de Operação Padrão</Label>
-                      <Input 
-                        id="nat" 
-                        
-                        value={natOp} 
-                        onChange={(e) => setNatOp(e.target.value)} 
+                      <Input
+                        id="nat"
+
+                        value={natOp}
+                        onChange={(e) => setNatOp(e.target.value)}
                         className="h-10 rounded-xl"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-4">
-                    <h4 className="text-sm font-semibold tracking-tight text-foreground">Alíquotas Padrão para Cálculo</h4>
-                    
+                    <h4 className="text-sm font-semibold tracking-tight text-foreground">
+                      Alíquotas Padrão para Cálculo
+                    </h4>
+
                     <div className="grid grid-cols-2 gap-3 sm:gap-4">
                       <div className="grid gap-1.5">
                         <Label htmlFor="iss">ISS (%) - Serviços</Label>
-                        <MoneyInput id="iss" prefix="" value={issRate} onChange={setIssRate} className="h-10" />
+                        <MoneyInput
+                          id="iss"
+                          prefix=""
+                          value={issRate}
+                          onChange={setIssRate}
+                          className="h-10"
+                        />
                       </div>
                       <div className="grid gap-1.5">
                         <Label htmlFor="icms">ICMS (%) - Vendas</Label>
-                        <MoneyInput id="icms" prefix="" value={icmsRate} onChange={setIcmsRate} className="h-10" />
+                        <MoneyInput
+                          id="icms"
+                          prefix=""
+                          value={icmsRate}
+                          onChange={setIcmsRate}
+                          className="h-10"
+                        />
                       </div>
                       <div className="grid gap-1.5">
                         <Label htmlFor="pis">PIS (%)</Label>
-                        <MoneyInput id="pis" prefix="" value={pisRate} onChange={setPisRate} className="h-10" />
+                        <MoneyInput
+                          id="pis"
+                          prefix=""
+                          value={pisRate}
+                          onChange={setPisRate}
+                          className="h-10"
+                        />
                       </div>
                       <div className="grid gap-1.5">
                         <Label htmlFor="cofins">COFINS (%)</Label>
-                        <MoneyInput id="cofins" prefix="" value={cofinsRate} onChange={setCofinsRate} className="h-10" />
+                        <MoneyInput
+                          id="cofins"
+                          prefix=""
+                          value={cofinsRate}
+                          onChange={setCofinsRate}
+                          className="h-10"
+                        />
                       </div>
                     </div>
 
                     <div className="flex gap-2.5 rounded-2xl border border-primary/20 bg-primary/5 p-4 shadow-sm sm:p-5">
                       <Scale className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                       <div className="space-y-0.5 text-xs text-muted-foreground leading-relaxed">
-                        <span className="font-semibold text-foreground block">Tributação Simplificada</span>
-                        No Simples Nacional, os tributos são unificados na guia DAS e as alíquotas individuais (PIS/COFINS) costumam ser configuradas como 0% para fins de preenchimento na nota (sendo declaradas apenas no Simples).
+                        <span className="font-semibold text-foreground block">
+                          Tributação Simplificada
+                        </span>
+                        No Simples Nacional, os tributos são unificados na guia DAS e as alíquotas
+                        individuais (PIS/COFINS) costumam ser configuradas como 0% para fins de
+                        preenchimento na nota (sendo declaradas apenas no Simples).
                       </div>
                     </div>
                   </div>
@@ -679,8 +925,8 @@ export function ConfigFiscais() {
               )}
 
               <div className="flex justify-end gap-2 border-t border-border/60 pt-4">
-                <Button 
-                  onClick={() => updateConfigMut.mutate()} 
+                <Button
+                  onClick={() => updateConfigMut.mutate()}
                   disabled={updateConfigMut.isPending}
                   className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
                 >
@@ -695,35 +941,45 @@ export function ConfigFiscais() {
         <TabsContent value="cfop" className="space-y-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-base font-semibold tracking-tight text-foreground">Regras de CFOP e Naturezas de Operação</h3>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">As regras de CFOP guiam a tributação de acordo com o destino, origem e tipo da transação fiscal.</p>
+              <h3 className="text-base font-semibold tracking-tight text-foreground">
+                Regras de CFOP e Naturezas de Operação
+              </h3>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                As regras de CFOP guiam a tributação de acordo com o destino, origem e tipo da
+                transação fiscal.
+              </p>
             </div>
-            
+
             <Dialog open={cfopModalOpen} onOpenChange={setCfopModalOpen}>
               <DialogTrigger asChild>
-                <PrimaryButton onClick={() => {
-                  setEditingCfopId(null);
-                  setCfopNome("");
-                  setCfopValor("");
-                  setCfopDesc("");
-                  setCfopModalOpen(true);
-                }}>
+                <PrimaryButton
+                  onClick={() => {
+                    setEditingCfopId(null);
+                    setCfopNome("");
+                    setCfopValor("");
+                    setCfopDesc("");
+                    setCfopModalOpen(true);
+                  }}
+                >
                   <Plus className="mr-2 h-4 w-4" /> Nova Regra CFOP
                 </PrimaryButton>
               </DialogTrigger>
               <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
                 <DialogHeader className="gap-1.5 pb-1">
-                  <DialogTitle className="tracking-tight">{editingCfopId ? "Editar Regra CFOP" : "Nova Regra de CFOP"}</DialogTitle>
+                  <DialogTitle className="tracking-tight">
+                    {editingCfopId ? "Editar Regra CFOP" : "Nova Regra de CFOP"}
+                  </DialogTitle>
                   <DialogDescription className="leading-relaxed">
-                    Defina o código CFOP e sua descrição para seleção automática nas operações de entrada ou saída.
+                    Defina o código CFOP e sua descrição para seleção automática nas operações de
+                    entrada ou saída.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-2">
                   <div className="grid gap-1.5">
                     <Label htmlFor="cfop-nome">Nome da Natureza</Label>
-                    <Input 
-                      id="cfop-nome" 
-                     
+                    <Input
+                      id="cfop-nome"
+
                       value={cfopNome}
                       onChange={(e) => setCfopNome(e.target.value)}
                       className="h-10 rounded-xl"
@@ -733,9 +989,9 @@ export function ConfigFiscais() {
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="grid gap-1.5">
                       <Label htmlFor="cfop-val">Código CFOP</Label>
-                      <Input 
-                        id="cfop-val" 
-                       
+                      <Input
+                        id="cfop-val"
+
                         value={cfopValor}
                         onChange={(e) => setCfopValor(e.target.value)}
                         className="h-10 rounded-xl"
@@ -743,7 +999,10 @@ export function ConfigFiscais() {
                     </div>
                     <div className="grid gap-1.5">
                       <Label htmlFor="cfop-tipo">Fluxo</Label>
-                      <Select value={cfopTipo} onValueChange={(v: "entrada" | "saida") => setCfopTipo(v)}>
+                      <Select
+                        value={cfopTipo}
+                        onValueChange={(v: "entrada" | "saida") => setCfopTipo(v)}
+                      >
                         <SelectTrigger id="cfop-tipo" className="h-10 rounded-xl">
                           <SelectValue />
                         </SelectTrigger>
@@ -757,9 +1016,9 @@ export function ConfigFiscais() {
 
                   <div className="grid gap-1.5">
                     <Label htmlFor="cfop-desc">Descrição Fiscal</Label>
-                    <Input 
-                      id="cfop-desc" 
-                     
+                    <Input
+                      id="cfop-desc"
+
                       value={cfopDesc}
                       onChange={(e) => setCfopDesc(e.target.value)}
                       className="h-10 rounded-xl"
@@ -767,53 +1026,86 @@ export function ConfigFiscais() {
                   </div>
                 </div>
                 <DialogFooter className="gap-2">
-                  <Button variant="outline" onClick={() => setCfopModalOpen(false)} className="h-10 rounded-xl">Cancelar</Button>
-                  <Button onClick={handleSalvarCFOP} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">Salvar Regra</Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setCfopModalOpen(false)}
+                    className="h-10 rounded-xl"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleSalvarCFOP}
+                    className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                  >
+                    Salvar Regra
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
           </div>
 
           <Card className="overflow-hidden rounded-2xl border-muted shadow-panel bg-card/60 backdrop-blur-sm">
-              <Table>
-                <TableHeader className="bg-[color-mix(in_oklab,var(--color-muted)_40%,var(--color-card))]">
-                  <TableRow>
-                    <TableHead className="font-semibold text-foreground">Natureza da Operação</TableHead>
-                    <TableHead className="font-semibold text-foreground">CFOP</TableHead>
-                    <TableHead className="font-semibold text-foreground">Fluxo</TableHead>
-                    <TableHead className="font-semibold text-foreground">Descrição</TableHead>
-                    <TableHead className="text-right" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {cfops.map((c) => {
-                    return (
-                      <TableRow key={c.id} className="transition-colors hover:bg-accent/30">
-                        <TableCell className="font-semibold text-foreground max-w-[200px] truncate">{c.nome}</TableCell>
-                        <TableCell className="font-mono font-bold text-primary text-sm text-tabular">{c.cfop}</TableCell>
-                        <TableCell>
-                          {c.tipo === "saida" ? (
-                            <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary shadow-sm">Saída</span>
-                          ) : (
-                            <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary shadow-sm">Entrada</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground leading-relaxed max-w-[320px] truncate">{c.descricao}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button size="sm" variant="ghost" className="h-8 w-8 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground" onClick={() => handleEditCFOP(c)}>
-                              <Edit2 className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button size="sm" variant="ghost" className="h-8 w-8 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive" onClick={() => setConfExcluirCfop(c)}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+            <Table>
+              <TableHeader className="bg-[color-mix(in_oklab,var(--color-muted)_40%,var(--color-card))]">
+                <TableRow>
+                  <TableHead className="font-semibold text-foreground">
+                    Natureza da Operação
+                  </TableHead>
+                  <TableHead className="font-semibold text-foreground">CFOP</TableHead>
+                  <TableHead className="font-semibold text-foreground">Fluxo</TableHead>
+                  <TableHead className="font-semibold text-foreground">Descrição</TableHead>
+                  <TableHead className="text-right" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {cfops.map((c) => {
+                  return (
+                    <TableRow key={c.id} className="transition-colors hover:bg-accent/30">
+                      <TableCell className="font-semibold text-foreground max-w-[200px] truncate">
+                        {c.nome}
+                      </TableCell>
+                      <TableCell className="font-mono font-bold text-primary text-sm text-tabular">
+                        {c.cfop}
+                      </TableCell>
+                      <TableCell>
+                        {c.tipo === "saida" ? (
+                          <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary shadow-sm">
+                            Saída
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary shadow-sm">
+                            Entrada
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground leading-relaxed max-w-[320px] truncate">
+                        {c.descricao}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground"
+                            onClick={() => handleEditCFOP(c)}
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                            onClick={() => setConfExcluirCfop(c)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </Card>
         </TabsContent>
         <TabsContent value="rtc" className="space-y-4">
@@ -821,10 +1113,17 @@ export function ConfigFiscais() {
         </TabsContent>
       </Tabs>
 
-      <AlertDialog open={!!confExcluirCert} onOpenChange={(v) => { if (!v) setConfExcluirCert(null); }}>
+      <AlertDialog
+        open={!!confExcluirCert}
+        onOpenChange={(v) => {
+          if (!v) setConfExcluirCert(null);
+        }}
+      >
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader className="gap-1.5">
-            <AlertDialogTitle className="tracking-tight">Excluir certificado digital</AlertDialogTitle>
+            <AlertDialogTitle className="tracking-tight">
+              Excluir certificado digital
+            </AlertDialogTitle>
             <AlertDialogDescription className="leading-relaxed">
               Tem certeza que deseja excluir o certificado digital ativo?
             </AlertDialogDescription>
@@ -842,7 +1141,12 @@ export function ConfigFiscais() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={!!confExcluirCfop} onOpenChange={(v) => { if (!v) setConfExcluirCfop(null); }}>
+      <AlertDialog
+        open={!!confExcluirCfop}
+        onOpenChange={(v) => {
+          if (!v) setConfExcluirCfop(null);
+        }}
+      >
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader className="gap-1.5">
             <AlertDialogTitle className="tracking-tight">Excluir regra CFOP</AlertDialogTitle>

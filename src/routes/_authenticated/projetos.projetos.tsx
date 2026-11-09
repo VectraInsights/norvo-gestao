@@ -59,9 +59,7 @@ import { brl, dateBR } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/projetos/projetos")({
   component: ProjetosPage,
-  errorComponent: (props) => (
-    <RouteErrorState {...props} title="Erro ao carregar projetos" />
-  ),
+  errorComponent: (props) => <RouteErrorState {...props} title="Erro ao carregar projetos" />,
 });
 
 type Projeto = {
@@ -136,17 +134,21 @@ function ProjetosPage() {
       if ((p.contatos?.nome || "").toLowerCase().includes(q)) return true;
       if ((p.descricao || "").toLowerCase().includes(q)) return true;
       // Pesquisa por orçamento: "25,00" acha 25.00 (a partir de 2 dígitos)
-      if (qDig.length >= 2 && Number((p as any).orcamento || 0).toFixed(2).replace(/\D/g, "").includes(qDig)) return true;
+      if (
+        qDig.length >= 2 &&
+        Number((p as any).orcamento || 0)
+          .toFixed(2)
+          .replace(/\D/g, "")
+          .includes(qDig)
+      )
+        return true;
       return false;
     });
   }, [projetos, busca]);
   const pageSize = 25;
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / pageSize));
   const paginaAtual = Math.min(pagina, totalPaginas);
-  const projetosVisiveis = filtrados.slice(
-    (paginaAtual - 1) * pageSize,
-    paginaAtual * pageSize,
-  );
+  const projetosVisiveis = filtrados.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
 
   const { data: clientes = [] } = useQuery({
     enabled: !!empresa,
@@ -159,7 +161,7 @@ function ProjetosPage() {
           .from("clientes")
           .select("id,nome")
           .eq("empresa_id", empresa!.id)
-          
+
           .order("nome")
           .range(ini, ini + 999);
         todos.push(...((data as unknown[]) ?? []));
@@ -249,7 +251,13 @@ function ProjetosPage() {
         description="Organize entregas, prazos e orçamentos por projeto."
       />
       <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
-        <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} />
+        <SearchField
+          value={busca}
+          onChange={(v) => {
+            setBusca(v);
+            setPagina(1);
+          }}
+        />
         <div className="flex items-center gap-2">
           <Dialog
             open={open}
@@ -266,7 +274,9 @@ function ProjetosPage() {
             </DialogTrigger>
             <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
               <DialogHeader className="gap-1.5 pb-1">
-                <DialogTitle className="tracking-tight">{editing ? "Editar projeto" : "Novo projeto"}</DialogTitle>
+                <DialogTitle className="tracking-tight">
+                  {editing ? "Editar projeto" : "Novo projeto"}
+                </DialogTitle>
               </DialogHeader>
               <div className="grid gap-3">
                 <div>
@@ -291,8 +301,7 @@ function ProjetosPage() {
                         { value: "none", label: "— sem cliente —" },
                         ...clientes.map((c) => ({ value: c.id, label: c.nome })),
                       ]}
-                     
-                     
+
                       emptyText="Nenhum item encontrado."
                       footer={{ label: "Novo cliente", onClick: () => setNovoClienteOpen(true) }}
                     />
@@ -340,10 +349,18 @@ function ProjetosPage() {
                 </div>
               </div>
               <DialogFooter className="gap-2">
-                <Button variant="outline" onClick={() => setOpen(false)} className="h-10 rounded-xl px-6">
+                <Button
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  className="h-10 rounded-xl px-6"
+                >
                   Cancelar
                 </Button>
-                <Button onClick={() => save.mutate()} disabled={save.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+                <Button
+                  onClick={() => save.mutate()}
+                  disabled={save.isPending}
+                  className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                >
                   Salvar
                 </Button>
               </DialogFooter>
@@ -370,7 +387,9 @@ function ProjetosPage() {
           <EmptyState
             icon={Briefcase}
             title="Nenhum projeto ainda"
-            description={busca ? "Nada encontrado para a busca." : "Crie seu primeiro projeto para começar."}
+            description={
+              busca ? "Nada encontrado para a busca." : "Crie seu primeiro projeto para começar."
+            }
           />
         ) : (
           <>
@@ -418,7 +437,12 @@ function ProjetosPage() {
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10" title="Excluir">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10"
+                              title="Excluir"
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </AlertDialogTrigger>
@@ -431,7 +455,11 @@ function ProjetosPage() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction data-acao className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => del.mutate(p.id)}>
+                              <AlertDialogAction
+                                data-acao
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                onClick={() => del.mutate(p.id)}
+                              >
                                 Excluir
                               </AlertDialogAction>
                             </AlertDialogFooter>

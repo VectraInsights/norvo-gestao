@@ -8,9 +8,9 @@ export type OfxTx = {
 };
 
 export type OfxAccount = {
-  bankId: string;   // BANKID (código COMPE)
+  bankId: string; // BANKID (código COMPE)
   branchId: string; // BRANCHID (agência)
-  acctId: string;   // ACCTID (conta)
+  acctId: string; // ACCTID (conta)
   acctType: string; // ACCTTYPE
 };
 
@@ -31,9 +31,10 @@ function tag(block: string, name: string): string {
 }
 
 export function parseOfxAccount(content: string): OfxAccount {
-  const block = content.match(/<BANKACCTFROM>[\s\S]*?<\/BANKACCTFROM>/i)?.[0]
-    ?? content.match(/<CCACCTFROM>[\s\S]*?<\/CCACCTFROM>/i)?.[0]
-    ?? "";
+  const block =
+    content.match(/<BANKACCTFROM>[\s\S]*?<\/BANKACCTFROM>/i)?.[0] ??
+    content.match(/<CCACCTFROM>[\s\S]*?<\/CCACCTFROM>/i)?.[0] ??
+    "";
   return {
     bankId: tag(block, "BANKID"),
     branchId: tag(block, "BRANCHID"),
@@ -44,20 +45,22 @@ export function parseOfxAccount(content: string): OfxAccount {
 
 export function parseOfxTransactions(content: string): OfxTx[] {
   const blocks = content.match(/<STMTTRN>[\s\S]*?<\/STMTTRN>/gi) ?? [];
-  return blocks.map((b, idx) => {
-    const valor = Number(tag(b, "TRNAMT").replace(",", "."));
-    const rawFitid = tag(b, "FITID");
-    // Fallback estável quando o banco não envia FITID: inclui índice para não
-    // colapsar duas transações reais de mesmo dia e valor.
-    const fitid = rawFitid || `${tag(b, "DTPOSTED")}-${tag(b, "TRNAMT")}-${idx}`;
-    return {
-      fitid,
-      data: parseDate(tag(b, "DTPOSTED")),
-      valor: isNaN(valor) ? 0 : valor,
-      tipo: tag(b, "TRNTYPE") || (valor >= 0 ? "CREDIT" : "DEBIT"),
-      memo: tag(b, "MEMO") || tag(b, "NAME") || "",
-    };
-  }).filter((t) => t.fitid);
+  return blocks
+    .map((b, idx) => {
+      const valor = Number(tag(b, "TRNAMT").replace(",", "."));
+      const rawFitid = tag(b, "FITID");
+      // Fallback estável quando o banco não envia FITID: inclui índice para não
+      // colapsar duas transações reais de mesmo dia e valor.
+      const fitid = rawFitid || `${tag(b, "DTPOSTED")}-${tag(b, "TRNAMT")}-${idx}`;
+      return {
+        fitid,
+        data: parseDate(tag(b, "DTPOSTED")),
+        valor: isNaN(valor) ? 0 : valor,
+        tipo: tag(b, "TRNTYPE") || (valor >= 0 ? "CREDIT" : "DEBIT"),
+        memo: tag(b, "MEMO") || tag(b, "NAME") || "",
+      };
+    })
+    .filter((t) => t.fitid);
 }
 
 export function parseOfx(content: string): OfxTx[] {

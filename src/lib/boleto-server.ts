@@ -17,7 +17,7 @@ import { z } from "zod";
 // ---------------------------------------------------------------------------
 
 type BancoConfig = {
-  codigo: string;        // Código do banco (ex: 756 Sicoob, 341 Itaú)
+  codigo: string; // Código do banco (ex: 756 Sicoob, 341 Itaú)
   nome: string;
   digitoVerificador: (dados: string) => number; // Função DV específica do banco
   nossoNumeroPrefixo: string; // Prefixo do nosso número
@@ -95,7 +95,7 @@ function gerarNossoNumero(cfg: any): string {
   // Nosso número sequencial baseado em timestamp
   // Em produção, idealmente viria de faixa alocada pelo banco ou do retorno CNAB
   const ts = Date.now().toString().slice(-6);
-  const prefixo = (BANCOS[cfg.banco as keyof typeof BANCOS]?.nossoNumeroPrefixo || "0001");
+  const prefixo = BANCOS[cfg.banco as keyof typeof BANCOS]?.nossoNumeroPrefixo || "0001";
   return `${prefixo}${ts}`;
 }
 
@@ -106,7 +106,12 @@ function fatorVencimentoDe(dataVencimento: string): string {
   return String(diff).padStart(4, "0");
 }
 
-function gerarCodigoBarras(cfg: any, nossoNumero: string, valor: number, vencimento: string): string {
+function gerarCodigoBarras(
+  cfg: any,
+  nossoNumero: string,
+  valor: number,
+  vencimento: string,
+): string {
   const bancoCfg = BANCOS[cfg.banco as keyof typeof BANCOS] || BANCOS.sicoob;
   const bancoCod = bancoCfg.codigo;
   const moeda = "9";
@@ -124,10 +129,8 @@ function gerarLinhaDigitavel(codigoBarras: string): string {
     codigoBarras.slice(32, 33) +
     codigoBarras.slice(33, 37) +
     modulo11(codigoBarras.slice(0, 3) + codigoBarras.slice(32, 33) + codigoBarras.slice(33, 37));
-  const campo2 =
-    codigoBarras.slice(37, 42) + modulo11(codigoBarras.slice(37, 42));
-  const campo3 =
-    codigoBarras.slice(42, 47) + modulo11(codigoBarras.slice(42, 47));
+  const campo2 = codigoBarras.slice(37, 42) + modulo11(codigoBarras.slice(37, 42));
+  const campo3 = codigoBarras.slice(42, 47) + modulo11(codigoBarras.slice(42, 47));
   const campo4 = codigoBarras.slice(4, 5);
   const campo5 = codigoBarras.slice(5, 47);
   return `${campo1} ${campo2} ${campo3} ${campo4} ${campo5}`;
@@ -155,7 +158,9 @@ export const gerarBoletoFn = createServerFn({ method: "POST" })
 
     const bancoCfg = BANCOS[cfg.banco as keyof typeof BANCOS];
     if (!bancoCfg) {
-      throw new Error(`Banco "${cfg.banco}" não suportado. Configure um banco válido (sicoob, itau).`);
+      throw new Error(
+        `Banco "${cfg.banco}" não suportado. Configure um banco válido (sicoob, itau).`,
+      );
     }
 
     const nossoNumero = gerarNossoNumero(cfg);

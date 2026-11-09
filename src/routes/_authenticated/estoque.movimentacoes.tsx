@@ -132,7 +132,14 @@ function Movimentacoes() {
       // Pesquisa por quantidade/custo: "25,00" acha 25.00 (a partir de 2 dígitos)
       if (qDig.length >= 2) {
         for (const v of [m.quantidade, m.custo_unitario]) {
-          if (v != null && Number(v || 0).toFixed(2).replace(/\D/g, "").includes(qDig)) return true;
+          if (
+            v != null &&
+            Number(v || 0)
+              .toFixed(2)
+              .replace(/\D/g, "")
+              .includes(qDig)
+          )
+            return true;
         }
       }
       return false;
@@ -264,151 +271,180 @@ function Movimentacoes() {
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={(v) => setBusca(v)} />
         <div className="flex items-center gap-2">
-            <Dialog
-              open={trOpen}
-              onOpenChange={(v) => {
-                if (!transferirMut.isPending) setTrOpen(v);
-              }}
-            >
-              <DialogTrigger asChild>
-                <Button variant="outline" className="h-9 rounded-xl px-4 shadow-sm transition-all hover:shadow-md active:scale-95">
-                  <ArrowLeftRight className="mr-1 h-4 w-4" />
-                  Transferir
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
-                <DialogHeader>
-                  <DialogTitle>Transferir entre depósitos</DialogTitle>
-                </DialogHeader>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    transferirMut.mutate();
-                  }}
-                  className="space-y-3"
-                >
+          <Dialog
+            open={trOpen}
+            onOpenChange={(v) => {
+              if (!transferirMut.isPending) setTrOpen(v);
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-9 rounded-xl px-4 shadow-sm transition-all hover:shadow-md active:scale-95"
+              >
+                <ArrowLeftRight className="mr-1 h-4 w-4" />
+                Transferir
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
+              <DialogHeader>
+                <DialogTitle>Transferir entre depósitos</DialogTitle>
+              </DialogHeader>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  transferirMut.mutate();
+                }}
+                className="space-y-3"
+              >
+                <div>
+                  <Label>Produto</Label>
+                  <Combobox
+                    value={tr.produto_id}
+                    onChange={(v) => setTr({ ...tr, produto_id: v })}
+                    options={(produtos ?? []).map((p) => ({
+                      value: p.id,
+                      label: `${p.nome} · estoque ${num(p.estoque_atual ?? 0)}`,
+                    }))}
+
+                    emptyText="Nenhum item encontrado."
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label>Produto</Label>
+                    <Label>De (origem)</Label>
                     <Combobox
-                      value={tr.produto_id}
-                      onChange={(v) => setTr({ ...tr, produto_id: v })}
-                      options={(produtos ?? []).map((p) => ({ value: p.id, label: `${p.nome} · estoque ${num(p.estoque_atual ?? 0)}` }))}
-                     
-                     
+                      value={tr.origem}
+                      onChange={(v) => setTr({ ...tr, origem: v })}
+                      options={depositos.map((d) => ({ value: d.id, label: d.nome }))}
                       emptyText="Nenhum item encontrado."
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>De (origem)</Label>
-                      <Combobox value={tr.origem} onChange={(v) => setTr({ ...tr, origem: v })} options={depositos.map((d) => ({ value: d.id, label: d.nome }))} emptyText="Nenhum item encontrado." />
-                    </div>
-                    <div>
-                      <Label>Para (destino)</Label>
-                      <Combobox
-                        value={tr.destino}
-                        onChange={(v) => setTr({ ...tr, destino: v })}
-                        options={depositos.map((d) => ({ value: d.id, label: d.nome }))}
-                       
-                       
-                        emptyText="Nenhum item encontrado."
-                      />
-                    </div>
+                  <div>
+                    <Label>Para (destino)</Label>
+                    <Combobox
+                      value={tr.destino}
+                      onChange={(v) => setTr({ ...tr, destino: v })}
+                      options={depositos.map((d) => ({ value: d.id, label: d.nome }))}
+
+                      emptyText="Nenhum item encontrado."
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>Quantidade</Label>
+                  <MoneyInput
+                    prefix=""
+                    decimals={3}
+                    value={tr.quantidade}
+                    onChange={(v) => setTr({ ...tr, quantidade: v })}
+                  />
+                </div>
+                <div>
+                  <Label>Observação</Label>
+                  <Textarea
+                    rows={2}
+                    value={tr.obs}
+                    onChange={(e) => setTr({ ...tr, obs: e.target.value })}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="submit"
+                    disabled={transferirMut.isPending}
+                    className="h-10 rounded-xl px-6"
+                  >
+                    {transferirMut.isPending ? "Transferindo…" : "Confirmar"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+          <Dialog
+            open={open}
+            onOpenChange={(v) => {
+              if (!registrarMut.isPending) setOpen(v);
+            }}
+          >
+            <DialogTrigger asChild>
+              <PrimaryButton size="sm">
+                <Plus className="mr-1 h-4 w-4" />
+                Nova movimentação
+              </PrimaryButton>
+            </DialogTrigger>
+            <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
+              <DialogHeader>
+                <DialogTitle>Nova movimentação</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={submit} className="space-y-3">
+                <div>
+                  <Label>Produto</Label>
+                  <Combobox
+                    value={form.produto_id}
+                    onChange={(v) => setForm({ ...form, produto_id: v })}
+                    options={(produtos ?? []).map((p) => ({
+                      value: p.id,
+                      label: `${p.nome} · estoque ${num(p.estoque_atual ?? 0)}`,
+                    }))}
+
+                    emptyText="Nenhum item encontrado."
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <Label>Tipo</Label>
+                    <Select
+                      value={form.tipo}
+                      onValueChange={(v) => setForm({ ...form, tipo: v as MovTipo })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="entrada">Entrada</SelectItem>
+                        <SelectItem value="saida">Saída</SelectItem>
+                        <SelectItem value="ajuste">Ajuste (± com sinal)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label>Quantidade</Label>
-                    <MoneyInput prefix="" decimals={3} value={tr.quantidade} onChange={(v) => setTr({ ...tr, quantidade: v })} />
-                  </div>
-                  <div>
-                    <Label>Observação</Label>
-                    <Textarea
-                      rows={2}
-                      value={tr.obs}
-                      onChange={(e) => setTr({ ...tr, obs: e.target.value })}
+                    <MoneyInput
+                      prefix=""
+                      decimals={3}
+                      value={form.quantidade}
+                      onChange={(v) => setForm({ ...form, quantidade: v })}
                     />
                   </div>
-                  <DialogFooter>
-                    <Button type="submit" disabled={transferirMut.isPending} className="h-10 rounded-xl px-6">
-                      {transferirMut.isPending ? "Transferindo…" : "Confirmar"}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-            <Dialog
-              open={open}
-              onOpenChange={(v) => {
-                if (!registrarMut.isPending) setOpen(v);
-              }}
-            >
-              <DialogTrigger asChild>
-                <PrimaryButton size="sm">
-                  <Plus className="mr-1 h-4 w-4" />
-                  Nova movimentação
-                </PrimaryButton>
-              </DialogTrigger>
-              <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
-                <DialogHeader>
-                  <DialogTitle>Nova movimentação</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={submit} className="space-y-3">
                   <div>
-                    <Label>Produto</Label>
-                    <Combobox
-                      value={form.produto_id}
-                      onChange={(v) => setForm({ ...form, produto_id: v })}
-                      options={(produtos ?? []).map((p) => ({ value: p.id, label: `${p.nome} · estoque ${num(p.estoque_atual ?? 0)}` }))}
-                     
-                     
-                      emptyText="Nenhum item encontrado."
+                    <Label>Custo unit.</Label>
+                    <MoneyInput
+                      value={form.custo_unitario}
+                      onChange={(v) => setForm({ ...form, custo_unitario: v })}
+                      prefix=""
                     />
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <Label>Tipo</Label>
-                      <Select
-                        value={form.tipo}
-                        onValueChange={(v) => setForm({ ...form, tipo: v as MovTipo })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="entrada">Entrada</SelectItem>
-                          <SelectItem value="saida">Saída</SelectItem>
-                          <SelectItem value="ajuste">Ajuste (± com sinal)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>Quantidade</Label>
-                      <MoneyInput prefix="" decimals={3} value={form.quantidade} onChange={(v) => setForm({ ...form, quantidade: v })} />
-                    </div>
-                    <div>
-                      <Label>Custo unit.</Label>
-                      <MoneyInput
-                        value={form.custo_unitario}
-                        onChange={(v) => setForm({ ...form, custo_unitario: v })}
-                        prefix=""
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Observações</Label>
-                    <Textarea
-                      rows={2}
-                      value={form.observacoes}
-                      onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
-                    />
-                  </div>
-                  <DialogFooter>
-                    <Button type="submit" disabled={registrarMut.isPending} className="h-10 rounded-xl px-6">
-                      {registrarMut.isPending ? "Registrando…" : "Registrar"}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
+                </div>
+                <div>
+                  <Label>Observações</Label>
+                  <Textarea
+                    rows={2}
+                    value={form.observacoes}
+                    onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="submit"
+                    disabled={registrarMut.isPending}
+                    className="h-10 rounded-xl px-6"
+                  >
+                    {registrarMut.isPending ? "Registrando…" : "Registrar"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -424,7 +460,11 @@ function Movimentacoes() {
         <EmptyState
           icon={Boxes}
           title="Sem movimentações"
-          description={busca ? "Nada encontrado para a busca." : "Registre a primeira entrada de compras ou ajuste de inventário."}
+          description={
+            busca
+              ? "Nada encontrado para a busca."
+              : "Registre a primeira entrada de compras ou ajuste de inventário."
+          }
         />
       ) : (
         <Card className="overflow-hidden shadow-panel">

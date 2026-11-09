@@ -25,7 +25,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -83,7 +92,11 @@ async function carregarMunicipios(): Promise<Mun[]> {
     if (raw) {
       const arr = JSON.parse(raw);
       if (Array.isArray(arr) && arr.length > 5000 && arr.some((m: any) => m.id))
-        return arr.map((m: any) => ({ nome: String(m.nome ?? ""), uf: String(m.uf ?? ""), id: Number(m.id ?? 0) }));
+        return arr.map((m: any) => ({
+          nome: String(m.nome ?? ""),
+          uf: String(m.uf ?? ""),
+          id: Number(m.id ?? 0),
+        }));
     }
   } catch {}
   const r = await fetch(
@@ -198,7 +211,6 @@ function T({
           set(k, vv);
           if (on14 && vv.replace(/\D/g, "").length === 14) on14(vv.replace(/\D/g, ""));
         }}
-       
       />
     </div>
   );
@@ -231,7 +243,7 @@ function Tc({
         onChange={(e) => {
           set(k, e.target.value.toUpperCase());
         }}
-       
+
         readOnly={ro}
       />
     </div>
@@ -289,7 +301,6 @@ function Num({
         decimals={dec ?? 2}
         value={(editing as any)?.[k!] ?? ""}
         onChange={(v) => set!(k!, v)}
-       
       />
     </div>
   );
@@ -349,14 +360,13 @@ function ChaveEdit({
         className="col-span-6 h-6 text-[11px]"
         value={nome || ""}
         onChange={(e) => onNome(e.target.value.toUpperCase())}
-       
       />
       <Input
         className="col-span-4 h-6 text-[11px]"
         value={doc || ""}
         onChange={(e) => onDoc(maskDoc(e.target.value))}
         onBlur={onBlurDoc}
-       
+
         inputMode="numeric"
       />
     </div>
@@ -465,7 +475,7 @@ function Combo({
         <Input
           className="h-7 text-xs pr-6"
           value={open ? txt : sel ? sel.label : value || ""}
-         
+
           onFocus={() => {
             setTxt("");
             setOpen(true);
@@ -627,8 +637,7 @@ async function calcDistDur(
     "https://router.project-osrm.org/route/v1/driving/",
     "https://routing.openstreetmap.de/routed-car/route/v1/driving/",
   ];
-  const rotaUrl =
-    (base: string) =>
+  const rotaUrl = (base: string) =>
     base +
     go.lon +
     "," +
@@ -760,7 +769,9 @@ function PercursosPage() {
       for (let ini = 0; ; ini += 500) {
         const { data, error } = await supabase
           .from("cte_percursos" as any)
-          .select("id,empresa_id,codigo,nome,created_at,rem_nome,rem_cnpj,dest_nome,dest_cnpj,toma_nome,toma_cnpj,coleta_xmun,coleta_uf,entrega_xmun,entrega_uf")
+          .select(
+            "id,empresa_id,codigo,nome,created_at,rem_nome,rem_cnpj,dest_nome,dest_cnpj,toma_nome,toma_cnpj,coleta_xmun,coleta_uf,entrega_xmun,entrega_uf",
+          )
           .eq("empresa_id", empresa!.id)
           .order("codigo")
           .range(ini, ini + 499);
@@ -807,7 +818,6 @@ function PercursosPage() {
         setChegadaCte(false);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresa]);
   // Chegada via CT-e (Gerar sem percurso): abre rascunho pré-preenchido e volta ao salvar
   useEffect(() => {
@@ -834,7 +844,9 @@ function PercursosPage() {
       ? pre.chaves.map((c: any) => String(c)).filter(Boolean)
       : [];
     if (existe) {
-      const chavesJa = Array.isArray(pre.chaves) ? pre.chaves.map((c: any) => String(c)).filter(Boolean) : [];
+      const chavesJa = Array.isArray(pre.chaves)
+        ? pre.chaves.map((c: any) => String(c)).filter(Boolean)
+        : [];
       if (!chavesJa.length) toast.success("Percurso já cadastrado — de volta ao CT-e");
       setChegadaCte(false);
       if (voltarCteRef.current) {
@@ -995,7 +1007,9 @@ function PercursosPage() {
     setCalcando(true);
     try {
       const calc = await calcDistDur(ori, dst);
-      setEditing((e) => (e && e.id === idAlvo ? { ...e, distancia_km: calc.km, duracao_horas: calc.h } : e));
+      setEditing((e) =>
+        e && e.id === idAlvo ? { ...e, distancia_km: calc.km, duracao_horas: calc.h } : e,
+      );
       toast.success("Percurso recalculado");
     } catch (e: any) {
       toast.error(e && e.message ? e.message : "Falha no recalculo");
@@ -1053,9 +1067,15 @@ function PercursosPage() {
       const pend: string[] = [];
       // Coleta/entrega: cidade sem UF gera CT-e com fim errado (UF cai no
       // fallback da NF-e). Exige a UF junto.
-      if (String((editing as any).coleta_xmun || "").trim() && !String((editing as any).coleta_uf || "").trim())
+      if (
+        String((editing as any).coleta_xmun || "").trim() &&
+        !String((editing as any).coleta_uf || "").trim()
+      )
         pend.push("UF da coleta");
-      if (String((editing as any).entrega_xmun || "").trim() && !String((editing as any).entrega_uf || "").trim())
+      if (
+        String((editing as any).entrega_xmun || "").trim() &&
+        !String((editing as any).entrega_uf || "").trim()
+      )
         pend.push("UF da entrega");
       if (!String((editing as any).seg_nome || "").trim()) pend.push("Seguradora");
       for (const p of [
@@ -1086,12 +1106,11 @@ function PercursosPage() {
       const payload: Record<string, any> = {};
       for (const k of EDITAVEIS) {
         const v = (editing as any)[k];
-        const vv =
-          k.endsWith("_ie")
-            ? limparIE(v)
-            : k.endsWith("_cnpj")
-              ? String(v || "").replace(/\D/g, "")
-              : v;
+        const vv = k.endsWith("_ie")
+          ? limparIE(v)
+          : k.endsWith("_cnpj")
+            ? String(v || "").replace(/\D/g, "")
+            : v;
         payload[k] =
           typeof vv === "string" ? vv.toUpperCase() : (vv ?? (k === "seg_repassar" ? false : ""));
       }
@@ -1148,9 +1167,7 @@ function PercursosPage() {
           payload.entrega_xmun = payload.dest_xmun || "";
           payload.entrega_uf = payload.dest_uf || "";
           setEditing((e) =>
-            e
-              ? { ...e, entrega_xmun: payload.entrega_xmun, entrega_uf: payload.entrega_uf }
-              : e,
+            e ? { ...e, entrega_xmun: payload.entrega_xmun, entrega_uf: payload.entrega_uf } : e,
           );
         }
       }
@@ -1162,9 +1179,13 @@ function PercursosPage() {
       const refColS = normCidade((editing as any).rem_xmun || (fbRemS as any).cidade || "");
       const refDstS = normCidade((editing as any).dest_xmun || (fbDstS as any).cidade || "");
       const colMudouS =
-        !!normCidade(payload.coleta_xmun) && !!refColS && normCidade(payload.coleta_xmun) !== refColS;
+        !!normCidade(payload.coleta_xmun) &&
+        !!refColS &&
+        normCidade(payload.coleta_xmun) !== refColS;
       const dstMudouS =
-        !!normCidade(payload.entrega_xmun) && !!refDstS && normCidade(payload.entrega_xmun) !== refDstS;
+        !!normCidade(payload.entrega_xmun) &&
+        !!refDstS &&
+        normCidade(payload.entrega_xmun) !== refDstS;
       const redMudouS =
         !!normCidade(payload.entrega_xmun) &&
         !!normCidade(payload.redesp_xmun) &&
@@ -1208,11 +1229,23 @@ function PercursosPage() {
         !!normCidade(sv.redesp_xmun) &&
         normCidade(sv.entrega_xmun) !== normCidade(sv.redesp_xmun);
       const rotaSalva =
-        sig(colMudouSv ? "" : sv.rem_cep, sv.coleta_xmun || sv.rem_xmun, sv.coleta_uf || sv.rem_uf) +
+        sig(
+          colMudouSv ? "" : sv.rem_cep,
+          sv.coleta_xmun || sv.rem_xmun,
+          sv.coleta_uf || sv.rem_uf,
+        ) +
         ">" +
         (temRedespSv
-          ? sig(redMudouSv ? "" : sv.redesp_cep, sv.entrega_xmun || sv.redesp_xmun, sv.entrega_uf || sv.redesp_uf)
-          : sig(dstMudouSv ? "" : sv.dest_cep, sv.entrega_xmun || sv.dest_xmun, sv.entrega_uf || sv.dest_uf));
+          ? sig(
+              redMudouSv ? "" : sv.redesp_cep,
+              sv.entrega_xmun || sv.redesp_xmun,
+              sv.entrega_uf || sv.redesp_uf,
+            )
+          : sig(
+              dstMudouSv ? "" : sv.dest_cep,
+              sv.entrega_xmun || sv.dest_xmun,
+              sv.entrega_uf || sv.dest_uf,
+            ));
       const mudouRota = rotaAtual !== rotaSalva;
       if (!payload.distancia_km || !payload.duracao_horas || mudouRota) {
         const calc = await calcDistDur(oriOrg, dstOrg);
@@ -1378,7 +1411,7 @@ function PercursosPage() {
           .select("id,numero,status,xml_assinado")
           .eq("empresa_id", empresa!.id)
           .range(ini, ini + 499);
-        for (const doc of ((docs as any[]) || [])) {
+        for (const doc of (docs as any[]) || []) {
           let usa = false;
           try {
             const p = JSON.parse((doc as any).xml_assinado || "{}");
@@ -1430,7 +1463,11 @@ function PercursosPage() {
           else falhas.push(id);
         }
       }
-      return { ok: ids.length - emUso.length - falhas.length, emUso: emUso.length, falhas: falhas.length };
+      return {
+        ok: ids.length - emUso.length - falhas.length,
+        emUso: emUso.length,
+        falhas: falhas.length,
+      };
     },
     onSuccess: ({ ok, emUso, falhas }) => {
       setSelecionados(new Set());
@@ -1449,7 +1486,14 @@ function PercursosPage() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Delete") return;
       const t = e.target as HTMLElement;
-      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      if (
+        t &&
+        (t.tagName === "INPUT" ||
+          t.tagName === "TEXTAREA" ||
+          t.tagName === "SELECT" ||
+          t.isContentEditable)
+      )
+        return;
       if (document.querySelector('[role="dialog"]')) return;
       e.preventDefault();
       setConfLote(true);
@@ -1522,7 +1566,9 @@ function PercursosPage() {
     const destU = (editing.dest_uf || "").trim();
     const entregaIgualRedesp = !!entX && !!rx && entX === rx && (!entU || !ru || entU === ru);
     if (entregaIgualRedesp && (destX || destU) && (entX !== destX || entU !== destU)) {
-      setEditing((e) => (e ? { ...e, entrega_xmun: e.dest_xmun || "", entrega_uf: e.dest_uf || "" } : e));
+      setEditing((e) =>
+        e ? { ...e, entrega_xmun: e.dest_xmun || "", entrega_uf: e.dest_uf || "" } : e,
+      );
       return;
     }
     if (
@@ -1558,8 +1604,12 @@ function PercursosPage() {
   // uma escolha manual do CST depois disso continua valendo.
   useEffect(() => {
     if (!editing) return;
-    const cU = String(editing.coleta_uf || "").trim().toUpperCase();
-    const eU = String(editing.entrega_uf || "").trim().toUpperCase();
+    const cU = String(editing.coleta_uf || "")
+      .trim()
+      .toUpperCase();
+    const eU = String(editing.entrega_uf || "")
+      .trim()
+      .toUpperCase();
     if (!cU || !eU) return; // rota ainda não identificada
     const cst = String(editing.icms_cst || "00").trim();
     const aliq = String(editing.icms_aliq ?? "").trim();
@@ -1579,7 +1629,12 @@ function PercursosPage() {
     if (cst !== "40" && cst !== "41") return;
     // Alíquota esperada p/ a rota (mesma regra do CT-e): origem MG -> 12% p/ Sul e
     // Sudeste listado (SP/RJ/PR/SC/RS), 7% p/ os demais destinos.
-    const esperada = cU === "MG" ? (["SP", "RJ", "PR", "SC", "RS"].includes(eU) ? "12.00" : "7.00") : aliq || "0.00";
+    const esperada =
+      cU === "MG"
+        ? ["SP", "RJ", "PR", "SC", "RS"].includes(eU)
+          ? "12.00"
+          : "7.00"
+        : aliq || "0.00";
     setEditing((e) => (e ? { ...e, icms_cst: "00", icms_aliq: esperada } : e));
   }, [editing?.coleta_uf, editing?.entrega_uf]);
   const lastLookupParte = useRef<Record<string, string>>({});
@@ -1659,20 +1714,18 @@ function PercursosPage() {
                 })
                 .eq("id", found._id);
             } else if (api.nome || api.cidade) {
-              await supabase
-                .from("transportes" as any)
-                .insert({
-                  empresa_id: empresa.id,
-                  nome: api.nome || d,
-                            documento: d,
-                  uf: api.uf || null,
-                  cidade: api.cidade || null,
-                  logradouro: api.logradouro || null,
-                  numero: api.numero || null,
-                  bairro: api.bairro || null,
-                  cep: api.cep || null,
-                  telefone: api.fone || null,
-                } as any);
+              await supabase.from("transportes" as any).insert({
+                empresa_id: empresa.id,
+                nome: api.nome || d,
+                documento: d,
+                uf: api.uf || null,
+                cidade: api.cidade || null,
+                logradouro: api.logradouro || null,
+                numero: api.numero || null,
+                bairro: api.bairro || null,
+                cep: api.cep || null,
+                telefone: api.fone || null,
+              } as any);
             }
             qc.invalidateQueries({ queryKey: ["contatos-cte", empresa.id] });
           }
@@ -1843,7 +1896,11 @@ function PercursosPage() {
         className="inline-flex items-center gap-1 uppercase hover:text-foreground"
         onClick={() =>
           setOrdPerc((o) =>
-            o.chave !== k ? { chave: k, dir: 1 } : o.dir === 1 ? { chave: k, dir: -1 } : { chave: "codigo", dir: 1 },
+            o.chave !== k
+              ? { chave: k, dir: 1 }
+              : o.dir === 1
+                ? { chave: k, dir: -1 }
+                : { chave: "codigo", dir: 1 },
           )
         }
         title="Ordenar"
@@ -1879,7 +1936,11 @@ function PercursosPage() {
       <Card className="overflow-hidden rounded-2xl shadow-panel">
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="space-y-2.5 p-4 sm:p-6">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}</div>
+            <div className="space-y-2.5 p-4 sm:p-6">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />
+              ))}
+            </div>
           ) : lista.length === 0 ? (
             <div className="p-4 sm:p-6">
               <EmptyState
@@ -1892,100 +1953,116 @@ function PercursosPage() {
             <>
               {selecionados.size > 0 && (
                 <div className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-2">
-                  <span className="text-xs text-muted-foreground">{selecionados.size} selecionado(s)</span>
-                  <Button variant="destructive" size="sm" className="h-8 rounded-lg" onClick={() => setConfLote(true)}>
+                  <span className="text-xs text-muted-foreground">
+                    {selecionados.size} selecionado(s)
+                  </span>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="h-8 rounded-lg"
+                    onClick={() => setConfLote(true)}
+                  >
                     <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Excluir selecionados
                   </Button>
                 </div>
               )}
-            <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-10">
-                    <Checkbox
-                      checked={lista.length > 0 && selecionados.size === lista.length}
-                      onCheckedChange={(v) => setSelecionados(v === true ? new Set(lista.map((p) => p.id)) : new Set())}
-                      aria-label="Selecionar todos"
-                    />
-                  </TableHead>
-                  <THP k="codigo" label="Código" className="w-20" />
-                  <THP k="nome" label="Nome" />
-                  <THP k="rota" label="Remetente → Destinatário" />
-                  <THP k="toma" label="Tomador" />
-                  <THP k="coleta" label="Coleta / Entrega" />
-                  <TableHead className="w-24 text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {lista.map((p) => (
-                  <TableRow key={p.id} className="transition-colors hover:bg-accent/30">
-                    <TableCell>
+              <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10">
                       <Checkbox
-                        checked={selecionados.has(p.id)}
-                        onCheckedChange={() => setSelecionados((ant) => { const prox = new Set(ant); if (prox.has(p.id)) prox.delete(p.id); else prox.add(p.id); return prox; })}
-                        aria-label={`Selecionar ${p.nome}`}
+                        checked={lista.length > 0 && selecionados.size === lista.length}
+                        onCheckedChange={(v) =>
+                          setSelecionados(v === true ? new Set(lista.map((p) => p.id)) : new Set())
+                        }
+                        aria-label="Selecionar todos"
                       />
-                    </TableCell>
-                    <TableCell>
-                      <Badge className="bg-primary/15 font-mono text-primary shadow-sm">
-                        {p.codigo || "—"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="max-w-[260px] truncate" title={p.nome}>
-                      {p.nome}
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      <span className="block truncate max-w-[280px]">{p.rem_nome || "—"}</span>
-                      <span className="block text-muted-foreground">→ {p.dest_nome || "—"}</span>
-                    </TableCell>
-                    <TableCell className="text-xs max-w-[200px] truncate">
-                      {p.toma_nome || fmtDoc(p.toma_cnpj)}
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      {p.coleta_xmun || "—"}/{p.coleta_uf || "—"} → {p.entrega_xmun || "—"}/
-                      {p.entrega_uf || "—"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 rounded-lg"
-                          title="Editar"
-                          onClick={async () => {
-                            // A listagem traz poucas colunas: busca a linha
-                            // completa antes de editar, senão o salvar
-                            // sobrescreve CFOP/natureza/alíquotas/seguro com vazio.
-                            let full: any = null;
-                            try {
-                              const { data } = await supabase
-                                .from("cte_percursos" as any)
-                                .select("*")
-                                .eq("id", p.id)
-                                .maybeSingle();
-                              full = data || null;
-                            } catch {}
-                            setEditing({ ...(full ?? p) });
-                            setPercTab("geral");
-                          }}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 rounded-lg text-destructive"
-                          title="Excluir"
-                          onClick={() => setConfExcluir(p)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </TableCell>
+                    </TableHead>
+                    <THP k="codigo" label="Código" className="w-20" />
+                    <THP k="nome" label="Nome" />
+                    <THP k="rota" label="Remetente → Destinatário" />
+                    <THP k="toma" label="Tomador" />
+                    <THP k="coleta" label="Coleta / Entrega" />
+                    <TableHead className="w-24 text-right">Ações</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {lista.map((p) => (
+                    <TableRow key={p.id} className="transition-colors hover:bg-accent/30">
+                      <TableCell>
+                        <Checkbox
+                          checked={selecionados.has(p.id)}
+                          onCheckedChange={() =>
+                            setSelecionados((ant) => {
+                              const prox = new Set(ant);
+                              if (prox.has(p.id)) prox.delete(p.id);
+                              else prox.add(p.id);
+                              return prox;
+                            })
+                          }
+                          aria-label={`Selecionar ${p.nome}`}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Badge className="bg-primary/15 font-mono text-primary shadow-sm">
+                          {p.codigo || "—"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="max-w-[260px] truncate" title={p.nome}>
+                        {p.nome}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        <span className="block truncate max-w-[280px]">{p.rem_nome || "—"}</span>
+                        <span className="block text-muted-foreground">→ {p.dest_nome || "—"}</span>
+                      </TableCell>
+                      <TableCell className="text-xs max-w-[200px] truncate">
+                        {p.toma_nome || fmtDoc(p.toma_cnpj)}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {p.coleta_xmun || "—"}/{p.coleta_uf || "—"} → {p.entrega_xmun || "—"}/
+                        {p.entrega_uf || "—"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 rounded-lg"
+                            title="Editar"
+                            onClick={async () => {
+                              // A listagem traz poucas colunas: busca a linha
+                              // completa antes de editar, senão o salvar
+                              // sobrescreve CFOP/natureza/alíquotas/seguro com vazio.
+                              let full: any = null;
+                              try {
+                                const { data } = await supabase
+                                  .from("cte_percursos" as any)
+                                  .select("*")
+                                  .eq("id", p.id)
+                                  .maybeSingle();
+                                full = data || null;
+                              } catch {}
+                              setEditing({ ...(full ?? p) });
+                              setPercTab("geral");
+                            }}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 rounded-lg text-destructive"
+                            title="Excluir"
+                            onClick={() => setConfExcluir(p)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </>
           )}
         </CardContent>
@@ -2002,15 +2079,25 @@ function PercursosPage() {
           onKeyDown={(event) => {
             // Enter em campo de texto salva o percurso (a validação do salvar
             // barra quando faltar obrigatório; textarea quebra linha)
-            if (event.key === "Enter" && !event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
+            if (
+              event.key === "Enter" &&
+              !event.shiftKey &&
+              !event.ctrlKey &&
+              !event.altKey &&
+              !event.metaKey
+            ) {
               const t = event.target as HTMLElement;
               // Só no diálogo principal: ignora popovers/combos e diálogos aninhados
               const dlg = t.closest('[role="dialog"]');
               if (dlg && dlg !== event.currentTarget) return;
               if (
                 t.tagName === "INPUT" &&
-                !["checkbox", "radio", "file", "button", "submit", "hidden"].includes((t as HTMLInputElement).type) &&
-                !t.closest('[role="combobox"],[role="listbox"],[role="option"],[data-radix-popper-content-wrapper]')
+                !["checkbox", "radio", "file", "button", "submit", "hidden"].includes(
+                  (t as HTMLInputElement).type,
+                ) &&
+                !t.closest(
+                  '[role="combobox"],[role="listbox"],[role="option"],[data-radix-popper-content-wrapper]',
+                )
               ) {
                 event.preventDefault();
                 if (editing && !salvar.isPending) salvarPercurso();
@@ -2055,13 +2142,21 @@ function PercursosPage() {
                     <div className="md:col-span-3 flex flex-col justify-between gap-2">
                       {editing.id ? (
                         <>
-                          <Parte titulo="Remetente" nome={editing.rem_nome} doc={editing.rem_cnpj} />
+                          <Parte
+                            titulo="Remetente"
+                            nome={editing.rem_nome}
+                            doc={editing.rem_cnpj}
+                          />
                           <Parte
                             titulo="Destinatário"
                             nome={editing.dest_nome}
                             doc={editing.dest_cnpj}
                           />
-                          <Parte titulo="Tomador" nome={editing.toma_nome} doc={editing.toma_cnpj} />
+                          <Parte
+                            titulo="Tomador"
+                            nome={editing.toma_nome}
+                            doc={editing.toma_cnpj}
+                          />
                         </>
                       ) : (
                         <>
@@ -2251,7 +2346,7 @@ function PercursosPage() {
                           <Combo
                             label="CFOP"
                             value={editing.cfop || ""}
-                           
+
                             onPick={(v) => {
                               const o = OPTS_CFOP.find((x) => x.v === v);
                               set("cfop", v);
@@ -2269,7 +2364,7 @@ function PercursosPage() {
                           <Combo
                             label="Natureza da Operação"
                             value={semNumCfop(editing.nat_operacao || "")}
-                           
+
                             onPick={(v) => set("nat_operacao", v)}
                             opts={OPTS_NAT}
                           />
@@ -2280,7 +2375,7 @@ function PercursosPage() {
                           <Combo
                             label="Tipo de carga (ANTT — piso mínimo)"
                             value={editing.tipo_carga_antt || "Carga Geral"}
-                           
+
                             onPick={(v) => set("tipo_carga_antt", v)}
                             opts={OPTS_TIPO_CARGA}
                           />
@@ -2345,13 +2440,19 @@ function PercursosPage() {
                             value: s.nome,
                             label: s.nome,
                           }))}
-                         
-                         
+
                           emptyText="Nenhum item encontrado."
                         />
                       </div>
                       <div className="md:col-span-4">
-                        <T editing={editing} set={set} label="CNPJ da seguradora" k="seg_cnpj" mono doc />
+                        <T
+                          editing={editing}
+                          set={set}
+                          label="CNPJ da seguradora"
+                          k="seg_cnpj"
+                          mono
+                          doc
+                        />
                       </div>
                       <div className="md:col-span-3">
                         <T editing={editing} set={set} label="Apólice" k="seg_apolice" mono />
@@ -2402,7 +2503,12 @@ function PercursosPage() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!confExcluir} onOpenChange={(v) => { if (!v) setConfExcluir(null); }}>
+      <AlertDialog
+        open={!!confExcluir}
+        onOpenChange={(v) => {
+          if (!v) setConfExcluir(null);
+        }}
+      >
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader className="gap-1.5">
             <AlertDialogTitle className="tracking-tight">Excluir percurso</AlertDialogTitle>
@@ -2423,12 +2529,18 @@ function PercursosPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={confLote} onOpenChange={(v) => { if (!v) setConfLote(false); }}>
+      <AlertDialog
+        open={confLote}
+        onOpenChange={(v) => {
+          if (!v) setConfLote(false);
+        }}
+      >
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader className="gap-1.5">
             <AlertDialogTitle className="tracking-tight">Excluir selecionados</AlertDialogTitle>
             <AlertDialogDescription className="leading-relaxed">
-              Tem certeza que deseja excluir {selecionados.size} percurso(s)? Percursos em uso no CT-e serão mantidos.
+              Tem certeza que deseja excluir {selecionados.size} percurso(s)? Percursos em uso no
+              CT-e serão mantidos.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">

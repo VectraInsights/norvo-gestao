@@ -12,10 +12,19 @@ import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/erp/status-badge";
 import { RouteErrorState } from "@/components/erp/route-error-state";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Sun, CalendarClock, AlertTriangle, ChevronRight, Pencil, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -24,22 +33,42 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { dateBR, brl } from "@/lib/format";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/rh/ferias")({
   component: FeriasPage,
-  errorComponent: RouteErrorState
+  errorComponent: RouteErrorState,
 });
 
 type ColabRow = {
-  id: string; nome: string; cargo: string | null;
-  data_admissao: string | null; status: string; salario_base: number;
+  id: string;
+  nome: string;
+  cargo: string | null;
+  data_admissao: string | null;
+  status: string;
+  salario_base: number;
 };
 
 type Concessao = {
-  id: string; empresa_id: string; colaborador_id: string;
-  periodo_inicio: string; data_inicio_gozo: string; data_fim_gozo: string;
-  dias: number; abono_dias: number; adiantar_decimo: boolean; status: string;
+  id: string;
+  empresa_id: string;
+  colaborador_id: string;
+  periodo_inicio: string;
+  data_inicio_gozo: string;
+  data_fim_gozo: string;
+  dias: number;
+  abono_dias: number;
+  adiantar_decimo: boolean;
+  status: string;
 };
 
 type Ciclo = { inicio: string; fim: string; limite: string };
@@ -67,13 +96,14 @@ const addMesesClamp = (d: Date, n: number) => {
 
 /* ─── Tabelas INSS 2026 ─── */
 const INSS_FAIXAS = [
-  { limite: 1621.00, aliquota: 0.075 },
+  { limite: 1621.0, aliquota: 0.075 },
   { limite: 2902.84, aliquota: 0.09 },
   { limite: 4354.27, aliquota: 0.12 },
   { limite: 8475.55, aliquota: 0.14 },
 ];
 function calcINSS(base: number): number {
-  let inss = 0, anterior = 0;
+  let inss = 0,
+    anterior = 0;
   for (const fx of INSS_FAIXAS) {
     const parcela = Math.min(base, fx.limite) - anterior;
     if (parcela <= 0) break;
@@ -85,11 +115,11 @@ function calcINSS(base: number): number {
 
 /* ─── Tabelas IRRF 2026 (Lei 15.270/2025) ─── */
 const IRRF_FAIXAS = [
-  { limite: 2428.80,  aliquota: 0,      deducao: 0 },
-  { limite: 2826.65,  aliquota: 0.075,  deducao: 182.16 },
-  { limite: 3751.05,  aliquota: 0.15,   deducao: 394.16 },
-  { limite: 4664.68,  aliquota: 0.225,  deducao: 675.49 },
-  { limite: Infinity,  aliquota: 0.275,  deducao: 908.73 },
+  { limite: 2428.8, aliquota: 0, deducao: 0 },
+  { limite: 2826.65, aliquota: 0.075, deducao: 182.16 },
+  { limite: 3751.05, aliquota: 0.15, deducao: 394.16 },
+  { limite: 4664.68, aliquota: 0.225, deducao: 675.49 },
+  { limite: Infinity, aliquota: 0.275, deducao: 908.73 },
 ];
 function calcIRRF(baseCalculo: number, salarioBruto: number): number {
   let imposto = 0;
@@ -102,7 +132,7 @@ function calcIRRF(baseCalculo: number, salarioBruto: number): number {
   if (imposto <= 0) return 0;
   if (salarioBruto <= 5000) return 0;
   if (salarioBruto <= 7350) {
-    const reducao = 978.62 - (0.133145 * salarioBruto);
+    const reducao = 978.62 - 0.133145 * salarioBruto;
     return Math.round(Math.max(0, imposto - reducao) * 100) / 100;
   }
   return Math.round(imposto * 100) / 100;
@@ -124,11 +154,16 @@ function ciclosAteHoje(admissao: string): Ciclo[] {
 
 type SitKey = "sem_admissao" | "vencida" | "vencendo" | "em_dia";
 const SIT_LABEL: Record<SitKey, string> = {
-  sem_admissao: "Sem data de admissão", vencida: "Férias vencidas",
-  vencendo: "Vence em até 60 dias", em_dia: "Em dia",
+  sem_admissao: "Sem data de admissão",
+  vencida: "Férias vencidas",
+  vencendo: "Vence em até 60 dias",
+  em_dia: "Em dia",
 };
 const CONC_STATUS: Record<string, string> = {
-  agendada: "Agendada", em_gozo: "Em gozo", concluida: "Concluída", cancelada: "Cancelada",
+  agendada: "Agendada",
+  em_gozo: "Em gozo",
+  concluida: "Concluída",
+  cancelada: "Cancelada",
 };
 
 function FeriasPage() {
@@ -146,9 +181,12 @@ function FeriasPage() {
     enabled: !!empresa,
     queryKey: ["colaboradores", empresa?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("colaboradores" as never)
+      const { data, error } = await supabase
+        .from("colaboradores" as never)
         .select("id, nome, cargo, data_admissao, status, salario_base")
-        .eq("empresa_id", empresa!.id).neq("status", "demitido").order("nome");
+        .eq("empresa_id", empresa!.id)
+        .neq("status", "demitido")
+        .order("nome");
       if (error) throw error;
       return (data ?? []) as unknown as ColabRow[];
     },
@@ -158,8 +196,14 @@ function FeriasPage() {
     enabled: !!empresa,
     queryKey: ["ferias_concessoes", empresa?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("ferias_concessoes" as never)
-        .select("id,empresa_id,colaborador_id,periodo_inicio,data_inicio_gozo,data_fim_gozo,dias,abono_dias,adiantar_decimo,status").eq("empresa_id", empresa!.id).order("data_inicio_gozo").limit(500);
+      const { data, error } = await supabase
+        .from("ferias_concessoes" as never)
+        .select(
+          "id,empresa_id,colaborador_id,periodo_inicio,data_inicio_gozo,data_fim_gozo,dias,abono_dias,adiantar_decimo,status",
+        )
+        .eq("empresa_id", empresa!.id)
+        .order("data_inicio_gozo")
+        .limit(500);
       if (error) throw error;
       return (data ?? []) as unknown as Concessao[];
     },
@@ -193,15 +237,21 @@ function FeriasPage() {
     });
   }, [colabs, concessoes]);
 
-  const alertas = useMemo(() => ({
-    vencidos: linhas.filter((l) => l.sit === "vencida"),
-    vencendo: linhas.filter((l) => l.sit === "vencendo"),
-  }), [linhas]);
+  const alertas = useMemo(
+    () => ({
+      vencidos: linhas.filter((l) => l.sit === "vencida"),
+      vencendo: linhas.filter((l) => l.sit === "vencendo"),
+    }),
+    [linhas],
+  );
 
   const toggleExpandido = (id: string) => {
-    setExpandido((prev) => prev === id ? null : id);
+    setExpandido((prev) => (prev === id ? null : id));
     setCicloSel(null);
-    setFormInicio(""); setFormFim(""); setFormAbono(""); setFormDecimo(false);
+    setFormInicio("");
+    setFormFim("");
+    setFormAbono("");
+    setFormDecimo(false);
   };
 
   const linhaExpandida = linhas.find((l) => l.colab.id === expandido);
@@ -210,9 +260,11 @@ function FeriasPage() {
     if (!linhaExpandida || !formInicio || !formFim) return null;
     const salario = Number(linhaExpandida.colab.salario_base) || 0;
     if (salario <= 0) return null;
-    const diasGozo = Math.round(
-      (new Date(formFim + "T00:00:00").getTime() - new Date(formInicio + "T00:00:00").getTime()) / 86400000
-    ) + 1;
+    const diasGozo =
+      Math.round(
+        (new Date(formFim + "T00:00:00").getTime() - new Date(formInicio + "T00:00:00").getTime()) /
+          86400000,
+      ) + 1;
     if (diasGozo < 1) return null;
     const abono = Number(formAbono) || 0;
 
@@ -237,11 +289,22 @@ function FeriasPage() {
     const totalReceber = liquidoFerias + valorAbono + liquidoDecimo;
 
     return {
-      salario, diasGozo, abono,
-      proporcional, terco, brutoFerias, inssFerias, irrfFerias, liquidoFerias,
+      salario,
+      diasGozo,
+      abono,
+      proporcional,
+      terco,
+      brutoFerias,
+      inssFerias,
+      irrfFerias,
+      liquidoFerias,
       valorAbono,
-      decimoBruto, inssDecimo, irrfDecimo, liquidoDecimo,
-      totalDescontos, totalReceber,
+      decimoBruto,
+      inssDecimo,
+      irrfDecimo,
+      liquidoDecimo,
+      totalDescontos,
+      totalReceber,
     };
   }, [linhaExpandida, formInicio, formFim, formAbono, formDecimo]);
 
@@ -254,24 +317,35 @@ function FeriasPage() {
       if (!formInicio || !formFim) throw new Error("Informe as datas de gozo");
       if (formInicio <= ciclo.fim)
         throw new Error("O gozo não pode começar antes do fim do período aquisitivo");
-      const dias = Math.round(
-        (new Date(formFim + "T00:00:00").getTime() - new Date(formInicio + "T00:00:00").getTime()) / 86400000
-      ) + 1;
+      const dias =
+        Math.round(
+          (new Date(formFim + "T00:00:00").getTime() -
+            new Date(formInicio + "T00:00:00").getTime()) /
+            86400000,
+        ) + 1;
       if (dias < 5) throw new Error("Mínimo de 5 dias corridos (CLT art. 134 §1º)");
       const abono = Number(formAbono) || 0;
       if (dias + abono + ciclo.usado > DIAS_DIREITO)
         throw new Error(`Saldo insuficiente: disponível ${DIAS_DIREITO - ciclo.usado} dia(s)`);
       const { error } = await (supabase.from("ferias_concessoes" as never) as any).insert({
-        empresa_id: empresa.id, colaborador_id: linhaExpandida.colab.id,
-        periodo_inicio: ciclo.inicio, data_inicio_gozo: formInicio,
-        data_fim_gozo: formFim, abono_dias: abono, adiantar_decimo: formDecimo,
+        empresa_id: empresa.id,
+        colaborador_id: linhaExpandida.colab.id,
+        periodo_inicio: ciclo.inicio,
+        data_inicio_gozo: formInicio,
+        data_fim_gozo: formFim,
+        abono_dias: abono,
+        adiantar_decimo: formDecimo,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Férias agendadas");
       qc.invalidateQueries({ queryKey: ["ferias_concessoes"] });
-      setCicloSel(null); setFormInicio(""); setFormFim(""); setFormAbono("0"); setFormDecimo(false);
+      setCicloSel(null);
+      setFormInicio("");
+      setFormFim("");
+      setFormAbono("0");
+      setFormDecimo(false);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -279,7 +353,8 @@ function FeriasPage() {
   const setStatusConc = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { error } = await (supabase.from("ferias_concessoes" as never) as any)
-        .update({ status }).eq("id", id);
+        .update({ status })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -291,7 +366,10 @@ function FeriasPage() {
 
   const excluirConc = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("ferias_concessoes" as never).delete().eq("id", id);
+      const { error } = await supabase
+        .from("ferias_concessoes" as never)
+        .delete()
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -332,7 +410,10 @@ function FeriasPage() {
             </p>
             <p className="text-muted-foreground">
               Agende o gozo antes do prazo:{" "}
-              {alertas.vencendo.map((l) => `${l.colab.nome} (${dateBR(l.proximoLimite!)})`).join(", ")}.
+              {alertas.vencendo
+                .map((l) => `${l.colab.nome} (${dateBR(l.proximoLimite!)})`)
+                .join(", ")}
+              .
             </p>
           </div>
         </Card>
@@ -346,8 +427,11 @@ function FeriasPage() {
             ))}
           </div>
         ) : !linhas || linhas.length === 0 ? (
-          <EmptyState icon={Sun} title="Nenhum colaborador ativo"
-            description="Cadastre colaboradores com data de admissão para acompanhar as férias automaticamente." />
+          <EmptyState
+            icon={Sun}
+            title="Nenhum colaborador ativo"
+            description="Cadastre colaboradores com data de admissão para acompanhar as férias automaticamente."
+          />
         ) : (
           <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
             <TableHeader>
@@ -385,15 +469,21 @@ function FeriasPage() {
                       <TableCell className="font-medium">
                         {l.colab.nome}
                         {l.colab.cargo && (
-                          <span className="block text-xs text-muted-foreground">{l.colab.cargo}</span>
+                          <span className="block text-xs text-muted-foreground">
+                            {l.colab.cargo}
+                          </span>
                         )}
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-tabular">
                         {l.colab.data_admissao ? dateBR(l.colab.data_admissao) : "—"}
                       </TableCell>
                       <TableCell className="text-center text-tabular">{l.abertos.length}</TableCell>
-                      <TableCell className="text-center text-tabular font-medium">{l.saldoTotal}</TableCell>
-                      <TableCell className={`text-tabular whitespace-nowrap ${l.sit === "vencida" ? "text-destructive font-medium" : ""}`}>
+                      <TableCell className="text-center text-tabular font-medium">
+                        {l.saldoTotal}
+                      </TableCell>
+                      <TableCell
+                        className={`text-tabular whitespace-nowrap ${l.sit === "vencida" ? "text-destructive font-medium" : ""}`}
+                      >
                         {l.proximoLimite ? dateBR(l.proximoLimite) : "—"}
                       </TableCell>
                       <TableCell>
@@ -410,7 +500,9 @@ function FeriasPage() {
                             <div>
                               <p className="mb-2 text-sm font-medium">Períodos aquisitivos</p>
                               {l.todosComSaldo.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">Sem períodos (data de admissão ausente).</p>
+                                <p className="text-sm text-muted-foreground">
+                                  Sem períodos (data de admissão ausente).
+                                </p>
                               ) : (
                                 <div className="space-y-2">
                                   {l.todosComSaldo.map((ciclo) => {
@@ -427,17 +519,33 @@ function FeriasPage() {
                                             <span className="text-muted-foreground">
                                               limite {dateBR(ciclo.limite)}
                                             </span>
-                                            {vencido && <StatusBadge status="vencido" label="vencido" tone="bg-destructive/10 text-destructive" />}
-                                            {venceBreve && <StatusBadge status="vencendo" label="vence em breve" tone="bg-primary/10 text-primary" />}
+                                            {vencido && (
+                                              <StatusBadge
+                                                status="vencido"
+                                                label="vencido"
+                                                tone="bg-destructive/10 text-destructive"
+                                              />
+                                            )}
+                                            {venceBreve && (
+                                              <StatusBadge
+                                                status="vencendo"
+                                                label="vence em breve"
+                                                tone="bg-primary/10 text-primary"
+                                              />
+                                            )}
                                           </div>
                                           <div>
                                             {saldo > 0 && (
                                               <Button
-                                                variant="outline" size="sm"
+                                                variant="outline"
+                                                size="sm"
                                                 className="h-8 rounded-lg px-3 shadow-sm active:scale-95"
                                                 onClick={() => {
-                                                setCicloSel(ciclo.inicio);
-                                                setFormInicio(""); setFormFim(""); setFormAbono(""); setFormDecimo(false);
+                                                  setCicloSel(ciclo.inicio);
+                                                  setFormInicio("");
+                                                  setFormFim("");
+                                                  setFormAbono("");
+                                                  setFormDecimo(false);
                                                 }}
                                               >
                                                 Conceder
@@ -474,59 +582,161 @@ function FeriasPage() {
                                                 </div>
                                                 <div>
                                                   <Label>Fim do gozo *</Label>
-                                                  <DateInput value={formFim} onChange={setFormFim} />
+                                                  <DateInput
+                                                    value={formFim}
+                                                    onChange={setFormFim}
+                                                  />
                                                 </div>
                                                 <div>
                                                   <Label>Venda (abono pecuniário)</Label>
-                                                  <MoneyInput prefix="" decimals={0} value={formAbono}
-                                                   
+                                                  <MoneyInput
+                                                    prefix=""
+                                                    decimals={0}
+                                                    value={formAbono}
+
                                                     className="h-9 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                     onChange={(v) => {
                                                       setFormAbono(v);
                                                       if (formInicio) {
                                                         const abono = Number(v) || 0;
                                                         const diasFerias = 30 - abono;
-                                                        const d = new Date(formInicio + "T00:00:00");
+                                                        const d = new Date(
+                                                          formInicio + "T00:00:00",
+                                                        );
                                                         d.setDate(d.getDate() + diasFerias - 1);
                                                         setFormFim(d.toISOString().slice(0, 10));
                                                       }
-                                                    }} />
-                                                  <p className="mt-1 text-xs text-muted-foreground">Máx. 10 dias (CLT art. 143).</p>
+                                                    }}
+                                                  />
+                                                  <p className="mt-1 text-xs text-muted-foreground">
+                                                    Máx. 10 dias (CLT art. 143).
+                                                  </p>
                                                 </div>
                                                 <label className="flex items-end gap-2 pb-1 text-sm">
-                                                  <input type="checkbox" checked={formDecimo}
-                                                    onChange={(e) => setFormDecimo(e.target.checked)} />
+                                                  <input
+                                                    type="checkbox"
+                                                    checked={formDecimo}
+                                                    onChange={(e) =>
+                                                      setFormDecimo(e.target.checked)
+                                                    }
+                                                  />
                                                   Adiantar 1ª parcela do 13º
                                                 </label>
                                               </div>
                                               {calculoFerias && (
                                                 <div className="rounded-md border bg-muted/30 p-3 text-sm space-y-1">
-                                                  <p className="font-medium text-muted-foreground mb-2">Prévia do cálculo</p>
-                                                  <div className="flex justify-between"><span>Férias ({calculoFerias.diasGozo}d × 1/30)</span><span className="text-tabular">{brl(calculoFerias.proporcional)}</span></div>
-                                                  <div className="flex justify-between"><span>Adicional constitucional (⅓)</span><span className="text-tabular">{brl(calculoFerias.terco)}</span></div>
-                                                  <div className="flex justify-between text-muted-foreground"><span>− INSS</span><span className="text-tabular">−{brl(calculoFerias.inssFerias)}</span></div>
-                                                  <div className="flex justify-between text-muted-foreground"><span>− IRRF</span><span className="text-tabular">−{brl(calculoFerias.irrfFerias)}</span></div>
-                                                  <div className="flex justify-between font-medium"><span>Líquido férias</span><span className="text-tabular">{brl(calculoFerias.liquidoFerias)}</span></div>
-                                                  {calculoFerias.abono > 0 && <>
-                                                    <div className="border-t pt-1 mt-1" />
-                                                    <div className="flex justify-between"><span>Abono pecuniário ({calculoFerias.abono}d)</span><span className="text-tabular">{brl(calculoFerias.valorAbono)}</span></div>
-                                                    <p className="text-xs text-muted-foreground">Isento de INSS e IRRF</p>
-                                                  </>}
-                                                  {calculoFerias.decimoBruto > 0 && <>
-                                                    <div className="border-t pt-1 mt-1" />
-                                                    <div className="flex justify-between"><span>13º adiantado (bruto)</span><span className="text-tabular">{brl(calculoFerias.decimoBruto)}</span></div>
-                                                    <div className="flex justify-between text-muted-foreground"><span>− INSS 13º</span><span className="text-tabular">−{brl(calculoFerias.inssDecimo)}</span></div>
-                                                    <div className="flex justify-between text-muted-foreground"><span>− IRRF 13º</span><span className="text-tabular">−{brl(calculoFerias.irrfDecimo)}</span></div>
-                                                    <div className="flex justify-between font-medium"><span>Líquido 13º</span><span className="text-tabular">{brl(calculoFerias.liquidoDecimo)}</span></div>
-                                                  </>}
-                                                  <div className="border-t pt-1 mt-1 flex justify-between text-muted-foreground"><span>Total descontos</span><span className="text-tabular">−{brl(calculoFerias.totalDescontos)}</span></div>
-                                                  <div className="flex justify-between font-semibold text-base"><span>Total a receber</span><span className="text-tabular">{brl(calculoFerias.totalReceber)}</span></div>
+                                                  <p className="font-medium text-muted-foreground mb-2">
+                                                    Prévia do cálculo
+                                                  </p>
+                                                  <div className="flex justify-between">
+                                                    <span>
+                                                      Férias ({calculoFerias.diasGozo}d × 1/30)
+                                                    </span>
+                                                    <span className="text-tabular">
+                                                      {brl(calculoFerias.proporcional)}
+                                                    </span>
+                                                  </div>
+                                                  <div className="flex justify-between">
+                                                    <span>Adicional constitucional (⅓)</span>
+                                                    <span className="text-tabular">
+                                                      {brl(calculoFerias.terco)}
+                                                    </span>
+                                                  </div>
+                                                  <div className="flex justify-between text-muted-foreground">
+                                                    <span>− INSS</span>
+                                                    <span className="text-tabular">
+                                                      −{brl(calculoFerias.inssFerias)}
+                                                    </span>
+                                                  </div>
+                                                  <div className="flex justify-between text-muted-foreground">
+                                                    <span>− IRRF</span>
+                                                    <span className="text-tabular">
+                                                      −{brl(calculoFerias.irrfFerias)}
+                                                    </span>
+                                                  </div>
+                                                  <div className="flex justify-between font-medium">
+                                                    <span>Líquido férias</span>
+                                                    <span className="text-tabular">
+                                                      {brl(calculoFerias.liquidoFerias)}
+                                                    </span>
+                                                  </div>
+                                                  {calculoFerias.abono > 0 && (
+                                                    <>
+                                                      <div className="border-t pt-1 mt-1" />
+                                                      <div className="flex justify-between">
+                                                        <span>
+                                                          Abono pecuniário ({calculoFerias.abono}d)
+                                                        </span>
+                                                        <span className="text-tabular">
+                                                          {brl(calculoFerias.valorAbono)}
+                                                        </span>
+                                                      </div>
+                                                      <p className="text-xs text-muted-foreground">
+                                                        Isento de INSS e IRRF
+                                                      </p>
+                                                    </>
+                                                  )}
+                                                  {calculoFerias.decimoBruto > 0 && (
+                                                    <>
+                                                      <div className="border-t pt-1 mt-1" />
+                                                      <div className="flex justify-between">
+                                                        <span>13º adiantado (bruto)</span>
+                                                        <span className="text-tabular">
+                                                          {brl(calculoFerias.decimoBruto)}
+                                                        </span>
+                                                      </div>
+                                                      <div className="flex justify-between text-muted-foreground">
+                                                        <span>− INSS 13º</span>
+                                                        <span className="text-tabular">
+                                                          −{brl(calculoFerias.inssDecimo)}
+                                                        </span>
+                                                      </div>
+                                                      <div className="flex justify-between text-muted-foreground">
+                                                        <span>− IRRF 13º</span>
+                                                        <span className="text-tabular">
+                                                          −{brl(calculoFerias.irrfDecimo)}
+                                                        </span>
+                                                      </div>
+                                                      <div className="flex justify-between font-medium">
+                                                        <span>Líquido 13º</span>
+                                                        <span className="text-tabular">
+                                                          {brl(calculoFerias.liquidoDecimo)}
+                                                        </span>
+                                                      </div>
+                                                    </>
+                                                  )}
+                                                  <div className="border-t pt-1 mt-1 flex justify-between text-muted-foreground">
+                                                    <span>Total descontos</span>
+                                                    <span className="text-tabular">
+                                                      −{brl(calculoFerias.totalDescontos)}
+                                                    </span>
+                                                  </div>
+                                                  <div className="flex justify-between font-semibold text-base">
+                                                    <span>Total a receber</span>
+                                                    <span className="text-tabular">
+                                                      {brl(calculoFerias.totalReceber)}
+                                                    </span>
+                                                  </div>
                                                 </div>
                                               )}
                                               <div className="flex justify-end gap-2">
-                                                <Button variant="outline" size="sm" onClick={() => setCicloSel(null)} className="h-9 rounded-xl px-4">Cancelar</Button>
-                                                <Button size="sm" onClick={() => saveConcessao.mutate()} disabled={saveConcessao.isPending} className="h-9 rounded-xl px-4 shadow-sm transition-all hover:shadow-md active:scale-95">
-                                                  {saveConcessao.isPending ? "Agendando..." : "Agendar férias"}
+                                                <Button
+                                                  variant="outline"
+                                                  size="sm"
+                                                  onClick={() => setCicloSel(null)}
+                                                  className="h-9 rounded-xl px-4"
+                                                >
+                                                  Cancelar
+                                                </Button>
+                                                <Button
+                                                  size="sm"
+                                                  onClick={() => saveConcessao.mutate()}
+                                                  disabled={saveConcessao.isPending}
+                                                  className="h-9 rounded-xl px-4 shadow-sm transition-all hover:shadow-md active:scale-95"
+                                                >
+                                                  {saveConcessao.isPending
+                                                    ? "Agendando..."
+                                                    : "Agendar férias"}
                                                 </Button>
                                               </div>
                                             </div>
@@ -545,7 +755,10 @@ function FeriasPage() {
                                 <p className="mb-2 text-sm font-medium">Concessões</p>
                                 <div className="space-y-2">
                                   {minhasConcessoes.map((c) => (
-                                    <div key={c.id} className={`rounded-xl border px-3 py-2 text-sm shadow-sm ${c.status === "cancelada" ? "opacity-50" : ""}`}>
+                                    <div
+                                      key={c.id}
+                                      className={`rounded-xl border px-3 py-2 text-sm shadow-sm ${c.status === "cancelada" ? "opacity-50" : ""}`}
+                                    >
                                       <div className="flex items-center justify-between gap-2">
                                         <span className="text-tabular whitespace-nowrap">
                                           {dateBR(c.data_inicio_gozo)} → {dateBR(c.data_fim_gozo)}
@@ -554,26 +767,48 @@ function FeriasPage() {
                                           </span>
                                         </span>
                                         <span className="flex items-center gap-2">
-                                          {c.abono_dias > 0 && <Badge variant="secondary">vendeu {c.abono_dias}d</Badge>}
-                                          {c.adiantar_decimo && <Badge variant="secondary">13º adiantado</Badge>}
+                                          {c.abono_dias > 0 && (
+                                            <Badge variant="secondary">
+                                              vendeu {c.abono_dias}d
+                                            </Badge>
+                                          )}
+                                          {c.adiantar_decimo && (
+                                            <Badge variant="secondary">13º adiantado</Badge>
+                                          )}
                                         </span>
                                       </div>
                                       <div className="mt-2 flex items-center justify-end gap-2">
                                         {c.status !== "cancelada" && (
-                                          <Select value={c.status}
-                                            onValueChange={(v) => setStatusConc.mutate({ id: c.id, status: v })}>
-                                            <SelectTrigger className="h-8 w-36 rounded-lg shadow-sm"><SelectValue /></SelectTrigger>
+                                          <Select
+                                            value={c.status}
+                                            onValueChange={(v) =>
+                                              setStatusConc.mutate({ id: c.id, status: v })
+                                            }
+                                          >
+                                            <SelectTrigger className="h-8 w-36 rounded-lg shadow-sm">
+                                              <SelectValue />
+                                            </SelectTrigger>
                                             <SelectContent>
                                               {Object.entries(CONC_STATUS).map(([k, v]) => (
-                                                <SelectItem key={k} value={k}>{v}</SelectItem>
+                                                <SelectItem key={k} value={k}>
+                                                  {v}
+                                                </SelectItem>
                                               ))}
                                             </SelectContent>
                                           </Select>
                                         )}
-                                        <StatusBadge status={c.status} label={CONC_STATUS[c.status] ?? c.status} />
+                                        <StatusBadge
+                                          status={c.status}
+                                          label={CONC_STATUS[c.status] ?? c.status}
+                                        />
                                         {c.status === "agendada" && (
-                                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10" title="Excluir"
-                                            onClick={() => setConfExcluir(c)}>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10"
+                                            title="Excluir"
+                                            onClick={() => setConfExcluir(c)}
+                                          >
                                             <Trash2 className="h-3.5 w-3.5" />
                                           </Button>
                                         )}
@@ -594,20 +829,26 @@ function FeriasPage() {
           </Table>
         )}
       </Card>
-      <AlertDialog open={!!confExcluir} onOpenChange={(v) => { if (!v) setConfExcluir(null); }}>
+      <AlertDialog
+        open={!!confExcluir}
+        onOpenChange={(v) => {
+          if (!v) setConfExcluir(null);
+        }}
+      >
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir concessão</AlertDialogTitle>
-            <AlertDialogDescription>
-              Excluir esta concessão?
-            </AlertDialogDescription>
+            <AlertDialogDescription>Excluir esta concessão?</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               data-acao
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => { if (confExcluir) excluirConc.mutate(confExcluir.id); setConfExcluir(null); }}
+              onClick={() => {
+                if (confExcluir) excluirConc.mutate(confExcluir.id);
+                setConfExcluir(null);
+              }}
             >
               Excluir
             </AlertDialogAction>

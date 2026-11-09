@@ -5,7 +5,14 @@ import { SearchField } from "@/components/erp/search-field";
 import { StatusBadge } from "@/components/erp/status-badge";
 import { RouteErrorState } from "@/components/erp/route-error-state";
 import { Card } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ShoppingCart } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,11 +22,14 @@ import { brl, dateBR } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/vendas/vendas")({
   component: VendasFaturadas,
-  errorComponent: RouteErrorState
+  errorComponent: RouteErrorState,
 });
 
 type Row = {
-  id: string; numero: number; data: string; total: number;
+  id: string;
+  numero: number;
+  data: string;
+  total: number;
   cliente: { nome: string } | null;
   condicao: { nome: string } | null;
 };
@@ -34,7 +44,8 @@ function VendasFaturadas() {
       // Busca em páginas para nunca cortar a lista (sem limite silencioso)
       const todas: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
-        const { data, error } = await supabase.from("vendas")
+        const { data, error } = await supabase
+          .from("vendas")
           .select("id,numero,data,total,cliente:clientes(nome),condicao:condicoes_pagamento(nome)")
           .eq("empresa_id", empresa!.id)
           .eq("status", "faturado")
@@ -59,7 +70,14 @@ function VendasFaturadas() {
       if ((v.condicao?.nome || "").toLowerCase().includes(q)) return true;
       if (String(v.numero ?? "").includes(qNum)) return true;
       // Pesquisa por valor: "25,00" acha 25.00 (a partir de 2 dígitos)
-      if (qDig.length >= 2 && Number(v.total || 0).toFixed(2).replace(/\D/g, "").includes(qDig)) return true;
+      if (
+        qDig.length >= 2 &&
+        Number(v.total || 0)
+          .toFixed(2)
+          .replace(/\D/g, "")
+          .includes(qDig)
+      )
+        return true;
       return false;
     });
   }, [data, busca]);
@@ -78,7 +96,11 @@ function VendasFaturadas() {
         <EmptyState
           icon={ShoppingCart}
           title="Nenhuma venda faturada"
-          description={busca ? "Nada encontrado para a busca." : "Faturamento é feito a partir de um orçamento/pedido."}
+          description={
+            busca
+              ? "Nada encontrado para a busca."
+              : "Faturamento é feito a partir de um orçamento/pedido."
+          }
         />
       ) : (
         <Card className="overflow-hidden shadow-panel">
@@ -97,13 +119,19 @@ function VendasFaturadas() {
               {filtrados.map((v) => (
                 <TableRow key={v.id}>
                   <TableCell className="text-tabular">
-                    <Link to="/vendas/pedidos" className="text-primary hover:underline">{v.numero}</Link>
+                    <Link to="/vendas/pedidos" className="text-primary hover:underline">
+                      {v.numero}
+                    </Link>
                   </TableCell>
                   <TableCell>{dateBR(v.data)}</TableCell>
                   <TableCell>{v.cliente?.nome ?? "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{v.condicao?.nome ?? "—"}</TableCell>
-                  <TableCell><StatusBadge status="faturado" /></TableCell>
-                  <TableCell className="text-right text-tabular font-medium">{brl(v.total)}</TableCell>
+                  <TableCell>
+                    <StatusBadge status="faturado" />
+                  </TableCell>
+                  <TableCell className="text-right text-tabular font-medium">
+                    {brl(v.total)}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

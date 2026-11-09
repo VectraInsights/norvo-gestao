@@ -172,7 +172,10 @@ export function NcmFiscalTab({ empresaId }: { empresaId: string }) {
 
   const doExcluir = async () => {
     if (!excluindo) return;
-    const { error } = await supabase.from("ncm_fiscal" as never).delete().eq("id", excluindo.id);
+    const { error } = await supabase
+      .from("ncm_fiscal" as never)
+      .delete()
+      .eq("id", excluindo.id);
     setExcluindo(null);
     if (error) return toast.error(error.message);
     qc.invalidateQueries({ queryKey: ["ncm-fiscal"] });
@@ -195,8 +198,8 @@ export function NcmFiscalTab({ empresaId }: { empresaId: string }) {
       <CardContent className="p-5 sm:p-6">
         <p className="mb-4 text-xs leading-relaxed text-muted-foreground">
           Produtos predominantes da carga: alimentam o produto predominante do CT-e e o{" "}
-          <code className="rounded bg-muted px-1 py-0.5 text-[11px]">prodPred</code> do MDF-e
-          (tipo de carga + NCM). As NF-e importadas preenchem este cadastro sozinhas.
+          <code className="rounded bg-muted px-1 py-0.5 text-[11px]">prodPred</code> do MDF-e (tipo
+          de carga + NCM). As NF-e importadas preenchem este cadastro sozinhas.
         </p>
 
         <div className="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-[140px_2fr_1fr_auto]">
@@ -289,7 +292,9 @@ export function NcmFiscalTab({ empresaId }: { empresaId: string }) {
                         <SelectContent>
                           {OPCOES_TP_CARGA.map((o) => (
                             <SelectItem key={o.nome} value={o.nome}>
-                              {o.codigo ? `${o.codigo} - ${o.nome}` : `${o.nome} (sem código no MDF-e)`}
+                              {o.codigo
+                                ? `${o.codigo} - ${o.nome}`
+                                : `${o.nome} (sem código no MDF-e)`}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -321,9 +326,13 @@ export function NcmFiscalTab({ empresaId }: { empresaId: string }) {
                   </TableRow>
                 ) : (
                   <TableRow key={r.id}>
-                    <TableCell className="font-mono text-muted-foreground">{r.ncm || "—"}</TableCell>
+                    <TableCell className="font-mono text-muted-foreground">
+                      {r.ncm || "—"}
+                    </TableCell>
                     <TableCell className="font-medium">{r.x_prod}</TableCell>
-                    <TableCell className="text-muted-foreground">{rotuloTpCarga(r.tp_carga)}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {rotuloTpCarga(r.tp_carga)}
+                    </TableCell>
                     <TableCell className="text-muted-foreground">
                       {ORIGEM_LABEL[r.origem || "manual"] ?? r.origem}
                     </TableCell>
@@ -360,8 +369,8 @@ export function NcmFiscalTab({ empresaId }: { empresaId: string }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir item?</AlertDialogTitle>
             <AlertDialogDescription>
-              {excluindo?.x_prod} sai do cadastro de NCM fiscal. Documentos já emitidos não
-              são alterados.
+              {excluindo?.x_prod} sai do cadastro de NCM fiscal. Documentos já emitidos não são
+              alterados.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

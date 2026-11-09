@@ -9,9 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
  * `lancamentos_financeiros.contato_id` não tem FK (apontaria para uma tabela só) e o
  * nome é resolvido aqui.
  */
-export async function nomesContatosFinanceiros(
-  ids: string[],
-): Promise<Record<string, string>> {
+export async function nomesContatosFinanceiros(ids: string[]): Promise<Record<string, string>> {
   const unicos = [...new Set((ids || []).filter(Boolean))];
   const saida: Record<string, string> = {};
   if (!unicos.length) return saida;

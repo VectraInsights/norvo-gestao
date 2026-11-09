@@ -132,7 +132,9 @@ export function buildDeclaracaoPayload(inp: DeclaracaoCiotInput, idOperacao: str
   for (const v of inp.veiculos || []) {
     const ex = Number((v as any).eixos);
     if (!Number.isInteger(ex) || ex < 1)
-      throw new Error(`Quantidade de eixos inválida para a placa ${String((v as any).placa || "—")}: confira em Frota → Veículos.`);
+      throw new Error(
+        `Quantidade de eixos inválida para a placa ${String((v as any).placa || "—")}: confira em Frota → Veículos.`,
+      );
   }
   const infPag: Record<string, unknown> = {
     TipoPagamento: Number(p.tipo),
@@ -273,7 +275,13 @@ export async function gerarIdOperacaoAntt(
 ): Promise<string> {
   const genBase = base.replace(/\/api$/, "");
   if (!tokenCache || Date.now() >= tokenCache.exp) {
-    const t = await postJson({ agent, base: genBase, path: "/token", body: "{}", headers: { chave: apiKeyDecodificada() } });
+    const t = await postJson({
+      agent,
+      base: genBase,
+      path: "/token",
+      body: "{}",
+      headers: { chave: apiKeyDecodificada() },
+    });
     const token = String(t.json?.token || "");
     if (t.status < 200 || t.status >= 300 || !token)
       throw new Error(`ANTT /token falhou (HTTP ${t.status}): ${t.text.slice(0, 200)}`);
@@ -287,7 +295,9 @@ export async function gerarIdOperacaoAntt(
     headers: { Authorization: `Bearer ${tokenCache.token}` },
   });
   if (g.json?.Sucesso === false)
-    throw new Error(`ANTT /gerar rejeitou: ${JSON.stringify(g.json?.Mensagem || g.json?.Erros || g.json).slice(0, 300)}`);
+    throw new Error(
+      `ANTT /gerar rejeitou: ${JSON.stringify(g.json?.Mensagem || g.json?.Erros || g.json).slice(0, 300)}`,
+    );
   // /gerar retorna {"Sucesso":true,"Dados":{"CIOT":"<12 chars>"}} — esse
   // CIOT é o IdOperacaoTransporte que vai na DeclaracaoOperacaoTransporte.
   const idOp = String(

@@ -62,7 +62,8 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --shadow-panel: 0 1px 2px oklch(0.22 0.02 60 / 0.06), 0 16px 40px -20px oklch(0.22 0.02 60 / 0.18);
+  --shadow-panel:
+    0 1px 2px oklch(0.22 0.02 60 / 0.06), 0 16px 40px -20px oklch(0.22 0.02 60 / 0.18);
   --shadow-lift: 0 2px 6px oklch(0.22 0.02 60 / 0.08), 0 28px 56px -24px oklch(0.22 0.02 60 / 0.28);
   --shadow-glow: 0 0 0 1px oklch(0.47 0.13 150 / 0.15), 0 8px 32px -8px oklch(0.47 0.13 150 / 0.25);
 }
@@ -135,7 +136,7 @@
   --muted-foreground: oklch(0.7 0.02 70);
   --accent: oklch(0.31 0.055 158);
   --accent-foreground: oklch(0.95 0.015 150);
-  --destructive: oklch(0.6 0.20 25);
+  --destructive: oklch(0.6 0.2 25);
   --destructive-foreground: oklch(0.95 0.01 75);
   --success: oklch(0.68 0.12 155);
   --success-foreground: oklch(0.18 0.015 60);
@@ -155,7 +156,9 @@
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
+  * {
+    border-color: var(--color-border);
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
@@ -165,18 +168,65 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
-  h1, .font-display { font-family: var(--font-display); letter-spacing: -0.015em; line-height: 1.15; }
-  h2, h3 { letter-spacing: -0.01em; line-height: 1.25; }
-  ::selection { background: color-mix(in oklab, var(--color-primary) 22%, transparent); }
-  :focus-visible { outline: 2px solid var(--color-ring); outline-offset: 2px; border-radius: 4px; }
-  :focus:not(:focus-visible) { outline: none; }
-  button, a, input, select, textarea { transition: border-color 200ms ease, background-color 200ms ease, box-shadow 200ms ease, color 200ms ease, transform 200ms ease; }
-  button, [role="button"], a { -webkit-tap-highlight-color: transparent; }
-  button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
-  [aria-busy="true"] { cursor: progress; }
-  ::-webkit-scrollbar { width: 10px; height: 10px; }
-  ::-webkit-scrollbar-thumb { border-radius: 8px; border: 2px solid transparent; background-clip: content-box; background-color: color-mix(in oklab, var(--color-muted-foreground) 35%, transparent); }
-  ::-webkit-scrollbar-track { background: transparent; }
+  h1,
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+  }
+  h2,
+  h3 {
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--color-primary) 22%, transparent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    transition:
+      border-color 200ms ease,
+      background-color 200ms ease,
+      box-shadow 200ms ease,
+      color 200ms ease,
+      transform 200ms ease;
+  }
+  button,
+  [role="button"],
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+  [aria-busy="true"] {
+    cursor: progress;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+    background-color: color-mix(in oklab, var(--color-muted-foreground) 35%, transparent);
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
 }
 
 @layer components {
@@ -189,77 +239,182 @@
   /* A borda e a sombra da caixa são do Card em volta (aqui só ficam fundo,
      arredondamento e scroll). O max-height vertical é o que faz o thead
      "sticky" grudar de verdade quando a tabela é longa. */
-  .erp-table-wrap { overflow-x: auto; max-height: calc(100vh - 20rem); background: var(--color-card); border-radius: var(--radius-lg); }
-  .erp-table-wrap table thead { background: color-mix(in oklab, var(--color-muted) 62%, transparent); }
-  .erp-table-wrap table th { white-space: nowrap; font-size: 0.72rem; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-muted-foreground); padding-block: 1rem; }
-  .erp-table-wrap table td { padding-block: 1rem; }
-  .erp-table-wrap table tbody tr { transition: background-color 140ms ease; }
-  .erp-table-wrap table tbody tr:hover { background: color-mix(in oklab, var(--color-accent) 38%, transparent); }
-  .card-hover { transition: box-shadow 200ms ease, transform 200ms ease; }
-  .card-hover:hover { box-shadow: var(--shadow-lift); transform: translateY(-1px); }
+  .erp-table-wrap {
+    overflow-x: auto;
+    max-height: calc(100vh - 20rem);
+    background: var(--color-card);
+    border-radius: var(--radius-lg);
+  }
+  .erp-table-wrap table thead {
+    background: color-mix(in oklab, var(--color-muted) 62%, transparent);
+  }
+  .erp-table-wrap table th {
+    white-space: nowrap;
+    font-size: 0.72rem;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+    padding-block: 1rem;
+  }
+  .erp-table-wrap table td {
+    padding-block: 1rem;
+  }
+  .erp-table-wrap table tbody tr {
+    transition: background-color 140ms ease;
+  }
+  .erp-table-wrap table tbody tr:hover {
+    background: color-mix(in oklab, var(--color-accent) 38%, transparent);
+  }
+  .card-hover {
+    transition:
+      box-shadow 200ms ease,
+      transform 200ms ease;
+  }
+  .card-hover:hover {
+    box-shadow: var(--shadow-lift);
+    transform: translateY(-1px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
 
 @keyframes shimmer {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(320%); }
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(320%);
+  }
 }
 
 @layer utilities {
-  .text-balance { text-wrap: balance; }
-  .scrollbar-subtle { scrollbar-color: color-mix(in oklab, var(--color-muted-foreground) 35%, transparent) transparent; scrollbar-width: thin; }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .scrollbar-subtle {
+    scrollbar-color: color-mix(in oklab, var(--color-muted-foreground) 35%, transparent) transparent;
+    scrollbar-width: thin;
+  }
 }
 
 html[data-density="compact"] .erp-table-wrap td,
-html[data-density="compact"] .erp-table-wrap th { padding-block: 0.375rem; }
-html[data-density="compact"] .erp-table-wrap { font-size: 0.8125rem; }
-html[data-density="compact"] .erp-surface { padding-block: 0.75rem; }
+html[data-density="compact"] .erp-table-wrap th {
+  padding-block: 0.375rem;
+}
+html[data-density="compact"] .erp-table-wrap {
+  font-size: 0.8125rem;
+}
+html[data-density="compact"] .erp-surface {
+  padding-block: 0.75rem;
+}
 html[data-density="compact"] .erp-surface h1,
 html[data-density="compact"] .erp-surface h2,
-html[data-density="compact"] .erp-surface h3 { margin-block: 0; }
+html[data-density="compact"] .erp-surface h3 {
+  margin-block: 0;
+}
 
 @media (max-width: 640px) {
-  #conteudo-principal { padding-inline: 1rem; padding-block: 1rem; }
-  .erp-table-wrap { max-width: calc(100vw - 1.5rem); max-height: calc(100vh - 18rem); scrollbar-width: thin; }
-  .erp-table-wrap table { min-width: 42rem; }
-  .erp-table-wrap:focus-within { outline: 2px solid var(--color-ring); outline-offset: 2px; }
-  .erp-surface { border-radius: 0.625rem; }
-  .erp-table-wrap td, .erp-table-wrap th { padding-inline: 0.5rem; }
+  #conteudo-principal {
+    padding-inline: 1rem;
+    padding-block: 1rem;
+  }
+  .erp-table-wrap {
+    max-width: calc(100vw - 1.5rem);
+    max-height: calc(100vh - 18rem);
+    scrollbar-width: thin;
+  }
+  .erp-table-wrap table {
+    min-width: 42rem;
+  }
+  .erp-table-wrap:focus-within {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+  .erp-surface {
+    border-radius: 0.625rem;
+  }
+  .erp-table-wrap td,
+  .erp-table-wrap th {
+    padding-inline: 0.5rem;
+  }
 }
 
 @media (min-width: 641px) and (max-width: 1023px) {
-  #conteudo-principal { padding-inline: 1.25rem; }
+  #conteudo-principal {
+    padding-inline: 1.25rem;
+  }
 }
 
 @media print {
-  @page { margin: 12mm; }
-  body { background: white !important; color: black !important; }
-  body > a, nav, aside, header button, [data-print="hidden"], .no-print { display: none !important; }
-  #conteudo-principal { overflow: visible !important; padding: 0 !important; }
+  @page {
+    margin: 12mm;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  body > a,
+  nav,
+  aside,
+  header button,
+  [data-print="hidden"],
+  .no-print {
+    display: none !important;
+  }
+  #conteudo-principal {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
   /* Tabela inteira na impressão (sem o scroll vertical da tela). */
-  .erp-table-wrap { max-height: none !important; overflow: visible !important; }
-  .print-break-before { break-before: page; }
-  .print-avoid-break { break-inside: avoid; }
+  .erp-table-wrap {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .print-break-before {
+    break-before: page;
+  }
+  .print-avoid-break {
+    break-inside: avoid;
+  }
 }
 
 @media (max-width: 640px) {
-  .erp-table-wrap { border-radius: 0.75rem; }
-  [role="dialog"] { max-height: calc(100dvh - 1rem); }
+  .erp-table-wrap {
+    border-radius: 0.75rem;
+  }
+  [role="dialog"] {
+    max-height: calc(100dvh - 1rem);
+  }
 }
 
-@utility text-display { font-family: var(--font-display); letter-spacing: -0.015em; }
-@utility text-tabular { font-variant-numeric: tabular-nums; }
+@utility text-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+@utility text-tabular {
+  font-variant-numeric: tabular-nums;
+}
 
 /* Mono global em Inter com dígitos tabulares: zero oval limpo (sem ponto interno),
    mantendo alinhamento das colunas numéricas. */
-.font-mono { font-variant-numeric: tabular-nums; }
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
 
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
-input[type="number"] { -moz-appearance: textfield; }
+input[type="number"] {
+  -moz-appearance: textfield;
+}

@@ -56,9 +56,6 @@ export function podeAcessarRota(
  * "Veículos" e "Motoristas" aparecem dentro do grupo Fiscal sem abrir o grupo
  * Frota & Viagens / DP / RH para o usuário.
  */
-export function moduloDoItemMenu(
-  to: string,
-  modulo?: ModuloKey,
-): ModuloKey | null {
+export function moduloDoItemMenu(to: string, modulo?: ModuloKey): ModuloKey | null {
   return modulo ?? moduloDaRota(to);
 }

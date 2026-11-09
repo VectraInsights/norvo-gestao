@@ -39,11 +39,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import {
-  gerarBoletoFn,
-  baixarBoletoFn,
-  processarRetornoCnabFn,
-} from "@/lib/boleto-server";
+import { gerarBoletoFn, baixarBoletoFn, processarRetornoCnabFn } from "@/lib/boleto-server";
 import { DateInput } from "@/components/erp/date-input";
 import { SearchField } from "@/components/erp/search-field";
 import { StatusBadge } from "@/components/erp/status-badge";
@@ -181,20 +177,29 @@ export function BoletosPage() {
 
   const statusLabel = (s: string) => {
     switch (s) {
-      case "pendente": return "Pendente";
-      case "pago": return "Pago";
-      case "cancelado": return "Cancelado";
-      case "vencido": return "Vencido";
-      default: return s;
+      case "pendente":
+        return "Pendente";
+      case "pago":
+        return "Pago";
+      case "cancelado":
+        return "Cancelado";
+      case "vencido":
+        return "Vencido";
+      default:
+        return s;
     }
   };
 
   const statusColor = (s: string) => {
     switch (s) {
-      case "pago": return "default";
-      case "vencido": return "destructive";
-      case "pendente": return "warning";
-      default: return "secondary";
+      case "pago":
+        return "default";
+      case "vencido":
+        return "destructive";
+      case "pendente":
+        return "warning";
+      default:
+        return "secondary";
     }
   };
 
@@ -210,10 +215,7 @@ export function BoletosPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-2">
-          <PrimaryButton
-            onClick={() => setOpen(true)}
-            disabled={gerarBoleto.isPending}
-          >
+          <PrimaryButton onClick={() => setOpen(true)} disabled={gerarBoleto.isPending}>
             <Plus className="mr-1 h-4 w-4" /> Gerar boleto
           </PrimaryButton>
           <Button
@@ -259,7 +261,9 @@ export function BoletosPage() {
               {boletos.map((b) => (
                 <TableRow key={b.id}>
                   <TableCell className="font-mono font-medium">{b.nosso_numero}</TableCell>
-                  <TableCell>R$ {Number(b.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</TableCell>
+                  <TableCell>
+                    R$ {Number(b.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  </TableCell>
                   <TableCell>{format(new Date(b.vencimento), "dd/MM/yyyy")}</TableCell>
                   <TableCell>
                     <StatusBadge tone={statusColor(b.status)}>{statusLabel(b.status)}</StatusBadge>
@@ -272,7 +276,9 @@ export function BoletosPage() {
                       {b.status === "pendente" && (
                         <Button
                           size="sm"
-                          onClick={() => baixarBoleto.mutate({ boletoId: b.id, empresaId: empresa.id })}
+                          onClick={() =>
+                            baixarBoleto.mutate({ boletoId: b.id, empresaId: empresa.id })
+                          }
                           disabled={baixarBoleto.isPending}
                         >
                           <Check className="mr-1 h-3 w-3" /> Baixar
@@ -320,7 +326,8 @@ export function BoletosPage() {
                     <SelectItem value="">Nenhum (boleto avulso)</SelectItem>
                     {lancamentosOpt?.map((l: any) => (
                       <SelectItem key={l.id} value={l.id}>
-                        {l.descricao} — R$ {Number(l.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        {l.descricao} — R${" "}
+                        {Number(l.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -344,11 +351,15 @@ export function BoletosPage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-[10px] text-muted-foreground">Nº documento (CT-e / fatura)</Label>
+              <Label className="text-[10px] text-muted-foreground">
+                Nº documento (CT-e / fatura)
+              </Label>
               <Input
                 className="h-7 text-xs text-left font-mono uppercase"
                 value={form.numeroDocumento}
-                onChange={(e) => setForm({ ...form, numeroDocumento: e.target.value.toUpperCase() })}
+                onChange={(e) =>
+                  setForm({ ...form, numeroDocumento: e.target.value.toUpperCase() })
+                }
               />
             </div>
             <div className="space-y-1">
@@ -478,7 +489,8 @@ export function BoletosPage() {
           <DialogHeader>
             <DialogTitle>Processar retorno CNAB</DialogTitle>
             <Description>
-              Envie o arquivo de retorno (.ret) do Itaú ou Sicoob para dar baixa automática nos boletos pagos.
+              Envie o arquivo de retorno (.ret) do Itaú ou Sicoob para dar baixa automática nos
+              boletos pagos.
             </Description>
           </DialogHeader>
           <div className="space-y-4 pt-4">
@@ -550,9 +562,11 @@ export function BoletosPage() {
       </Dialog>
     </div>
   );
-};
+}
 
-interface DescriptionProps { children: React.ReactNode; }
+interface DescriptionProps {
+  children: React.ReactNode;
+}
 function Description({ children }: DescriptionProps) {
   return <p className="text-xs text-muted-foreground">{children}</p>;
 }

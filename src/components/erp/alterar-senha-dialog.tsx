@@ -112,7 +112,11 @@ export function AlterarSenhaDialog({
         <div className="grid gap-4">
           <div className="grid gap-1.5">
             <Label>Nome *</Label>
-            <Input value={nome} onChange={(e) => setNome(e.target.value)} className="h-10 rounded-xl" />
+            <Input
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              className="h-10 rounded-xl"
+            />
           </div>
           <div className="border-t pt-4">
             <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
@@ -121,11 +125,21 @@ export function AlterarSenhaDialog({
             <div className="grid gap-3">
               <div className="grid gap-1.5">
                 <Label>Senha atual</Label>
-                <Input type="password" value={atual} onChange={(e) => setAtual(e.target.value)} className="h-10 rounded-xl" />
+                <Input
+                  type="password"
+                  value={atual}
+                  onChange={(e) => setAtual(e.target.value)}
+                  className="h-10 rounded-xl"
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label>Nova senha</Label>
-                <Input type="password" value={nova} onChange={(e) => setNova(e.target.value)} className="h-10 rounded-xl" />
+                <Input
+                  type="password"
+                  value={nova}
+                  onChange={(e) => setNova(e.target.value)}
+                  className="h-10 rounded-xl"
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label>Confirmar nova senha</Label>
@@ -140,10 +154,18 @@ export function AlterarSenhaDialog({
           </div>
         </div>
         <DialogFooter className="gap-2">
-          <Button variant="outline" className="h-10 rounded-xl px-5" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            className="h-10 rounded-xl px-5"
+            onClick={() => onOpenChange(false)}
+          >
             Cancelar
           </Button>
-          <Button className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={salvar} disabled={saving}>
+          <Button
+            className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+            onClick={salvar}
+            disabled={saving}
+          >
             Salvar
           </Button>
         </DialogFooter>

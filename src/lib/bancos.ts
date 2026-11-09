@@ -15,18 +15,84 @@ export type Banco = {
 // Logos normalizados: 512x512, fundo branco, mesmo canvas (public/bancos/*.png)
 // Ordem importa (mais específico primeiro na busca por alias)
 export const BANCOS: Banco[] = [
-  { slug: "bradesco",    nome: "Bradesco",       codigos: ["237"], aliases: ["bradesco"],                              logo: "/bancos/bradesco.png" },
-  { slug: "itau",        nome: "Itaú",           codigos: ["341"], aliases: ["itau", "itaú", "itaú unibanco"],         logo: "/bancos/itau.png" },
-  { slug: "sicoob",      nome: "Sicoob",         codigos: ["756", "748"], aliases: ["sicoob"],                         logo: "/bancos/sicoob.png" },
-  { slug: "caixa",       nome: "Caixa",          codigos: ["104"], aliases: ["caixa", "caixa econômica", "cef"],       logo: "/bancos/caixa.png" },
-  { slug: "santander",   nome: "Santander",      codigos: ["033"], aliases: ["santander"],                             logo: "/bancos/santander.png" },
-  { slug: "nubank",      nome: "Nubank",         codigos: ["260"], aliases: ["nubank", "nu pagamentos"],               logo: "/bancos/nubank.png" },
-  { slug: "inter",       nome: "Inter",          codigos: ["077"], aliases: ["inter", "banco inter"],                  logo: "/bancos/inter.png" },
-  { slug: "bb",          nome: "Banco do Brasil",codigos: ["001"], aliases: ["banco do brasil", "bb", "bco brasil"],   logo: "/bancos/bb.png" },
-  { slug: "daycoval",    nome: "Daycoval",       codigos: ["707"], aliases: ["daycoval"],                               logo: "/bancos/daycoval.png" },
-  { slug: "c6",          nome: "C6 Bank",        codigos: ["336"], aliases: ["c6", "c6 bank"],                         logo: c6.url },
-  { slug: "pagbank",     nome: "PagBank",        codigos: ["290"], aliases: ["pagbank", "pagseguro"],                  logo: pagbank.url },
-  { slug: "mercadopago", nome: "Mercado Pago",   codigos: ["323"], aliases: ["mercado pago", "mercadopago"],           logo: mercadopago.url },
+  {
+    slug: "bradesco",
+    nome: "Bradesco",
+    codigos: ["237"],
+    aliases: ["bradesco"],
+    logo: "/bancos/bradesco.png",
+  },
+  {
+    slug: "itau",
+    nome: "Itaú",
+    codigos: ["341"],
+    aliases: ["itau", "itaú", "itaú unibanco"],
+    logo: "/bancos/itau.png",
+  },
+  {
+    slug: "sicoob",
+    nome: "Sicoob",
+    codigos: ["756", "748"],
+    aliases: ["sicoob"],
+    logo: "/bancos/sicoob.png",
+  },
+  {
+    slug: "caixa",
+    nome: "Caixa",
+    codigos: ["104"],
+    aliases: ["caixa", "caixa econômica", "cef"],
+    logo: "/bancos/caixa.png",
+  },
+  {
+    slug: "santander",
+    nome: "Santander",
+    codigos: ["033"],
+    aliases: ["santander"],
+    logo: "/bancos/santander.png",
+  },
+  {
+    slug: "nubank",
+    nome: "Nubank",
+    codigos: ["260"],
+    aliases: ["nubank", "nu pagamentos"],
+    logo: "/bancos/nubank.png",
+  },
+  {
+    slug: "inter",
+    nome: "Inter",
+    codigos: ["077"],
+    aliases: ["inter", "banco inter"],
+    logo: "/bancos/inter.png",
+  },
+  {
+    slug: "bb",
+    nome: "Banco do Brasil",
+    codigos: ["001"],
+    aliases: ["banco do brasil", "bb", "bco brasil"],
+    logo: "/bancos/bb.png",
+  },
+  {
+    slug: "daycoval",
+    nome: "Daycoval",
+    codigos: ["707"],
+    aliases: ["daycoval"],
+    logo: "/bancos/daycoval.png",
+  },
+  { slug: "c6", nome: "C6 Bank", codigos: ["336"], aliases: ["c6", "c6 bank"], logo: c6.url },
+  {
+    slug: "pagbank",
+    nome: "PagBank",
+    codigos: ["290"],
+    aliases: ["pagbank", "pagseguro"],
+    logo: pagbank.url,
+  },
+  {
+    slug: "mercadopago",
+    nome: "Mercado Pago",
+    codigos: ["323"],
+    aliases: ["mercado pago", "mercadopago"],
+    logo: mercadopago.url,
+  },
 ];
 
 export function detectBancoByNome(nome: string | null | undefined): Banco | undefined {
@@ -55,4 +121,3 @@ export function normalizaContaNumero(raw: string | null | undefined): string {
   const digits = semDv.replace(/\D/g, "").replace(/^0+/, "");
   return digits;
 }
-

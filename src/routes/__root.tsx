@@ -26,7 +26,9 @@ function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="erp-surface w-full max-w-md p-8 text-center sm:p-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Erro 404</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+          Erro 404
+        </p>
         <h1 className="mt-3 text-display text-5xl text-foreground">Página não encontrada</h1>
         <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
           O endereço que você tentou acessar não existe ou foi movido.
@@ -126,7 +128,10 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <a href="#conteudo-principal" className="sr-only fixed left-4 top-4 z-[100] rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg focus:not-sr-only focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+        <a
+          href="#conteudo-principal"
+          className="sr-only fixed left-4 top-4 z-[100] rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg focus:not-sr-only focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        >
           Pular para o conteúdo principal
         </a>
         {children}

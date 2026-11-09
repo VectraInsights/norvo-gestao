@@ -41,7 +41,9 @@ export function ConnectionStatus() {
     >
       {online ? <Wifi className="h-4 w-4 shrink-0" /> : <WifiOff className="h-4 w-4 shrink-0" />}
       <span className="leading-relaxed">
-        {online ? "Conexão restabelecida." : "Você está sem conexão. As alterações serão retomadas quando a rede voltar."}
+        {online
+          ? "Conexão restabelecida."
+          : "Você está sem conexão. As alterações serão retomadas quando a rede voltar."}
       </span>
     </div>
   );

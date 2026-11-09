@@ -2,15 +2,36 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
-  Legend, ResponsiveContainer, PieChart, Pie, Cell 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
-import { 
-  BarChart3, FileSpreadsheet, Calendar, 
-  ArrowUpRight, Landmark, FileText, Ban 
+import {
+  BarChart3,
+  FileSpreadsheet,
+  Calendar,
+  ArrowUpRight,
+  Landmark,
+  FileText,
+  Ban,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -27,7 +48,7 @@ export const Route = createFileRoute("/_authenticated/fiscal/relatorios")({
   errorComponent: RouteErrorState,
 });
 
-const MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+const MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 const COLORS = ["#0ea5e9", "#f59e0b", "#8b5cf6", "#ec4899", "#10b981", "#6366f1"];
 
 function RelatoriosFiscais() {
@@ -64,15 +85,17 @@ function RelatoriosFiscais() {
     const [mes, ano] = periodo.split("-");
     const periodoKey = `${ano}-${mes}`;
 
-    const notasPeriodo = notas.filter(n => (n.data_emissao || "").startsWith(periodoKey));
+    const notasPeriodo = notas.filter((n) => (n.data_emissao || "").startsWith(periodoKey));
     const totalNotas = notasPeriodo.length;
     const valorTotal = notasPeriodo.reduce((acc, n) => acc + (Number(n.valor_total) || 0), 0);
-    const notasAutorizadas = notasPeriodo.filter(n => n.situacao === "lancada" || n.situacao === "importada").length;
-    const notasCanceladas = notasPeriodo.filter(n => n.situacao === "cancelada").length;
+    const notasAutorizadas = notasPeriodo.filter(
+      (n) => n.situacao === "lancada" || n.situacao === "importada",
+    ).length;
+    const notasCanceladas = notasPeriodo.filter((n) => n.situacao === "cancelada").length;
 
     // Faturamento por fornecedor (top 5)
     const porFornecedor: Record<string, { nome: string; valor: number; qtd: number }> = {};
-    notasPeriodo.forEach(n => {
+    notasPeriodo.forEach((n) => {
       const key = n.cnpj_emitente || n.emitente;
       if (!porFornecedor[key]) porFornecedor[key] = { nome: n.emitente, valor: 0, qtd: 0 };
       porFornecedor[key].valor += Number(n.valor_total) || 0;
@@ -89,7 +112,7 @@ function RelatoriosFiscais() {
       d.setMonth(d.getMonth() - i);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       const label = `${MESES[d.getMonth()]}/${String(d.getFullYear()).slice(2)}`;
-      const notasMes = notas.filter(n => (n.data_emissao || "").startsWith(key));
+      const notasMes = notas.filter((n) => (n.data_emissao || "").startsWith(key));
       evolucao.push({
         mes: label,
         valor: notasMes.reduce((acc, n) => acc + (Number(n.valor_total) || 0), 0),
@@ -98,7 +121,7 @@ function RelatoriosFiscais() {
     }
 
     // Notas por mês (todas, para o período filtrado)
-    const todasNotasMes = notas.filter(n => (n.data_emissao || "").startsWith(periodoKey));
+    const todasNotasMes = notas.filter((n) => (n.data_emissao || "").startsWith(periodoKey));
 
     return {
       totalNotas,
@@ -113,7 +136,7 @@ function RelatoriosFiscais() {
 
   const handleExportExcel = () => {
     if (!stats) return toast.error("Nenhum dado para exportar");
-    const resumo = stats.todasNotasMes.map(n => ({
+    const resumo = stats.todasNotasMes.map((n) => ({
       "NF-e": n.numero_nf,
       Emitente: n.emitente,
       CNPJ: n.cnpj_emitente,
@@ -121,7 +144,7 @@ function RelatoriosFiscais() {
       Valor: Number(n.valor_total) || 0,
       Situação: n.situacao,
     }));
-    const fornecedores = stats.fornecedoresSorted.map(f => ({
+    const fornecedores = stats.fornecedoresSorted.map((f) => ({
       Fornecedor: f.nome,
       "Qtd Notas": f.qtd,
       "Valor Total": f.valor,
@@ -135,22 +158,25 @@ function RelatoriosFiscais() {
 
   const periodos = useMemo(() => {
     const meses = new Set<string>();
-    (notas ?? []).forEach(n => {
+    (notas ?? []).forEach((n) => {
       if (n.data_emissao) meses.add(n.data_emissao.slice(0, 7));
     });
-    return Array.from(meses).sort().reverse().map(m => {
-      const [ano, mes] = m.split("-");
-      return { value: m, label: `${MESES[parseInt(mes) - 1]} / ${ano}` };
-    });
+    return Array.from(meses)
+      .sort()
+      .reverse()
+      .map((m) => {
+        const [ano, mes] = m.split("-");
+        return { value: m, label: `${MESES[parseInt(mes) - 1]} / ${ano}` };
+      });
   }, [notas]);
 
   return (
     <>
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <PageHeader 
-          eyebrow="Gestão Fiscal" 
-          title="Relatórios e Dashboards" 
-          description="Análise detalhada de notas de compra, fornecedores e resumo de operações." 
+        <PageHeader
+          eyebrow="Gestão Fiscal"
+          title="Relatórios e Dashboards"
+          description="Análise detalhada de notas de compra, fornecedores e resumo de operações."
         />
         <div className="flex shrink-0 items-center gap-2.5">
           <select
@@ -158,11 +184,18 @@ function RelatoriosFiscais() {
             onChange={(e) => setPeriodo(e.target.value)}
             className="h-10 rounded-xl border border-input bg-background px-3.5 text-sm font-medium shadow-sm transition-all hover:shadow-md"
           >
-            {periodos.map(p => (
-              <option key={p.value} value={p.value}>{p.label}</option>
+            {periodos.map((p) => (
+              <option key={p.value} value={p.value}>
+                {p.label}
+              </option>
             ))}
           </select>
-          <Button onClick={handleExportExcel} variant="outline" className="h-10 rounded-xl px-4 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" disabled={!stats}>
+          <Button
+            onClick={handleExportExcel}
+            variant="outline"
+            className="h-10 rounded-xl px-4 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+            disabled={!stats}
+          >
             <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar XLS
           </Button>
         </div>
@@ -170,7 +203,9 @@ function RelatoriosFiscais() {
 
       {isLoading ? (
         <div className="mt-6 grid gap-4 sm:grid-cols-2 sm:mt-8 lg:grid-cols-4 lg:gap-5">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 rounded-2xl" />
+          ))}
         </div>
       ) : stats ? (
         <>
@@ -178,45 +213,77 @@ function RelatoriosFiscais() {
           <div className="mt-6 grid gap-4 sm:grid-cols-2 sm:mt-8 lg:grid-cols-4 lg:gap-5">
             <Card className="rounded-2xl border-muted bg-card/60 backdrop-blur-sm shadow-panel transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">Valor Total Notas</CardTitle>
-                <span className="rounded-xl bg-primary/10 p-2"><ArrowUpRight className="h-4 w-4 text-primary" /></span>
+                <CardTitle className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                  Valor Total Notas
+                </CardTitle>
+                <span className="rounded-xl bg-primary/10 p-2">
+                  <ArrowUpRight className="h-4 w-4 text-primary" />
+                </span>
               </CardHeader>
               <CardContent>
-                <div className="text-display text-2xl font-bold tracking-tight text-foreground">{brl(stats.valorTotal)}</div>
-                <p className="mt-1.5 text-[11px] text-muted-foreground">{stats.totalNotas} nota(s) no período</p>
+                <div className="text-display text-2xl font-bold tracking-tight text-foreground">
+                  {brl(stats.valorTotal)}
+                </div>
+                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                  {stats.totalNotas} nota(s) no período
+                </p>
               </CardContent>
             </Card>
 
             <Card className="rounded-2xl border-muted bg-card/60 backdrop-blur-sm shadow-panel transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">Fornecedores</CardTitle>
-                <span className="rounded-xl bg-primary/10 p-2"><Landmark className="h-4 w-4 text-primary" /></span>
+                <CardTitle className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                  Fornecedores
+                </CardTitle>
+                <span className="rounded-xl bg-primary/10 p-2">
+                  <Landmark className="h-4 w-4 text-primary" />
+                </span>
               </CardHeader>
               <CardContent>
-                <div className="text-display text-2xl font-bold tracking-tight text-foreground">{stats.fornecedoresSorted.length}</div>
-                <p className="mt-1.5 text-[11px] text-muted-foreground">Fornecedores distintos no período</p>
+                <div className="text-display text-2xl font-bold tracking-tight text-foreground">
+                  {stats.fornecedoresSorted.length}
+                </div>
+                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                  Fornecedores distintos no período
+                </p>
               </CardContent>
             </Card>
 
             <Card className="rounded-2xl border-muted bg-card/60 backdrop-blur-sm shadow-panel transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">Notas Importadas</CardTitle>
-                <span className="rounded-xl bg-primary/10 p-2"><FileText className="h-4 w-4 text-primary" /></span>
+                <CardTitle className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                  Notas Importadas
+                </CardTitle>
+                <span className="rounded-xl bg-primary/10 p-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                </span>
               </CardHeader>
               <CardContent>
-                <div className="text-display text-2xl font-bold tracking-tight text-foreground">{stats.notasAutorizadas}</div>
-                <p className="mt-1.5 text-[11px] text-muted-foreground">Notas recebidas e processadas</p>
+                <div className="text-display text-2xl font-bold tracking-tight text-foreground">
+                  {stats.notasAutorizadas}
+                </div>
+                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                  Notas recebidas e processadas
+                </p>
               </CardContent>
             </Card>
 
             <Card className="rounded-2xl border-muted bg-card/60 backdrop-blur-sm shadow-panel transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">Canceladas</CardTitle>
-                <span className="rounded-xl bg-destructive/10 p-2"><Ban className="h-4 w-4 text-destructive" /></span>
+                <CardTitle className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                  Canceladas
+                </CardTitle>
+                <span className="rounded-xl bg-destructive/10 p-2">
+                  <Ban className="h-4 w-4 text-destructive" />
+                </span>
               </CardHeader>
               <CardContent>
-                <div className="text-display text-2xl font-bold tracking-tight text-foreground">{stats.notasCanceladas}</div>
-                <p className="mt-1.5 text-[11px] text-muted-foreground">Notas canceladas no período</p>
+                <div className="text-display text-2xl font-bold tracking-tight text-foreground">
+                  {stats.notasCanceladas}
+                </div>
+                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                  Notas canceladas no período
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -226,18 +293,60 @@ function RelatoriosFiscais() {
             <Card className="rounded-2xl md:col-span-2 border-muted bg-card/60 backdrop-blur-sm shadow-panel">
               <CardHeader className="pb-2">
                 <CardTitle className="tracking-tight">Evolução de Notas de Compra</CardTitle>
-                <CardDescription className="leading-relaxed">Valor total de notas recebidas nos últimos 6 meses.</CardDescription>
+                <CardDescription className="leading-relaxed">
+                  Valor total de notas recebidas nos últimos 6 meses.
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-80 w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={stats.evolucao} margin={{ top: 20, right: 30, left: 10, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-                      <XAxis dataKey="mes" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} tickMargin={8} />
-                      <YAxis stroke="var(--color-muted-foreground)" fontSize={11} tickFormatter={(v) => `R$ ${v / 1000}k`} tickLine={false} axisLine={false} />
-                      <Tooltip formatter={(v: number) => brl(v)} contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, padding: "8px 12px", boxShadow: "var(--shadow-panel)" }} />
-                      <Legend verticalAlign="top" height={36} iconSize={12} iconType="rect" wrapperStyle={{ fontSize: 12 }} />
-                      <Bar dataKey="valor" name="Valor Notas" fill="#0ea5e9" radius={[8, 8, 0, 0]} />
+                    <BarChart
+                      data={stats.evolucao}
+                      margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="var(--color-border)"
+                        vertical={false}
+                      />
+                      <XAxis
+                        dataKey="mes"
+                        stroke="var(--color-muted-foreground)"
+                        fontSize={11}
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                      />
+                      <YAxis
+                        stroke="var(--color-muted-foreground)"
+                        fontSize={11}
+                        tickFormatter={(v) => `R$ ${v / 1000}k`}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <Tooltip
+                        formatter={(v: number) => brl(v)}
+                        contentStyle={{
+                          background: "var(--color-card)",
+                          border: "1px solid var(--color-border)",
+                          borderRadius: 12,
+                          padding: "8px 12px",
+                          boxShadow: "var(--shadow-panel)",
+                        }}
+                      />
+                      <Legend
+                        verticalAlign="top"
+                        height={36}
+                        iconSize={12}
+                        iconType="rect"
+                        wrapperStyle={{ fontSize: 12 }}
+                      />
+                      <Bar
+                        dataKey="valor"
+                        name="Valor Notas"
+                        fill="#0ea5e9"
+                        radius={[8, 8, 0, 0]}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -247,7 +356,9 @@ function RelatoriosFiscais() {
             <Card className="rounded-2xl border-muted bg-card/60 backdrop-blur-sm shadow-panel">
               <CardHeader className="pb-2">
                 <CardTitle className="tracking-tight">Top Fornecedores</CardTitle>
-                <CardDescription className="leading-relaxed">Maiores fornecedores por valor no período.</CardDescription>
+                <CardDescription className="leading-relaxed">
+                  Maiores fornecedores por valor no período.
+                </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col items-center justify-center">
                 {stats.fornecedoresSorted.length > 0 ? (
@@ -269,7 +380,16 @@ function RelatoriosFiscais() {
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                           </Pie>
-                          <Tooltip formatter={(v: number) => brl(v)} contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, padding: "8px 12px", boxShadow: "var(--shadow-panel)" }} />
+                          <Tooltip
+                            formatter={(v: number) => brl(v)}
+                            contentStyle={{
+                              background: "var(--color-card)",
+                              border: "1px solid var(--color-border)",
+                              borderRadius: 12,
+                              padding: "8px 12px",
+                              boxShadow: "var(--shadow-panel)",
+                            }}
+                          />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
@@ -277,10 +397,17 @@ function RelatoriosFiscais() {
                       {stats.fornecedoresSorted.map((item, index) => (
                         <div key={index} className="flex items-center justify-between text-xs">
                           <div className="flex items-center gap-2">
-                            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
-                            <span className="text-muted-foreground truncate max-w-[140px]">{item.nome}</span>
+                            <span
+                              className="h-2.5 w-2.5 rounded-full"
+                              style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                            ></span>
+                            <span className="text-muted-foreground truncate max-w-[140px]">
+                              {item.nome}
+                            </span>
                           </div>
-                          <strong className="text-foreground font-semibold">{brl(item.valor)}</strong>
+                          <strong className="text-foreground font-semibold">
+                            {brl(item.valor)}
+                          </strong>
                         </div>
                       ))}
                     </div>
@@ -296,42 +423,50 @@ function RelatoriosFiscais() {
           <Card className="mt-6 rounded-2xl sm:mt-8 border-muted bg-card/60 backdrop-blur-sm shadow-panel overflow-hidden">
             <CardHeader className="border-b border-muted pb-4">
               <CardTitle className="tracking-tight">Notas no Período</CardTitle>
-              <CardDescription className="leading-relaxed">Lista de todas as notas recebidas no período selecionado.</CardDescription>
+              <CardDescription className="leading-relaxed">
+                Lista de todas as notas recebidas no período selecionado.
+              </CardDescription>
             </CardHeader>
-              <Table>
-                <TableHeader className="bg-[color-mix(in_oklab,var(--color-muted)_40%,var(--color-card))]">
+            <Table>
+              <TableHeader className="bg-[color-mix(in_oklab,var(--color-muted)_40%,var(--color-card))]">
+                <TableRow>
+                  <TableHead className="font-semibold text-foreground">NF-e</TableHead>
+                  <TableHead className="font-semibold text-foreground">Emitente</TableHead>
+                  <TableHead className="font-semibold text-foreground">Data</TableHead>
+                  <TableHead className="text-right font-semibold text-foreground">Valor</TableHead>
+                  <TableHead className="font-semibold text-foreground">Situação</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {stats.todasNotasMes.length === 0 ? (
                   <TableRow>
-                    <TableHead className="font-semibold text-foreground">NF-e</TableHead>
-                    <TableHead className="font-semibold text-foreground">Emitente</TableHead>
-                    <TableHead className="font-semibold text-foreground">Data</TableHead>
-                    <TableHead className="text-right font-semibold text-foreground">Valor</TableHead>
-                    <TableHead className="font-semibold text-foreground">Situação</TableHead>
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      Nenhuma nota no período selecionado.
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {stats.todasNotasMes.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                        Nenhuma nota no período selecionado.
+                ) : (
+                  stats.todasNotasMes.map((n) => (
+                    <TableRow key={n.id} className="transition-colors hover:bg-accent/30">
+                      <TableCell className="font-mono text-xs">{n.numero_nf || "—"}</TableCell>
+                      <TableCell className="font-medium text-foreground">{n.emitente}</TableCell>
+                      <TableCell className="text-tabular text-muted-foreground">
+                        {n.data_emissao}
+                      </TableCell>
+                      <TableCell className="text-right text-tabular font-medium text-foreground">
+                        {brl(Number(n.valor_total) || 0)}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={`text-xs font-medium ${n.situacao === "lancada" ? "text-primary" : n.situacao === "cancelada" ? "text-destructive" : "text-muted-foreground"}`}
+                        >
+                          {n.situacao || "—"}
+                        </span>
                       </TableCell>
                     </TableRow>
-                  ) : (
-                    stats.todasNotasMes.map((n) => (
-                      <TableRow key={n.id} className="transition-colors hover:bg-accent/30">
-                        <TableCell className="font-mono text-xs">{n.numero_nf || "—"}</TableCell>
-                        <TableCell className="font-medium text-foreground">{n.emitente}</TableCell>
-                        <TableCell className="text-tabular text-muted-foreground">{n.data_emissao}</TableCell>
-                        <TableCell className="text-right text-tabular font-medium text-foreground">{brl(Number(n.valor_total) || 0)}</TableCell>
-                        <TableCell>
-                          <span className={`text-xs font-medium ${n.situacao === "lancada" ? "text-primary" : n.situacao === "cancelada" ? "text-destructive" : "text-muted-foreground"}`}>
-                            {n.situacao || "—"}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </Card>
         </>
       ) : null}

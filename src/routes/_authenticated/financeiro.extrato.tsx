@@ -5,8 +5,21 @@ import { EmptyState } from "@/components/erp/empty-state";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Combobox } from "@/components/erp/combobox";
 import { SearchField } from "@/components/erp/search-field";
 import { AuditDialog } from "@/components/erp/audit-dialog";
@@ -26,16 +39,29 @@ export const Route = createFileRoute("/_authenticated/financeiro/extrato")({
   head: () => ({
     meta: [
       { title: "Extrato de movimentações — Norvo" },
-      { name: "description", content: "Extrato consolidado de entradas e saídas por conta financeira, categoria e centro de custo." },
+      {
+        name: "description",
+        content:
+          "Extrato consolidado de entradas e saídas por conta financeira, categoria e centro de custo.",
+      },
       { property: "og:title", content: "Extrato de movimentações — Norvo" },
-      { property: "og:description", content: "Extrato consolidado de entradas e saídas por conta financeira, categoria e centro de custo." },
+      {
+        property: "og:description",
+        content:
+          "Extrato consolidado de entradas e saídas por conta financeira, categoria e centro de custo.",
+      },
     ],
   }),
   errorComponent: RouteErrorState,
-  notFoundComponent: () => <div className="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground shadow-panel">Página não encontrada.</div>,
+  notFoundComponent: () => (
+    <div className="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground shadow-panel">
+      Página não encontrada.
+    </div>
+  ),
 });
 
-const brl = (n: number) => Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const brl = (n: number) =>
+  Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 // Datas "YYYY-MM-DD" (colunas DATE) precisam virar meia-noite LOCAL — new Date() direto
 // interpreta como UTC e, no fuso -3, mostra o dia anterior.
@@ -89,7 +115,8 @@ function ExtratoPage() {
     enabled: trilhaOpen && !!empresa,
     queryKey: ["auditoria-extrato", empresa?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("auditoria_eventos" as never)
+      const { data, error } = await supabase
+        .from("auditoria_eventos" as never)
         .select("id,created_at,acao,detalhes")
         .eq("empresa_id", empresa!.id as never)
         .eq("modulo", "financeiro")
@@ -137,8 +164,11 @@ function ExtratoPage() {
     enabled: !!empresa,
     queryKey: ["contas-opt", empresa?.id] as const,
     queryFn: async () => {
-      const { data, error } = await supabase.from("contas_bancarias")
-        .select("id,nome").eq("empresa_id", empresa!.id).order("nome");
+      const { data, error } = await supabase
+        .from("contas_bancarias")
+        .select("id,nome")
+        .eq("empresa_id", empresa!.id)
+        .order("nome");
       if (error) throw error;
       return data ?? [];
     },
@@ -148,8 +178,11 @@ function ExtratoPage() {
     enabled: !!empresa,
     queryKey: ["categorias-todas", empresa?.id] as const,
     queryFn: async () => {
-      const { data, error } = await supabase.from("categorias_financeiras")
-        .select("id,nome,tipo").eq("empresa_id", empresa!.id).order("nome");
+      const { data, error } = await supabase
+        .from("categorias_financeiras")
+        .select("id,nome,tipo")
+        .eq("empresa_id", empresa!.id)
+        .order("nome");
       if (error) throw error;
       return data ?? [];
     },
@@ -159,16 +192,22 @@ function ExtratoPage() {
     enabled: !!empresa,
     queryKey: ["centros-custo", empresa?.id] as const,
     queryFn: async () => {
-      const { data, error } = await supabase.from("centros_custo")
-        .select("id,nome").eq("empresa_id", empresa!.id).order("nome");
+      const { data, error } = await supabase
+        .from("centros_custo")
+        .select("id,nome")
+        .eq("empresa_id", empresa!.id)
+        .order("nome");
       if (error) throw error;
       return data ?? [];
     },
   });
 
   const dataRef = (m: Mov) =>
-    base === "pagamento" ? (m.data_pagamento ?? m.data_vencimento)
-      : base === "emissao" ? m.data_emissao : m.data_vencimento;
+    base === "pagamento"
+      ? (m.data_pagamento ?? m.data_vencimento)
+      : base === "emissao"
+        ? m.data_emissao
+        : m.data_vencimento;
 
   // Autor + origem: lançamentos de adiantamento recorrente mostram o criador da recorrência
   const autorComOrigem = (m: Mov) => {
@@ -183,16 +222,30 @@ function ExtratoPage() {
     const qDig = q.replace(/\D/g, "");
     return (movs ?? [])
       .filter((m) => {
-        if (somenteQuitados === "quitados" && m.status !== "pago" && m.status !== "parcial") return false;
+        if (somenteQuitados === "quitados" && m.status !== "pago" && m.status !== "parcial")
+          return false;
         if (tipo !== "todos" && m.tipo !== tipo) return false;
-        if (contaId !== "todas" && (m.conta?.nome ?? "") !== (contas?.find((c) => c.id === contaId)?.nome ?? "")) return false;
-        if (categoriaId !== "todas" && (m.categoria?.nome ?? "") !== (categorias?.find((c) => c.id === categoriaId)?.nome ?? "")) return false;
-        if (centroId !== "todos" && (m.centro?.nome ?? "") !== (centros?.find((c) => c.id === centroId)?.nome ?? "")) return false;
+        if (
+          contaId !== "todas" &&
+          (m.conta?.nome ?? "") !== (contas?.find((c) => c.id === contaId)?.nome ?? "")
+        )
+          return false;
+        if (
+          categoriaId !== "todas" &&
+          (m.categoria?.nome ?? "") !== (categorias?.find((c) => c.id === categoriaId)?.nome ?? "")
+        )
+          return false;
+        if (
+          centroId !== "todos" &&
+          (m.centro?.nome ?? "") !== (centros?.find((c) => c.id === centroId)?.nome ?? "")
+        )
+          return false;
         const d = parseDia(dataRef(m));
         if (periodo.from && d < periodo.from) return false;
         if (periodo.to && d > periodo.to) return false;
         if (q) {
-          const texto = `${m.descricao} ${m.contato?.nome ?? ""} ${m.documento ?? ""}`.toLowerCase();
+          const texto =
+            `${m.descricao} ${m.contato?.nome ?? ""} ${m.documento ?? ""}`.toLowerCase();
           const casaTexto = texto.includes(q);
           // Pesquisa por valor: "25,00" acha 25.00 (a partir de 2 dígitos)
           const casaValor =
@@ -206,12 +259,26 @@ function ExtratoPage() {
         return true;
       })
       .sort((a, b) => dataRef(a).localeCompare(dataRef(b)));
-  }, [movs, busca, tipo, contaId, categoriaId, centroId, periodo, base, somenteQuitados, contas, categorias, centros]);
+  }, [
+    movs,
+    busca,
+    tipo,
+    contaId,
+    categoriaId,
+    centroId,
+    periodo,
+    base,
+    somenteQuitados,
+    contas,
+    categorias,
+    centros,
+  ]);
 
   const linhas = useMemo(() => {
     let saldo = 0;
     return filtrados.map((m) => {
-      const valor = m.status === "pago" || m.status === "parcial" ? (m.valor_pago || m.valor) : m.valor;
+      const valor =
+        m.status === "pago" || m.status === "parcial" ? m.valor_pago || m.valor : m.valor;
       const assinado = m.tipo === "receber" ? valor : -valor;
       saldo += assinado;
       return { m, assinado, saldo };
@@ -222,17 +289,39 @@ function ExtratoPage() {
   const saidas = linhas.filter((l) => l.assinado < 0).reduce((s, l) => s + Math.abs(l.assinado), 0);
 
   const exportarCsv = () => {
-    const head = ["Data", "Descrição", "Contato", "Categoria", "Centro de custo", "Conta", "Documento", "Forma", "Entrada", "Saída", "Saldo", "Lançado por", "Lançado em"];
+    const head = [
+      "Data",
+      "Descrição",
+      "Contato",
+      "Categoria",
+      "Centro de custo",
+      "Conta",
+      "Documento",
+      "Forma",
+      "Entrada",
+      "Saída",
+      "Saldo",
+      "Lançado por",
+      "Lançado em",
+    ];
     const rows = linhas.map(({ m, assinado, saldo }) => [
       format(parseDia(dataRef(m)), "dd/MM/yyyy"),
-      m.descricao, m.contato?.nome ?? "", m.categoria?.nome ?? "", m.centro?.nome ?? "",
-      m.conta?.nome ?? "", m.documento ?? "", m.forma_pagamento ?? "",
-      assinado > 0 ? assinado.toFixed(2) : "", assinado < 0 ? Math.abs(assinado).toFixed(2) : "",
+      m.descricao,
+      m.contato?.nome ?? "",
+      m.categoria?.nome ?? "",
+      m.centro?.nome ?? "",
+      m.conta?.nome ?? "",
+      m.documento ?? "",
+      m.forma_pagamento ?? "",
+      assinado > 0 ? assinado.toFixed(2) : "",
+      assinado < 0 ? Math.abs(assinado).toFixed(2) : "",
       saldo.toFixed(2),
       autorComOrigem(m),
       format(new Date(m.created_at), "dd/MM/yyyy HH:mm"),
     ]);
-    const csv = [head, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\n");
+    const csv = [head, ...rows]
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";"))
+      .join("\n");
     const url = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
@@ -255,7 +344,9 @@ function ExtratoPage() {
             <ArrowDownCircle className="h-6 w-6 text-success" />
           </span>
           <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Entradas</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Entradas
+            </p>
             <p className="mt-1 truncate text-xl font-semibold text-tabular">{brl(entradas)}</p>
           </div>
         </Card>
@@ -264,7 +355,9 @@ function ExtratoPage() {
             <ArrowUpCircle className="h-6 w-6 text-destructive" />
           </span>
           <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Saídas</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Saídas
+            </p>
             <p className="mt-1 truncate text-xl font-semibold text-tabular">{brl(saidas)}</p>
           </div>
         </Card>
@@ -273,8 +366,12 @@ function ExtratoPage() {
             <Scale className="h-6 w-6 text-primary" />
           </span>
           <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Resultado do período</p>
-            <p className="mt-1 truncate text-xl font-semibold text-tabular">{brl(entradas - saidas)}</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Resultado do período
+            </p>
+            <p className="mt-1 truncate text-xl font-semibold text-tabular">
+              {brl(entradas - saidas)}
+            </p>
           </div>
         </Card>
       </div>
@@ -282,95 +379,166 @@ function ExtratoPage() {
       <div className="flex shrink-0 flex-wrap items-center gap-2.5">
         <PeriodoFilter value={periodo} onChange={setPeriodo} />
         <Select value={base} onValueChange={(v) => setBase(v as typeof base)}>
-          <SelectTrigger className="h-10 w-[190px] rounded-xl shadow-sm"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-10 w-[190px] rounded-xl shadow-sm">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="pagamento">Data de pagamento</SelectItem>
             <SelectItem value="vencimento">Data de vencimento</SelectItem>
             <SelectItem value="emissao">Data de emissão</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={somenteQuitados} onValueChange={(v) => setSomenteQuitados(v as typeof somenteQuitados)}>
-          <SelectTrigger className="h-10 w-[190px] rounded-xl shadow-sm"><SelectValue /></SelectTrigger>
+        <Select
+          value={somenteQuitados}
+          onValueChange={(v) => setSomenteQuitados(v as typeof somenteQuitados)}
+        >
+          <SelectTrigger className="h-10 w-[190px] rounded-xl shadow-sm">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="quitados">Somente realizados</SelectItem>
             <SelectItem value="todos">Realizados e previstos</SelectItem>
           </SelectContent>
         </Select>
         <Select value={tipo} onValueChange={(v) => setTipo(v as typeof tipo)}>
-          <SelectTrigger className="h-10 w-[150px] rounded-xl shadow-sm"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-10 w-[150px] rounded-xl shadow-sm">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todos os tipos</SelectItem>
             <SelectItem value="receber">Entradas</SelectItem>
             <SelectItem value="pagar">Saídas</SelectItem>
           </SelectContent>
         </Select>
-        <Combobox value={contaId} onChange={setContaId} options={[{ value: "todas", label: "Todas as contas" }, ...((contas ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })) )]} emptyText="Nenhum item encontrado." className="h-10" />
-        <Combobox value={categoriaId} onChange={setCategoriaId} options={[{ value: "todas", label: "Todas as categorias" }, ...((categorias ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })) )]} emptyText="Nenhum item encontrado." className="h-10" />
-        <Combobox value={centroId} onChange={setCentroId} options={[{ value: "todos", label: "Todos os centros" }, ...((centros ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })) )]} emptyText="Nenhum item encontrado." className="h-10" />
+        <Combobox
+          value={contaId}
+          onChange={setContaId}
+          options={[
+            { value: "todas", label: "Todas as contas" },
+            ...(contas ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })),
+          ]}
+          emptyText="Nenhum item encontrado."
+          className="h-10"
+        />
+        <Combobox
+          value={categoriaId}
+          onChange={setCategoriaId}
+          options={[
+            { value: "todas", label: "Todas as categorias" },
+            ...(categorias ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })),
+          ]}
+          emptyText="Nenhum item encontrado."
+          className="h-10"
+        />
+        <Combobox
+          value={centroId}
+          onChange={setCentroId}
+          options={[
+            { value: "todos", label: "Todos os centros" },
+            ...(centros ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })),
+          ]}
+          emptyText="Nenhum item encontrado."
+          className="h-10"
+        />
         <SearchField value={busca} onChange={setBusca} className="ml-auto w-full sm:w-72" />
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setTrilhaOpen(true)}
+            className="h-9 rounded-xl px-4 active:scale-95"
+          >
             Auditoria
           </Button>
-          <Button variant="outline" size="sm" onClick={exportarCsv} disabled={!linhas.length} className="h-10 rounded-xl px-4 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
-            <Download className="mr-1.5 h-4 w-4" />Exportar CSV
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportarCsv}
+            disabled={!linhas.length}
+            className="h-10 rounded-xl px-4 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+          >
+            <Download className="mr-1.5 h-4 w-4" />
+            Exportar CSV
           </Button>
         </div>
       </div>
 
       {isLoading ? (
         <div className="space-y-2.5" aria-label="Carregando">
-          {Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />
+          ))}
         </div>
       ) : !linhas.length ? (
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <EmptyState icon={ListTree} title="Nenhuma movimentação no período" description="Ajuste os filtros acima para ampliar a consulta." />
+          <EmptyState
+            icon={ListTree}
+            title="Nenhuma movimentação no período"
+            description="Ajuste os filtros acima para ampliar a consulta."
+          />
         </div>
       ) : (
         <Card className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl shadow-panel">
           {/* Rolagem só dentro da lista: a página não cria barra externa. */}
           <div className="min-h-0 flex-1 overflow-y-auto overflow-x-auto [&_.erp-table-wrap]:max-h-none">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Contato</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead>Centro de custo</TableHead>
-                <TableHead>Conta</TableHead>
-                <TableHead className="text-right">Entrada</TableHead>
-                <TableHead className="text-right">Saída</TableHead>
-                <TableHead className="text-right">Saldo</TableHead>
-                <TableHead>Lançado por</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {linhas.map(({ m, assinado, saldo }) => (
-                <TableRow key={m.id} className="transition-colors hover:bg-accent/30">
-                  <TableCell className="text-tabular whitespace-nowrap">{format(parseDia(dataRef(m)), "dd/MM/yyyy")}</TableCell>
-                  <TableCell className="font-medium">
-                    {m.descricao}
-                    {m.status !== "pago" && (
-                      <Badge variant="secondary" className="ml-2 bg-accent text-accent-foreground">{m.status}</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{m.contato?.nome ?? "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{m.categoria?.nome ?? "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{m.centro?.nome ?? "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{m.conta?.nome ?? "—"}</TableCell>
-                  <TableCell className="text-right text-tabular text-success">{assinado > 0 ? brl(assinado) : ""}</TableCell>
-                  <TableCell className="text-right text-tabular text-destructive">{assinado < 0 ? brl(Math.abs(assinado)) : ""}</TableCell>
-                  <TableCell className="text-right text-tabular font-medium">{brl(saldo)}</TableCell>
-                  <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                    {autorComOrigem(m)}
-                    <br />
-                    {format(new Date(m.created_at), "dd/MM/yyyy HH:mm")}
-                  </TableCell>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead>Contato</TableHead>
+                  <TableHead>Categoria</TableHead>
+                  <TableHead>Centro de custo</TableHead>
+                  <TableHead>Conta</TableHead>
+                  <TableHead className="text-right">Entrada</TableHead>
+                  <TableHead className="text-right">Saída</TableHead>
+                  <TableHead className="text-right">Saldo</TableHead>
+                  <TableHead>Lançado por</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {linhas.map(({ m, assinado, saldo }) => (
+                  <TableRow key={m.id} className="transition-colors hover:bg-accent/30">
+                    <TableCell className="text-tabular whitespace-nowrap">
+                      {format(parseDia(dataRef(m)), "dd/MM/yyyy")}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {m.descricao}
+                      {m.status !== "pago" && (
+                        <Badge
+                          variant="secondary"
+                          className="ml-2 bg-accent text-accent-foreground"
+                        >
+                          {m.status}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {m.contato?.nome ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {m.categoria?.nome ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{m.centro?.nome ?? "—"}</TableCell>
+                    <TableCell className="text-muted-foreground">{m.conta?.nome ?? "—"}</TableCell>
+                    <TableCell className="text-right text-tabular text-success">
+                      {assinado > 0 ? brl(assinado) : ""}
+                    </TableCell>
+                    <TableCell className="text-right text-tabular text-destructive">
+                      {assinado < 0 ? brl(Math.abs(assinado)) : ""}
+                    </TableCell>
+                    <TableCell className="text-right text-tabular font-medium">
+                      {brl(saldo)}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                      {autorComOrigem(m)}
+                      <br />
+                      {format(new Date(m.created_at), "dd/MM/yyyy HH:mm")}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         </Card>
       )}
@@ -382,7 +550,7 @@ function ExtratoPage() {
         emptyText="Nenhum evento registrado ainda. Movimentações em Receber/Pagar geram registros aqui."
         isLoading={trilhaQuery.isLoading}
         isError={trilhaQuery.isError}
-        events={(trilhaQuery.data ?? [])}
+        events={trilhaQuery.data ?? []}
       />
     </div>
   );

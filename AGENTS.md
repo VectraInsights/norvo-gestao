@@ -2,6 +2,7 @@
 
 ERP web (financeiro, vendas, estoque, fiscal, RH, projetos) com backend Supabase.
 Dono do projeto: VectraInsights. Conversas com o agente podem ser em português.
+
 > Contexto narrativo e histórico de decisões: leia também `HISTORICO.md`.
 
 ## Stack
@@ -108,7 +109,7 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
   single-instance lock; órfãos seguram o lock e fazem novas instâncias saírem em silêncio).
 - Tabelas criadas após o export do `types.ts` (ex.: `ferias_periodos`, `ferias_concessoes`) não
   constam no tipo `Database`. Padrão adotado nas páginas de RH: `supabase.from("tabela" as never)`
-  + casts `any` com `eslint-disable @typescript-eslint/no-explicit-any` no topo do arquivo.
+  - casts `any` com `eslint-disable @typescript-eslint/no-explicit-any` no topo do arquivo.
 - Policies usam duas variantes da mesma função: `private.is_empresa_member` (maioria, criada
   nas migrações originais) e `public.is_empresa_member` (tabelas RH/CRM/férias). Ao recriar
   funções SECURITY DEFINER no projeto Supabase, SEMPRE conceder
@@ -144,7 +145,7 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
   config em `multas_config` (acesso SÓ service_role, RLS sem políticas p/ anon/authenticated);
   o connector `sincronizarMultasSENATRANFn` (`src/lib/multas-server.ts`) faz `GET {endpoint}`
   com Basic auth esperando `{ autuacoes: [{placa, renavam?, orgao_autuador?, auto_infracao?,
-  data_infracao?, descricao?, valor?, data_vencimento?, pontos?}] }` e grava via RPC
+data_infracao?, descricao?, valor?, data_vencimento?, pontos?}] }` e grava via RPC
   `registrar_multas_senatran` (upsert por `auto_infracao`). Dialog de configuração SENATRAN
   na UI (`/frota/multas`: endpoint, usuário, senha, toggle ativo). Botão Sincronizar só
   habilitado quando a integração está ativa. Sem credencial configurada o cadastro manual
@@ -153,14 +154,14 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
   deriva o módulo do primeiro segmento da rota. Membros existentes só veem o menu novo após
   o admin marcar o módulo em Configurações → Usuários (owner/admin sempre veem tudo).
 - Catálogo de `cargos` (migrations `20260822133000` + `20260824120000` + `20260824210000`
-  + `20260824220000`): customizável — os 52 cargos PADRÃO (`empresa_id IS NULL`) existem e
-  podem ser renomeados/excluídos como qualquer outro (em padrão, basta ser owner/admin de
-  alguma empresa; em cargo de empresa, owner/admin DELA). A ÚNICA restrição é excluir cargo
-  vinculado a funcionário: trigger `tg_cargo_guard` bloqueia no banco comparando
-  `colaboradores.cargo` (TEXTO com o nome) — em padrão, considera funcionários de TODAS as
-  empresas. A UI mostra "padrão" nos globais e quantos funcionários usam cada cargo.
-  Cargo no RH é dropdown; VIAGENS e COMISSÕES consideram motoristas os colaboradores
-  ativos cujo cargo contém "Motorist" (ILIKE) — não existe coluna `eh_motorista`.
+  - `20260824220000`): customizável — os 52 cargos PADRÃO (`empresa_id IS NULL`) existem e
+    podem ser renomeados/excluídos como qualquer outro (em padrão, basta ser owner/admin de
+    alguma empresa; em cargo de empresa, owner/admin DELA). A ÚNICA restrição é excluir cargo
+    vinculado a funcionário: trigger `tg_cargo_guard` bloqueia no banco comparando
+    `colaboradores.cargo` (TEXTO com o nome) — em padrão, considera funcionários de TODAS as
+    empresas. A UI mostra "padrão" nos globais e quantos funcionários usam cada cargo.
+    Cargo no RH é dropdown; VIAGENS e COMISSÕES consideram motoristas os colaboradores
+    ativos cujo cargo contém "Motorist" (ILIKE) — não existe coluna `eh_motorista`.
 - Adiantamentos (migration `20260824120000`): campo "recorrente" gera conta a pagar mensal.
   A UI chama `public.gerar_adiantamentos_recorrentes()` logo após o INSERT (1ª conta na
   hora; se o dia do mês já passou, a 1ª conta é a do mês seguinte) e o pg_cron diário
@@ -217,7 +218,7 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
   - `SEFAZ_URL` ausente (Vercel/Node.js): mTLS direto (busca certificado no Supabase via service role,
     baixa do Storage, chama `sefaz.ts`)
   - `SEFAZ_URL` presente (Cloudflare Worker): `POST ${SEFAZ_URL}` com body `{action, empresaId, ...}`
-    + header `Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>`
+    - header `Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>`
 
 - **Proxy Vercel**: `src/server.ts` intercepta `POST /api/sefaz` ANTES do handler TanStack Start.
   Chama `src/lib/sefaz-proxy.ts` (handler puro Web APIs, sem h3/Nitro) que valida Bearer token e

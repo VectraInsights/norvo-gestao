@@ -6,7 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { TransferenciaDialog } from "@/components/erp/transferencia-dialog";
 import { RouteErrorState } from "@/components/erp/route-error-state";
 import { ArrowLeftRight, Plus, Search, Trash2 } from "lucide-react";
@@ -19,13 +26,18 @@ import { brl, dateBR } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/financeiro/transferencias")({
   component: TransferenciasPage,
-  errorComponent: RouteErrorState
+  errorComponent: RouteErrorState,
 });
 
 type Conta = { id: string; nome: string | null; banco: string | null; saldo_atual: number };
 type Transferencia = {
-  id: string; data: string; valor: number; descricao: string; observacoes: string | null;
-  conta_origem_id: string; conta_destino_id: string;
+  id: string;
+  data: string;
+  valor: number;
+  descricao: string;
+  observacoes: string | null;
+  conta_origem_id: string;
+  conta_destino_id: string;
 };
 
 function TransferenciasPage() {
@@ -38,8 +50,12 @@ function TransferenciasPage() {
     enabled: !!empresa,
     queryKey: ["contas-transf", empresa?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("contas_bancarias")
-        .select("id,nome,banco,saldo_atual").eq("empresa_id", empresa!.id).eq("ativo", true).order("nome");
+      const { data, error } = await supabase
+        .from("contas_bancarias")
+        .select("id,nome,banco,saldo_atual")
+        .eq("empresa_id", empresa!.id)
+        .eq("ativo", true)
+        .order("nome");
       if (error) throw error;
       return (data ?? []) as Conta[];
     },
@@ -47,7 +63,7 @@ function TransferenciasPage() {
 
   const nomeConta = (id: string) => {
     const c = contas.find((x) => x.id === id);
-    return c ? (c.nome || c.banco || "Conta") : "—";
+    return c ? c.nome || c.banco || "Conta" : "—";
   };
 
   const { data: lista, isLoading } = useQuery({
@@ -56,8 +72,12 @@ function TransferenciasPage() {
     staleTime: 30_000,
     gcTime: 10 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("transferencias_contas" as never)
-        .select("id,empresa_id,data,conta_origem_id,conta_destino_id,valor,descricao,observacoes").eq("empresa_id", empresa!.id).order("data", { ascending: false }).limit(300);
+      const { data, error } = await supabase
+        .from("transferencias_contas" as never)
+        .select("id,empresa_id,data,conta_origem_id,conta_destino_id,valor,descricao,observacoes")
+        .eq("empresa_id", empresa!.id)
+        .order("data", { ascending: false })
+        .limit(300);
       if (error) throw error;
       return (data ?? []) as unknown as Transferencia[];
     },
@@ -67,10 +87,12 @@ function TransferenciasPage() {
     const q = busca.trim().toLowerCase();
     return (lista ?? []).filter((t) => {
       if (!q) return true;
-      return (t.descricao || "").toLowerCase().includes(q)
-        || (t.observacoes || "").toLowerCase().includes(q)
-        || nomeConta(t.conta_origem_id).toLowerCase().includes(q)
-        || nomeConta(t.conta_destino_id).toLowerCase().includes(q);
+      return (
+        (t.descricao || "").toLowerCase().includes(q) ||
+        (t.observacoes || "").toLowerCase().includes(q) ||
+        nomeConta(t.conta_origem_id).toLowerCase().includes(q) ||
+        nomeConta(t.conta_destino_id).toLowerCase().includes(q)
+      );
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lista, busca, contas]);
@@ -78,15 +100,22 @@ function TransferenciasPage() {
   const excluir = useMutation({
     mutationFn: async (id: string) => {
       // Desvincula do extrato antes de excluir (perna conciliada volta a "em aberto")
-      const { data: pernas } = await supabase.from("lancamentos_financeiros")
-        .select("id").eq("transferencia_id", id);
+      const { data: pernas } = await supabase
+        .from("lancamentos_financeiros")
+        .select("id")
+        .eq("transferencia_id", id);
       const ids = (pernas ?? []).map((p: { id: string }) => p.id);
       if (ids.length) {
-        const { error: eOfx } = await supabase.from("ofx_transacoes")
-          .update({ status: "aberto", lancamento_id: null }).in("lancamento_id", ids);
+        const { error: eOfx } = await supabase
+          .from("ofx_transacoes")
+          .update({ status: "aberto", lancamento_id: null })
+          .in("lancamento_id", ids);
         if (eOfx) throw eOfx;
       }
-      const { error } = await supabase.from("transferencias_contas" as never).delete().eq("id", id);
+      const { error } = await supabase
+        .from("transferencias_contas" as never)
+        .delete()
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -108,21 +137,35 @@ function TransferenciasPage() {
       <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-9 rounded-xl pl-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input
+            className="h-9 rounded-xl pl-10 shadow-sm"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
         </div>
         <div className="flex items-center gap-2">
-          <PrimaryButton size="sm" onClick={() => setOpen(true)}><Plus className="mr-1 h-3.5 w-3.5" /> Nova transferência</PrimaryButton>
+          <PrimaryButton size="sm" onClick={() => setOpen(true)}>
+            <Plus className="mr-1 h-3.5 w-3.5" /> Nova transferência
+          </PrimaryButton>
           <TransferenciaDialog open={open} onOpenChange={setOpen} />
         </div>
       </div>
 
       {isLoading ? (
-        <div className="space-y-2.5">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-xl" />)}</div>
+        <div className="space-y-2.5">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-12 w-full rounded-xl" />
+          ))}
+        </div>
       ) : !filtrados?.length ? (
         <EmptyState
           icon={ArrowLeftRight}
           title="Nenhuma transferência"
-          description={busca ? "Nada encontrado para a busca." : "Registre movimentações de saldo entre as contas financeiras da empresa."}
+          description={
+            busca
+              ? "Nada encontrado para a busca."
+              : "Registre movimentações de saldo entre as contas financeiras da empresa."
+          }
         />
       ) : (
         <Card className="overflow-hidden rounded-2xl shadow-panel">
@@ -141,13 +184,23 @@ function TransferenciasPage() {
               {filtrados.map((t) => (
                 <TableRow key={t.id} className="transition-colors hover:bg-accent/30">
                   <TableCell className="text-tabular">{dateBR(t.data)}</TableCell>
-                  <TableCell className="max-w-[280px] truncate font-medium">{t.descricao}</TableCell>
-                  <TableCell className="text-muted-foreground">{nomeConta(t.conta_origem_id)}</TableCell>
-                  <TableCell className="text-muted-foreground">{nomeConta(t.conta_destino_id)}</TableCell>
-                  <TableCell className="text-right font-medium text-tabular">{brl(t.valor)}</TableCell>
+                  <TableCell className="max-w-[280px] truncate font-medium">
+                    {t.descricao}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {nomeConta(t.conta_origem_id)}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {nomeConta(t.conta_destino_id)}
+                  </TableCell>
+                  <TableCell className="text-right font-medium text-tabular">
+                    {brl(t.valor)}
+                  </TableCell>
                   <TableCell>
                     <Button
-                      variant="ghost" size="icon" aria-label="Excluir transferência"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Excluir transferência"
                       className="h-8 w-8 rounded-lg"
                       onClick={() => excluir.mutate(t.id)}
                     >

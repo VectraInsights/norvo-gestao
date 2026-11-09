@@ -40,20 +40,22 @@ function RecuperarSenha() {
                 <MailCheck className="h-4 w-4" />
               </div>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                Se existir uma conta para <strong className="text-foreground">{email}</strong>, você receberá
-                um link para definir uma nova senha. Verifique também a caixa de
-                spam.
+                Se existir uma conta para <strong className="text-foreground">{email}</strong>, você
+                receberá um link para definir uma nova senha. Verifique também a caixa de spam.
               </p>
             </div>
-            <Button asChild variant="outline" className="h-10 w-full rounded-xl shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+            <Button
+              asChild
+              variant="outline"
+              className="h-10 w-full rounded-xl shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+            >
               <Link to="/auth">Voltar para o login</Link>
             </Button>
           </div>
         ) : (
           <>
             <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-              Informe seu email e enviaremos um link para você criar uma nova
-              senha.
+              Informe seu email e enviaremos um link para você criar uma nova senha.
             </p>
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <div className="grid gap-1.5">
@@ -67,7 +69,11 @@ function RecuperarSenha() {
                   className="h-10 rounded-xl"
                 />
               </div>
-              <Button type="submit" className="h-10 w-full rounded-xl shadow-sm transition-all hover:-translate-y-px hover:shadow-md" disabled={loading}>
+              <Button
+                type="submit"
+                className="h-10 w-full rounded-xl shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                disabled={loading}
+              >
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Enviar link de recuperação
               </Button>

@@ -23,8 +23,7 @@ export function SearchField({
   inputClassName,
   ariaLabel = "Buscar",
 }: SearchFieldProps) {
-  const height =
-    size === "xxs" ? "h-8 text-[13px]" : size === "xs" ? "h-9" : "h-10";
+  const height = size === "xxs" ? "h-8 text-[13px]" : size === "xs" ? "h-9" : "h-10";
   return (
     <div className={cn("relative flex-1", className)}>
       <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

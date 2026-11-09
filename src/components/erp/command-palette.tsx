@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
-  CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator,
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
 } from "@/components/ui/command";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
@@ -29,7 +35,11 @@ const ROUTES: RotaBusca[] = [
   { label: "Notas de compra (Entradas & XMLs)", to: "/fiscal/recebidas" },
   { label: "Relatórios fiscais", to: "/fiscal/relatorios" },
   { label: "Painel do contador / Exportação", to: "/fiscal/contador" },
-  { label: "Configurações fiscais (Certificado & Alíquotas)", to: "/configuracoes", secao: "fiscais" },
+  {
+    label: "Configurações fiscais (Certificado & Alíquotas)",
+    to: "/configuracoes",
+    secao: "fiscais",
+  },
   { label: "Projetos", to: "/projetos/projetos" },
   { label: "Ordens de serviço", to: "/projetos/os" },
   { label: "Colaboradores", to: "/rh/colaboradores" },
@@ -78,8 +88,11 @@ export function CommandPalette() {
     enabled,
     queryFn: async () => {
       const { data } = await supabase
-        .from("contatos").select("id,nome,tipo")
-        .eq("empresa_id", empresaId!).ilike("nome", `%${term}%`).limit(6);
+        .from("contatos")
+        .select("id,nome,tipo")
+        .eq("empresa_id", empresaId!)
+        .ilike("nome", `%${term}%`)
+        .limit(6);
       return data ?? [];
     },
   });
@@ -89,8 +102,11 @@ export function CommandPalette() {
     enabled,
     queryFn: async () => {
       const { data } = await supabase
-        .from("produtos").select("id,nome,codigo")
-        .eq("empresa_id", empresaId!).or(`nome.ilike.%${term}%,codigo.ilike.%${term}%`).limit(6);
+        .from("produtos")
+        .select("id,nome,codigo")
+        .eq("empresa_id", empresaId!)
+        .or(`nome.ilike.%${term}%,codigo.ilike.%${term}%`)
+        .limit(6);
       return data ?? [];
     },
   });
@@ -114,43 +130,60 @@ export function CommandPalette() {
     enabled,
     queryFn: async () => {
       const { data } = await supabase
-        .from("lancamentos_financeiros").select("id,descricao,tipo,valor")
-        .eq("empresa_id", empresaId!).ilike("descricao", `%${term}%`).limit(6);
+        .from("lancamentos_financeiros")
+        .select("id,descricao,tipo,valor")
+        .eq("empresa_id", empresaId!)
+        .ilike("descricao", `%${term}%`)
+        .limit(6);
       return data ?? [];
     },
   });
 
   const go = (dest: RotaBusca | string) => {
-    setOpen(false); setQ("");
+    setOpen(false);
+    setQ("");
     if (typeof dest === "string") navigate({ to: dest });
     else if (dest.secao) navigate({ to: "/configuracoes", search: { secao: dest.secao } });
     else navigate({ to: dest.to });
   };
-  const fechar = (nextOpen: boolean) => { setOpen(nextOpen); if (!nextOpen) setQ(""); };
+  const fechar = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) setQ("");
+  };
 
   return (
     <>
       <Button
-        variant="outline" size="sm"
+        variant="outline"
+        size="sm"
         className="h-9 gap-2 rounded-xl px-3 text-xs text-muted-foreground shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
         aria-label="Abrir busca global (Ctrl K ou Ctrl /)"
         onClick={() => setOpen(true)}
       >
         <Search className="h-3.5 w-3.5" />
         <span className="hidden sm:inline">Buscar…</span>
-        <kbd className="ml-1 hidden rounded-md border bg-muted px-1.5 py-0.5 font-mono text-[10px] sm:inline">⌘K</kbd>
+        <kbd className="ml-1 hidden rounded-md border bg-muted px-1.5 py-0.5 font-mono text-[10px] sm:inline">
+          ⌘K
+        </kbd>
       </Button>
 
       <CommandDialog open={open} onOpenChange={fechar}>
         <CommandInput value={q} onValueChange={setQ} />
         <CommandList>
-          <CommandEmpty>{term.length < 2 ? "Digite ao menos 2 caracteres." : "Nada encontrado."}</CommandEmpty>
+          <CommandEmpty>
+            {term.length < 2 ? "Digite ao menos 2 caracteres." : "Nada encontrado."}
+          </CommandEmpty>
 
           <CommandGroup heading="Páginas">
             {ROUTES.filter((r) => rotaVisivel(r))
               .filter((r) => !term || r.label.toLowerCase().includes(term.toLowerCase()))
               .map((r) => (
-                <CommandItem key={`${r.to}-${r.label}`} value={r.label} onSelect={() => go(r)} className="rounded-lg">
+                <CommandItem
+                  key={`${r.to}-${r.label}`}
+                  value={r.label}
+                  onSelect={() => go(r)}
+                  className="rounded-lg"
+                >
                   {r.label}
                 </CommandItem>
               ))}
@@ -161,10 +194,17 @@ export function CommandPalette() {
               <CommandSeparator />
               <CommandGroup heading="Clientes / Fornecedores">
                 {contatos.map((c) => (
-                  <CommandItem key={c.id} value={`contato-${c.id}-${c.nome}`}
-                    onSelect={() => go(c.tipo === "fornecedor" ? "/estoque/fornecedores" : "/vendas/clientes")}>
+                  <CommandItem
+                    key={c.id}
+                    value={`contato-${c.id}-${c.nome}`}
+                    onSelect={() =>
+                      go(c.tipo === "fornecedor" ? "/estoque/fornecedores" : "/vendas/clientes")
+                    }
+                  >
                     <span className="truncate">{c.nome}</span>
-                    <span className="ml-auto text-xs text-muted-foreground capitalize">{c.tipo}</span>
+                    <span className="ml-auto text-xs text-muted-foreground capitalize">
+                      {c.tipo}
+                    </span>
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -176,9 +216,15 @@ export function CommandPalette() {
               <CommandSeparator />
               <CommandGroup heading="Produtos">
                 {produtos.map((p) => (
-                  <CommandItem key={p.id} value={`prod-${p.id}-${p.nome}`} onSelect={() => go("/estoque/produtos")}>
+                  <CommandItem
+                    key={p.id}
+                    value={`prod-${p.id}-${p.nome}`}
+                    onSelect={() => go("/estoque/produtos")}
+                  >
                     <span className="truncate">{p.nome}</span>
-                    {p.codigo && <span className="ml-auto text-xs text-muted-foreground">{p.codigo}</span>}
+                    {p.codigo && (
+                      <span className="ml-auto text-xs text-muted-foreground">{p.codigo}</span>
+                    )}
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -190,9 +236,15 @@ export function CommandPalette() {
               <CommandSeparator />
               <CommandGroup heading="Colaboradores">
                 {colaboradores.map((colaborador) => (
-                  <CommandItem key={colaborador.id} value={`colaborador-${colaborador.id}-${colaborador.nome}`} onSelect={() => go("/rh/colaboradores")}>
+                  <CommandItem
+                    key={colaborador.id}
+                    value={`colaborador-${colaborador.id}-${colaborador.nome}`}
+                    onSelect={() => go("/rh/colaboradores")}
+                  >
                     <span className="truncate">{colaborador.nome}</span>
-                    <span className="ml-auto text-xs text-muted-foreground">{colaborador.cargo || "Colaborador"}</span>
+                    <span className="ml-auto text-xs text-muted-foreground">
+                      {colaborador.cargo || "Colaborador"}
+                    </span>
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -204,11 +256,19 @@ export function CommandPalette() {
               <CommandSeparator />
               <CommandGroup heading="Lançamentos">
                 {lancamentos.map((l) => (
-                  <CommandItem key={l.id} value={`lanc-${l.id}-${l.descricao}`}
-                    onSelect={() => go(l.tipo === "pagar" ? "/financeiro/pagar" : "/financeiro/receber")}>
+                  <CommandItem
+                    key={l.id}
+                    value={`lanc-${l.id}-${l.descricao}`}
+                    onSelect={() =>
+                      go(l.tipo === "pagar" ? "/financeiro/pagar" : "/financeiro/receber")
+                    }
+                  >
                     <span className="truncate">{l.descricao}</span>
                     <span className="ml-auto text-xs text-muted-foreground text-tabular">
-                      {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(l.valor))}
+                      {new Intl.NumberFormat("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      }).format(Number(l.valor))}
                     </span>
                   </CommandItem>
                 ))}

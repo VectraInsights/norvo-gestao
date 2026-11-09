@@ -3,8 +3,21 @@ import { PageHeader } from "@/components/erp/page-header";
 import { RouteErrorState } from "@/components/erp/route-error-state";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -14,12 +27,16 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/financeiro/dre")({
   component: DrePage,
-  errorComponent: RouteErrorState
+  errorComponent: RouteErrorState,
 });
 
 type Lanc = {
-  valor: number; valor_pago: number; tipo: "receber" | "pagar";
-  status: string; data_vencimento: string; data_pagamento: string | null;
+  valor: number;
+  valor_pago: number;
+  tipo: "receber" | "pagar";
+  status: string;
+  data_vencimento: string;
+  data_pagamento: string | null;
   categoria_id: string | null;
 };
 type Cat = { id: string; nome: string; tipo: "receber" | "pagar" };
@@ -39,8 +56,11 @@ function DrePage() {
       // Busca em páginas de 1000 para nunca cortar a DRE (sem limite silencioso)
       const lancs: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
-        const { data, error } = await supabase.from("lancamentos_financeiros")
-          .select("valor,valor_pago,tipo,status,data_vencimento,data_pagamento,categoria_id,transferencia_id")
+        const { data, error } = await supabase
+          .from("lancamentos_financeiros")
+          .select(
+            "valor,valor_pago,tipo,status,data_vencimento,data_pagamento,categoria_id,transferencia_id",
+          )
           .eq("empresa_id", empresa!.id)
           .neq("status", "cancelado")
           .is("transferencia_id", null)
@@ -51,8 +71,10 @@ function DrePage() {
         lancs.push(...(data ?? []));
         if (!data || data.length < 1000) break;
       }
-      const { data: cats } = await supabase.from("categorias_financeiras")
-        .select("id,nome,tipo").eq("empresa_id", empresa!.id);
+      const { data: cats } = await supabase
+        .from("categorias_financeiras")
+        .select("id,nome,tipo")
+        .eq("empresa_id", empresa!.id);
       return { lancs: lancs as Lanc[], cats: (cats ?? []) as Cat[] };
     },
   });
@@ -105,16 +127,24 @@ function DrePage() {
         actions={
           <div className="flex shrink-0 gap-2">
             <Select value={regime} onValueChange={(v) => setRegime(v as "caixa" | "competencia")}>
-              <SelectTrigger className="h-10 w-[170px] rounded-xl shadow-sm"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-10 w-[170px] rounded-xl shadow-sm">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="caixa">Regime de caixa</SelectItem>
                 <SelectItem value="competencia">Competência</SelectItem>
               </SelectContent>
             </Select>
             <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
-              <SelectTrigger className="h-10 w-[110px] rounded-xl shadow-sm"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-10 w-[110px] rounded-xl shadow-sm">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {anos.map((a) => <SelectItem key={a} value={String(a)}>{a}</SelectItem>)}
+                {anos.map((a) => (
+                  <SelectItem key={a} value={String(a)}>
+                    {a}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -122,21 +152,40 @@ function DrePage() {
       />
 
       {isLoading ? (
-        <div className="space-y-2.5">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-xl" />)}</div>
+        <div className="space-y-2.5">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full rounded-xl" />
+          ))}
+        </div>
       ) : (
         <>
           <div className="mb-6 grid gap-4 sm:gap-5 lg:grid-cols-3">
             <Card className="rounded-2xl p-5 shadow-panel transition-all duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-6">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Receitas</p>
-              <p className="mt-1.5 text-2xl font-semibold tracking-tight text-success text-tabular">{brl(total(linhas.totRec))}</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Receitas
+              </p>
+              <p className="mt-1.5 text-2xl font-semibold tracking-tight text-success text-tabular">
+                {brl(total(linhas.totRec))}
+              </p>
             </Card>
             <Card className="rounded-2xl p-5 shadow-panel transition-all duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-6">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Despesas</p>
-              <p className="mt-1.5 text-2xl font-semibold tracking-tight text-destructive text-tabular">{brl(total(linhas.totDesp))}</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Despesas
+              </p>
+              <p className="mt-1.5 text-2xl font-semibold tracking-tight text-destructive text-tabular">
+                {brl(total(linhas.totDesp))}
+              </p>
             </Card>
             <Card className="rounded-2xl p-5 shadow-panel transition-all duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-6">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Resultado</p>
-              <p className={cn("mt-1.5 text-2xl font-semibold tracking-tight text-tabular", total(linhas.resultado) < 0 && "text-destructive")}>
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Resultado
+              </p>
+              <p
+                className={cn(
+                  "mt-1.5 text-2xl font-semibold tracking-tight text-tabular",
+                  total(linhas.resultado) < 0 && "text-destructive",
+                )}
+              >
                 {brl(total(linhas.resultado))}
               </p>
             </Card>
@@ -147,33 +196,57 @@ function DrePage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="min-w-[200px]">Categoria</TableHead>
-                  {MESES.map((m) => <TableHead key={m} className="text-right">{m}</TableHead>)}
+                  {MESES.map((m) => (
+                    <TableHead key={m} className="text-right">
+                      {m}
+                    </TableHead>
+                  ))}
                   <TableHead className="text-right">Total</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 <TableRow className="bg-muted/40">
                   <TableCell className="font-semibold">Receitas</TableCell>
-                  {linhas.totRec.map((v, i) => <TableCell key={i} className="text-right font-medium">{brl(v)}</TableCell>)}
-                  <TableCell className="text-right font-semibold">{brl(total(linhas.totRec))}</TableCell>
+                  {linhas.totRec.map((v, i) => (
+                    <TableCell key={i} className="text-right font-medium">
+                      {brl(v)}
+                    </TableCell>
+                  ))}
+                  <TableCell className="text-right font-semibold">
+                    {brl(total(linhas.totRec))}
+                  </TableCell>
                 </TableRow>
                 {linhas.rec.map((r) => (
                   <TableRow key={`r-${r.nome}`} className="transition-colors hover:bg-accent/30">
                     <TableCell className="pl-6 text-muted-foreground">{r.nome}</TableCell>
-                    {r.meses.map((v, i) => <TableCell key={i} className="text-right">{v ? brl(v) : "—"}</TableCell>)}
+                    {r.meses.map((v, i) => (
+                      <TableCell key={i} className="text-right">
+                        {v ? brl(v) : "—"}
+                      </TableCell>
+                    ))}
                     <TableCell className="text-right font-medium">{brl(r.total)}</TableCell>
                   </TableRow>
                 ))}
 
                 <TableRow className="bg-muted/40">
                   <TableCell className="font-semibold">Despesas</TableCell>
-                  {linhas.totDesp.map((v, i) => <TableCell key={i} className="text-right font-medium">{brl(v)}</TableCell>)}
-                  <TableCell className="text-right font-semibold">{brl(total(linhas.totDesp))}</TableCell>
+                  {linhas.totDesp.map((v, i) => (
+                    <TableCell key={i} className="text-right font-medium">
+                      {brl(v)}
+                    </TableCell>
+                  ))}
+                  <TableCell className="text-right font-semibold">
+                    {brl(total(linhas.totDesp))}
+                  </TableCell>
                 </TableRow>
                 {linhas.desp.map((r) => (
                   <TableRow key={`d-${r.nome}`} className="transition-colors hover:bg-accent/30">
                     <TableCell className="pl-6 text-muted-foreground">{r.nome}</TableCell>
-                    {r.meses.map((v, i) => <TableCell key={i} className="text-right">{v ? brl(v) : "—"}</TableCell>)}
+                    {r.meses.map((v, i) => (
+                      <TableCell key={i} className="text-right">
+                        {v ? brl(v) : "—"}
+                      </TableCell>
+                    ))}
                     <TableCell className="text-right font-medium">{brl(r.total)}</TableCell>
                   </TableRow>
                 ))}
@@ -181,9 +254,19 @@ function DrePage() {
                 <TableRow className="border-t-2">
                   <TableCell className="font-semibold">Resultado</TableCell>
                   {linhas.resultado.map((v, i) => (
-                    <TableCell key={i} className={cn("text-right font-medium", v < 0 && "text-destructive")}>{brl(v)}</TableCell>
+                    <TableCell
+                      key={i}
+                      className={cn("text-right font-medium", v < 0 && "text-destructive")}
+                    >
+                      {brl(v)}
+                    </TableCell>
                   ))}
-                  <TableCell className={cn("text-right font-semibold", total(linhas.resultado) < 0 && "text-destructive")}>
+                  <TableCell
+                    className={cn(
+                      "text-right font-semibold",
+                      total(linhas.resultado) < 0 && "text-destructive",
+                    )}
+                  >
                     {brl(total(linhas.resultado))}
                   </TableCell>
                 </TableRow>

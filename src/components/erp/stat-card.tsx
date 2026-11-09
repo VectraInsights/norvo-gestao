@@ -15,7 +15,14 @@ type StatCardProps = {
 };
 
 // Card de metrica padrao do ERP (dashboard; reutilizavel em resumo de modulos).
-export function StatCard({ icon: Icon, label, value, tone, variant = "primary", className }: StatCardProps) {
+export function StatCard({
+  icon: Icon,
+  label,
+  value,
+  tone,
+  variant = "primary",
+  className,
+}: StatCardProps) {
   const secondary = variant === "secondary";
   return (
     <Card
@@ -25,25 +32,42 @@ export function StatCard({ icon: Icon, label, value, tone, variant = "primary", 
         className,
       )}
     >
-      <CardContent className={cn("flex items-center gap-3 p-4", secondary ? "h-[96px]" : "h-[120px]")}>
+      <CardContent
+        className={cn("flex items-center gap-3 p-4", secondary ? "h-[96px]" : "h-[120px]")}
+      >
         <span
           className={cn(
             "grid shrink-0 place-items-center",
-            secondary ? "h-8 w-8 rounded-lg bg-background shadow-sm" : "h-9 w-9 rounded-xl bg-muted/70 transition-colors group-hover:bg-primary/10",
+            secondary
+              ? "h-8 w-8 rounded-lg bg-background shadow-sm"
+              : "h-9 w-9 rounded-xl bg-muted/70 transition-colors group-hover:bg-primary/10",
           )}
         >
-          <Icon className={cn("h-4 w-4", tone ?? (secondary ? "text-muted-foreground" : "text-primary"))} aria-hidden="true" />
+          <Icon
+            className={cn(
+              "h-4 w-4",
+              tone ?? (secondary ? "text-muted-foreground" : "text-primary"),
+            )}
+            aria-hidden="true"
+          />
         </span>
         <span className="min-w-0 flex-1">
           <span
             className={cn(
               "block truncate",
-              secondary ? "text-xs text-muted-foreground" : "text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground",
+              secondary
+                ? "text-xs text-muted-foreground"
+                : "text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground",
             )}
           >
             {label}
           </span>
-          <span className={cn("block truncate font-semibold leading-tight text-tabular", secondary ? "mt-0.5 text-xl" : "mt-1 text-2xl")}>
+          <span
+            className={cn(
+              "block truncate font-semibold leading-tight text-tabular",
+              secondary ? "mt-0.5 text-xl" : "mt-1 text-2xl",
+            )}
+          >
             {value}
           </span>
         </span>
@@ -56,7 +80,9 @@ export function StatCardSkeleton({ variant = "primary" }: { variant?: "primary" 
   const secondary = variant === "secondary";
   return (
     <Card className="rounded-2xl shadow-panel">
-      <CardContent className={cn("flex items-center gap-3 p-4", secondary ? "h-[96px]" : "h-[120px]")}>
+      <CardContent
+        className={cn("flex items-center gap-3 p-4", secondary ? "h-[96px]" : "h-[120px]")}
+      >
         <Skeleton className={secondary ? "h-8 w-8 rounded-lg" : "h-9 w-9 rounded-xl"} />
         <div className="min-w-0 flex-1">
           <Skeleton className={secondary ? "h-3 w-20 rounded-full" : "h-3 w-24 rounded-full"} />

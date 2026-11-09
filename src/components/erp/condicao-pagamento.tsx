@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Combobox } from "@/components/erp/combobox";
 import { DateInput } from "@/components/erp/date-input";
@@ -28,7 +34,10 @@ function brl(v: number): string {
 
 function pct(v: number, total: number): string {
   if (!total) return "—";
-  return ((v / total) * 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return ((v / total) * 100).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 // Condição de pagamento + parcelas no estilo Conta Azul:
@@ -58,13 +67,15 @@ export function CondicaoPagamento({
 }) {
   const [nx, setNx] = useState(() => String(Math.min(12, Math.max(1, parcelas.length || 1))));
   const [primeiro, setPrimeiro] = useState(
-    parcelas[0]?.dataVencimento || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    parcelas[0]?.dataVencimento ||
+      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
   );
   const [intervalo, setIntervalo] = useState(() => {
     if (parcelas.length > 1) {
       const a = Date.parse(`${parcelas[0]?.dataVencimento || ""}T00:00:00`);
       const b = Date.parse(`${parcelas[1]?.dataVencimento || ""}T00:00:00`);
-      if (!Number.isNaN(a) && !Number.isNaN(b)) return String(Math.max(0, Math.round((b - a) / 86400000)));
+      if (!Number.isNaN(a) && !Number.isNaN(b))
+        return String(Math.max(0, Math.round((b - a) / 86400000)));
     }
     return "30";
   });
@@ -117,21 +128,28 @@ export function CondicaoPagamento({
   return (
     <div className="space-y-4">
       <div className="overflow-hidden rounded-2xl border shadow-panel">
-        <div className="border-b border-primary/20 bg-primary/8 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-primary/80">Condição de pagamento</div>
+        <div className="border-b border-primary/20 bg-primary/8 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+          Condição de pagamento
+        </div>
         <div className="grid grid-cols-2 gap-3 p-4 md:grid-cols-5">
           <div>
             <span className="text-xs text-muted-foreground">Parcelamento</span>
             <Select
               value={nx}
               disabled={travarRegen}
-              onValueChange={(v) => { setNx(v); gerar(v, primeiro, intervalo, formaTop, contaTop); }}
+              onValueChange={(v) => {
+                setNx(v);
+                gerar(v, primeiro, intervalo, formaTop, contaTop);
+              }}
             >
               <SelectTrigger className="h-9 rounded-xl text-xs w-full shadow-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {Array.from({ length: 12 }, (_, k) => (
-                  <SelectItem key={k + 1} value={String(k + 1)}>{k + 1}x</SelectItem>
+                  <SelectItem key={k + 1} value={String(k + 1)}>
+                    {k + 1}x
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -142,7 +160,10 @@ export function CondicaoPagamento({
               className="h-9 text-xs w-full"
               value={primeiro}
               disabled={travarRegen}
-              onChange={(v) => { setPrimeiro(v); gerar(nx, v, intervalo, formaTop, contaTop); }}
+              onChange={(v) => {
+                setPrimeiro(v);
+                gerar(nx, v, intervalo, formaTop, contaTop);
+              }}
             />
           </div>
           <div>
@@ -153,21 +174,30 @@ export function CondicaoPagamento({
               className="h-9 text-xs w-full"
               value={intervalo}
               disabled={travarRegen}
-              onChange={(v) => { setIntervalo(v); gerar(nx, primeiro, v, formaTop, contaTop); }}
+              onChange={(v) => {
+                setIntervalo(v);
+                gerar(nx, primeiro, v, formaTop, contaTop);
+              }}
             />
           </div>
           <div>
             <span className="text-xs text-muted-foreground">Forma de pagamento</span>
             <Select
               value={formaTop}
-              onValueChange={(v) => { setFormaTop(v); if (travarRegen) carimbar(v, contaTop); else gerar(nx, primeiro, intervalo, v, contaTop); }}
+              onValueChange={(v) => {
+                setFormaTop(v);
+                if (travarRegen) carimbar(v, contaTop);
+                else gerar(nx, primeiro, intervalo, v, contaTop);
+              }}
             >
               <SelectTrigger className="h-9 rounded-xl text-xs w-full shadow-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {formas.map((f) => (
-                  <SelectItem key={f} value={f}>{f}</SelectItem>
+                  <SelectItem key={f} value={f}>
+                    {f}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -176,13 +206,16 @@ export function CondicaoPagamento({
             <span className="text-xs text-muted-foreground">Conta de pagamento</span>
             <Combobox
               value={contaTop}
-              onChange={(v) => { setContaTop(v); if (travarRegen) carimbar(formaTop, v); else gerar(nx, primeiro, intervalo, formaTop, v); }}
+              onChange={(v) => {
+                setContaTop(v);
+                if (travarRegen) carimbar(formaTop, v);
+                else gerar(nx, primeiro, intervalo, formaTop, v);
+              }}
               options={[
                 { value: "__none__", label: "Sem conta" },
                 ...contas.map((c) => ({ value: c.id, label: c.nome })),
               ]}
-             
-             
+
               emptyText="Nenhuma conta encontrada."
               className="h-9 text-xs"
             />
@@ -192,106 +225,123 @@ export function CondicaoPagamento({
 
       {/* Parcelas só aparecem no parcelamento (2+); com 1, a condição já resolve */}
       {parcelas.length !== 1 && (
-      <div className="overflow-hidden rounded-2xl border shadow-panel">
-        <div className="flex items-center justify-between gap-2 border-b border-primary/20 bg-primary/8 px-4 py-2.5">
-          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-primary/80">
-            <Archive className="h-3.5 w-3.5" />
-            Parcelas
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-8 rounded-xl px-3 text-xs shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
-            onClick={() => {
-              const ult = parcelas[parcelas.length - 1];
-              onChange([...parcelas, {
-                numero: String(parcelas.length + 1).padStart(3, "0"),
-                dataVencimento: ult ? isoPlusDays(ult.dataVencimento, 30) : primeiro,
-                valor: 0,
-                forma_pagamento: formaTop,
-                conta_bancaria_id: contaTop === "__none__" ? "" : contaTop,
-              }]);
-            }}
-          >
-            <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar Parcela
-          </Button>
-        </div>
-        <div className="p-4">
-        {parcelas.length === 0 ? (
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            {emptyHint || "Altere a condição acima para gerar as parcelas."}
-          </p>
-        ) : (
-          <div className="rounded-xl border overflow-hidden">
-            <div className="hidden md:grid grid-cols-[36px_150px_130px_70px_1fr_36px] gap-2 border-b bg-muted/40 px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              <span>Nº</span>
-              <span>Vencimento</span>
-              <span>Valor (R$)</span>
-              <span>%</span>
-              <span>Forma de pagamento</span>
-              <span />
+        <div className="overflow-hidden rounded-2xl border shadow-panel">
+          <div className="flex items-center justify-between gap-2 border-b border-primary/20 bg-primary/8 px-4 py-2.5">
+            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+              <Archive className="h-3.5 w-3.5" />
+              Parcelas
             </div>
-            <div className="divide-y">
-              {parcelas.map((p, i) => (
-                <div key={i} className="grid grid-cols-2 md:grid-cols-[36px_150px_130px_70px_1fr_36px] gap-2 px-4 py-2.5 items-center transition-colors hover:bg-accent/30">
-                  <span className="text-xs font-medium text-muted-foreground">{i + 1}</span>
-                  <DateInput
-                    className="h-9 text-xs w-full"
-                    value={p.dataVencimento}
-                    onChange={(v) => setRow(i, { dataVencimento: v })}
-                  />
-                  <MoneyInput
-                    value={String(p.valor ?? 0)}
-                    onChange={(v) => setRow(i, { valor: parseFloat(v) || 0 })}
-                    className="h-9 text-xs text-right w-full"
-                   
-                  />
-                  <Input className="h-9 rounded-xl text-xs text-right text-tabular" value={pct(p.valor, total)} readOnly tabIndex={-1} />
-                  <Select
-                    value={p.forma_pagamento || "Boleto"}
-                    onValueChange={(v) => setRow(i, { forma_pagamento: v })}
-                  >
-                    <SelectTrigger className="h-9 rounded-xl text-xs w-full shadow-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {formas.map((f) => (
-                        <SelectItem key={f} value={f}>{f}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="col-span-2 md:col-span-1 flex justify-end">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 shrink-0"
-                            onClick={() => onChange(parcelas.filter((_, idx) => idx !== i))}
-                          >
-                            <XCircle className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Remover parcela</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 rounded-xl px-3 text-xs shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+              onClick={() => {
+                const ult = parcelas[parcelas.length - 1];
+                onChange([
+                  ...parcelas,
+                  {
+                    numero: String(parcelas.length + 1).padStart(3, "0"),
+                    dataVencimento: ult ? isoPlusDays(ult.dataVencimento, 30) : primeiro,
+                    valor: 0,
+                    forma_pagamento: formaTop,
+                    conta_bancaria_id: contaTop === "__none__" ? "" : contaTop,
+                  },
+                ]);
+              }}
+            >
+              <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar Parcela
+            </Button>
+          </div>
+          <div className="p-4">
+            {parcelas.length === 0 ? (
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                {emptyHint || "Altere a condição acima para gerar as parcelas."}
+              </p>
+            ) : (
+              <div className="rounded-xl border overflow-hidden">
+                <div className="hidden md:grid grid-cols-[36px_150px_130px_70px_1fr_36px] gap-2 border-b bg-muted/40 px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <span>Nº</span>
+                  <span>Vencimento</span>
+                  <span>Valor (R$)</span>
+                  <span>%</span>
+                  <span>Forma de pagamento</span>
+                  <span />
                 </div>
-              ))}
-            </div>
-            <div className="flex justify-end border-t bg-muted/30 px-4 py-2.5">
-              <span className="text-xs text-muted-foreground">
-                Total parcelas: <span className="font-semibold text-foreground">{brl(parcelas.reduce((a, p) => a + p.valor, 0))}</span>
-                {Math.abs(parcelas.reduce((a, p) => a + p.valor, 0) - total) > 0.009 && (
-                  <span className="text-destructive ml-2">(diferente do total: {brl(total)})</span>
-                )}
-              </span>
-            </div>
+                <div className="divide-y">
+                  {parcelas.map((p, i) => (
+                    <div
+                      key={i}
+                      className="grid grid-cols-2 md:grid-cols-[36px_150px_130px_70px_1fr_36px] gap-2 px-4 py-2.5 items-center transition-colors hover:bg-accent/30"
+                    >
+                      <span className="text-xs font-medium text-muted-foreground">{i + 1}</span>
+                      <DateInput
+                        className="h-9 text-xs w-full"
+                        value={p.dataVencimento}
+                        onChange={(v) => setRow(i, { dataVencimento: v })}
+                      />
+                      <MoneyInput
+                        value={String(p.valor ?? 0)}
+                        onChange={(v) => setRow(i, { valor: parseFloat(v) || 0 })}
+                        className="h-9 text-xs text-right w-full"
+                      />
+                      <Input
+                        className="h-9 rounded-xl text-xs text-right text-tabular"
+                        value={pct(p.valor, total)}
+                        readOnly
+                        tabIndex={-1}
+                      />
+                      <Select
+                        value={p.forma_pagamento || "Boleto"}
+                        onValueChange={(v) => setRow(i, { forma_pagamento: v })}
+                      >
+                        <SelectTrigger className="h-9 rounded-xl text-xs w-full shadow-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {formas.map((f) => (
+                            <SelectItem key={f} value={f}>
+                              {f}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <div className="col-span-2 md:col-span-1 flex justify-end">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 shrink-0"
+                                onClick={() => onChange(parcelas.filter((_, idx) => idx !== i))}
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Remover parcela</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-end border-t bg-muted/30 px-4 py-2.5">
+                  <span className="text-xs text-muted-foreground">
+                    Total parcelas:{" "}
+                    <span className="font-semibold text-foreground">
+                      {brl(parcelas.reduce((a, p) => a + p.valor, 0))}
+                    </span>
+                    {Math.abs(parcelas.reduce((a, p) => a + p.valor, 0) - total) > 0.009 && (
+                      <span className="text-destructive ml-2">
+                        (diferente do total: {brl(total)})
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
-        )}
         </div>
-      </div>
       )}
     </div>
   );

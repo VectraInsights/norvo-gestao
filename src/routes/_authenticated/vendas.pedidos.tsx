@@ -42,13 +42,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import {
-  Loader2,
-  MoreHorizontal,
-  Plus,
-  ShoppingCart,
-  Trash2,
-} from "lucide-react";
+import { Loader2, MoreHorizontal, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -71,7 +65,7 @@ type VendaRow = {
 
 export const Route = createFileRoute("/_authenticated/vendas/pedidos")({
   component: VendasPage,
-  errorComponent: RouteErrorState
+  errorComponent: RouteErrorState,
 });
 
 type Item = {
@@ -137,7 +131,14 @@ function VendasPage() {
       if ((v.condicao?.nome || "").toLowerCase().includes(q)) return true;
       if (String(v.numero ?? "").includes(qNum)) return true;
       // Pesquisa por valor: "25,00" acha 25.00 (a partir de 2 dígitos)
-      if (qDig.length >= 2 && Number(v.total || 0).toFixed(2).replace(/\D/g, "").includes(qDig)) return true;
+      if (
+        qDig.length >= 2 &&
+        Number(v.total || 0)
+          .toFixed(2)
+          .replace(/\D/g, "")
+          .includes(qDig)
+      )
+        return true;
       return false;
     });
   }, [vendas, busca]);
@@ -188,41 +189,47 @@ function VendasPage() {
         description="Proposta → pedido → faturamento. Ao faturar, o sistema baixa estoque, gera contas a receber e cria a nota fiscal."
       />
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} />
+        <SearchField
+          value={busca}
+          onChange={(v) => {
+            setBusca(v);
+            setPagina(1);
+          }}
+        />
         <div className="flex items-center gap-2">
           <Select
-              value={statusFilter}
-              onValueChange={(v) => {
-                setStatusFilter(v as VendaStatus | "todos");
-                setPagina(1);
+            value={statusFilter}
+            onValueChange={(v) => {
+              setStatusFilter(v as VendaStatus | "todos");
+              setPagina(1);
+            }}
+          >
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os status</SelectItem>
+              <SelectItem value="rascunho">Rascunho</SelectItem>
+              <SelectItem value="proposta">Proposta</SelectItem>
+              <SelectItem value="pedido">Pedido</SelectItem>
+              <SelectItem value="faturado">Faturado</SelectItem>
+              <SelectItem value="cancelado">Cancelado</SelectItem>
+            </SelectContent>
+          </Select>
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <PrimaryButton>
+                <Plus className="mr-1 h-4 w-4" />
+                Nova venda
+              </PrimaryButton>
+            </SheetTrigger>
+            <NovaVendaSheet
+              onClose={() => {
+                setOpen(false);
+                invalidateAll();
               }}
-            >
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos os status</SelectItem>
-                <SelectItem value="rascunho">Rascunho</SelectItem>
-                <SelectItem value="proposta">Proposta</SelectItem>
-                <SelectItem value="pedido">Pedido</SelectItem>
-                <SelectItem value="faturado">Faturado</SelectItem>
-                <SelectItem value="cancelado">Cancelado</SelectItem>
-              </SelectContent>
-            </Select>
-            <Sheet open={open} onOpenChange={setOpen}>
-              <SheetTrigger asChild>
-                <PrimaryButton>
-                  <Plus className="mr-1 h-4 w-4" />
-                  Nova venda
-                </PrimaryButton>
-              </SheetTrigger>
-              <NovaVendaSheet
-                onClose={() => {
-                  setOpen(false);
-                  invalidateAll();
-                }}
-              />
-            </Sheet>
+            />
+          </Sheet>
         </div>
       </div>
 
@@ -367,7 +374,7 @@ function NovaVendaSheet({ onClose }: { onClose: () => void }) {
           .from("clientes")
           .select("id,nome")
           .eq("empresa_id", empresa!.id)
-          
+
           .order("nome")
           .range(ini, ini + 999)
           .abortSignal(signal);
@@ -517,8 +524,7 @@ function NovaVendaSheet({ onClose }: { onClose: () => void }) {
               value={clienteId}
               onChange={setClienteId}
               options={(clientes ?? []).map((c) => ({ value: c.id, label: c.nome }))}
-             
-             
+
               emptyText="Nenhum item encontrado."
               footer={{ label: "Novo cliente", onClick: () => setNovoClienteOpen(true) }}
             />
@@ -529,8 +535,7 @@ function NovaVendaSheet({ onClose }: { onClose: () => void }) {
               value={condicaoId}
               onChange={setCondicaoId}
               options={(condicoes ?? []).map((c) => ({ value: c.id, label: c.nome }))}
-             
-             
+
               emptyText="Nenhum item encontrado."
             />
           </div>
@@ -546,8 +551,7 @@ function NovaVendaSheet({ onClose }: { onClose: () => void }) {
                 value: p.id,
                 label: p.nome + " — " + brl(Number(p.preco_venda ?? 0)),
               }))}
-             
-             
+
               emptyText="Nenhum item encontrado."
             />
           </div>

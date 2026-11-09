@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { MODULOS, moduloDaRota, modulosDaRota, moduloDoItemMenu, podeAcessarRota } from "./permissoes";
+import {
+  MODULOS,
+  moduloDaRota,
+  modulosDaRota,
+  moduloDoItemMenu,
+  podeAcessarRota,
+} from "./permissoes";
 
 describe("moduloDaRota", () => {
   it("identifica módulos nas rotas do ERP", () => {

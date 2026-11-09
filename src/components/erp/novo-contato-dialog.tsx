@@ -5,7 +5,13 @@ import { toast } from "sonner";
 import { Loader2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,16 +32,35 @@ type Props = {
 };
 
 const emptyForm = () => ({
-  nome: "", documento: "", email: "", telefone: "", ie: "",
-  cep: "", logradouro: "", numero: "", complemento: "",
-  bairro: "", cidade: "", uf: "", observacoes: "",
-  isCliente: true, isFornecedor: false,
+  nome: "",
+  documento: "",
+  email: "",
+  telefone: "",
+  ie: "",
+  cep: "",
+  logradouro: "",
+  numero: "",
+  complemento: "",
+  bairro: "",
+  cidade: "",
+  uf: "",
+  observacoes: "",
+  isCliente: true,
+  isFornecedor: false,
 });
 
 // Cadastro de contato em tela cheia, com os dados completos (mesmos campos de
 // Vendas → Clientes e fornecedores), p/ usar dentro de qualquer tela que peça
 // cliente/fornecedor (rodapé "Novo ..." dos Comboboxes).
-export function NovoContatoDialog({ empresaId, tipoFixo, titulo, open, onOpenChange, onCriado, nomeInicial }: Props) {
+export function NovoContatoDialog({
+  empresaId,
+  tipoFixo,
+  titulo,
+  open,
+  onOpenChange,
+  onCriado,
+  nomeInicial,
+}: Props) {
   const qc = useQueryClient();
   const [form, setForm] = useState(emptyForm);
   const [lookingUp, setLookingUp] = useState(false);
@@ -50,7 +75,7 @@ export function NovoContatoDialog({ empresaId, tipoFixo, titulo, open, onOpenCha
         isFornecedor: !tipoFixo || tipoFixo === "fornecedor" || tipoFixo === "ambos",
       });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, tipoFixo]);
 
   const lookupCnpj = async () => {
@@ -68,8 +93,12 @@ export function NovoContatoDialog({ empresaId, tipoFixo, titulo, open, onOpenCha
       // A existencia e verificada na tabela do tipo escolhido (modulos independentes):
       // a mesma empresa pode ser cliente de um CNPJ e fornecedor de outro.
       for (const tabela of form.isCliente ? ["clientes"] : ["fornecedores"]) {
-        const { data: existente } = await supabase.from(tabela as any)
-          .select("id,nome").eq("empresa_id", empresaId).eq("documento", digits).maybeSingle();
+        const { data: existente } = await supabase
+          .from(tabela as any)
+          .select("id,nome")
+          .eq("empresa_id", empresaId)
+          .eq("documento", digits)
+          .maybeSingle();
         if (existente) {
           toast.error(`Já cadastrado: ${(existente as { nome: string }).nome}`);
           return;
@@ -82,8 +111,13 @@ export function NovoContatoDialog({ empresaId, tipoFixo, titulo, open, onOpenCha
       ]) {
         try {
           const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-          if (res.ok) { d = await res.json(); break; }
-        } catch { /* tenta próxima */ }
+          if (res.ok) {
+            d = await res.json();
+            break;
+          }
+        } catch {
+          /* tenta próxima */
+        }
       }
       if (!d || d.status === "ERROR") throw new Error("CNPJ não encontrado nas APIs públicas");
       setForm((f) => ({
@@ -122,8 +156,7 @@ export function NovoContatoDialog({ empresaId, tipoFixo, titulo, open, onOpenCha
       return;
     }
     const tipo: TipoContatoRapido =
-      form.isCliente && form.isFornecedor ? "ambos"
-      : form.isCliente ? "cliente" : "fornecedor";
+      form.isCliente && form.isFornecedor ? "ambos" : form.isCliente ? "cliente" : "fornecedor";
     setSalvando(true);
     try {
       const doc = form.documento.replace(/\D/g, "");
@@ -134,10 +167,16 @@ export function NovoContatoDialog({ empresaId, tipoFixo, titulo, open, onOpenCha
       if (form.isFornecedor) tabelas.push("fornecedores");
       for (const tabela of tabelas) {
         if (doc) {
-          const { data: existente } = await supabase.from(tabela as any)
-            .select("id,nome").eq("empresa_id", empresaId).eq("documento", doc).maybeSingle();
+          const { data: existente } = await supabase
+            .from(tabela as any)
+            .select("id,nome")
+            .eq("empresa_id", empresaId)
+            .eq("documento", doc)
+            .maybeSingle();
           if (existente)
-            throw new Error(`Já existe um ${tabela === "clientes" ? "cliente" : "fornecedor"} com este CPF/CNPJ: ${(existente as { nome: string }).nome}`);
+            throw new Error(
+              `Já existe um ${tabela === "clientes" ? "cliente" : "fornecedor"} com este CPF/CNPJ: ${(existente as { nome: string }).nome}`,
+            );
         }
       }
       const dados = {
@@ -158,7 +197,11 @@ export function NovoContatoDialog({ empresaId, tipoFixo, titulo, open, onOpenCha
       };
       let criado: { id: string; nome: string } | null = null;
       for (const tabela of tabelas) {
-        const { data, error } = await supabase.from(tabela as any).insert(dados).select("id,nome").single();
+        const { data, error } = await supabase
+          .from(tabela as any)
+          .insert(dados)
+          .select("id,nome")
+          .single();
         if (error) throw error;
         if (!criado) criado = data as { id: string; nome: string };
       }
@@ -182,7 +225,12 @@ export function NovoContatoDialog({ empresaId, tipoFixo, titulo, open, onOpenCha
       <DialogContent className="fixed inset-0 left-0 top-0 translate-x-0 translate-y-0 w-screen h-screen max-w-none max-h-none rounded-none p-6 overflow-y-auto sm:p-8">
         <DialogHeader className="gap-1.5 pb-1">
           <DialogTitle className="tracking-tight">
-            {titulo ?? (tipoFixo === "fornecedor" ? "Novo fornecedor" : tipoFixo === "cliente" ? "Novo cliente" : "Novo contato")}
+            {titulo ??
+              (tipoFixo === "fornecedor"
+                ? "Novo fornecedor"
+                : tipoFixo === "cliente"
+                  ? "Novo cliente"
+                  : "Novo contato")}
           </DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
@@ -200,57 +248,157 @@ export function NovoContatoDialog({ empresaId, tipoFixo, titulo, open, onOpenCha
                 className="h-10 rounded-xl"
               />
               <Button
-                type="button" variant="outline" onClick={() => void lookupCnpj()}
-                disabled={lookingUp || !form.documento} className="h-10 rounded-xl"
+                type="button"
+                variant="outline"
+                onClick={() => void lookupCnpj()}
+                disabled={lookingUp || !form.documento}
+                className="h-10 rounded-xl"
                 title="Buscar dados na Receita"
               >
-                {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                {lookingUp ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-[1fr_140px]">
-            <div><Label>Nome / Razão social *</Label><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} className="h-10 rounded-xl" /></div>
-            <div><Label>IE</Label><Input value={form.ie} onChange={(e) => setForm({ ...form, ie: e.target.value })} className="h-10 rounded-xl" /></div>
+            <div>
+              <Label>Nome / Razão social *</Label>
+              <Input
+                required
+                value={form.nome}
+                onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                className="h-10 rounded-xl"
+              />
+            </div>
+            <div>
+              <Label>IE</Label>
+              <Input
+                value={form.ie}
+                onChange={(e) => setForm({ ...form, ie: e.target.value })}
+                className="h-10 rounded-xl"
+              />
+            </div>
           </div>
           {!tipoFixo && (
             <div>
               <Label>Tipo *</Label>
               <div className="flex gap-4 mt-2">
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <Checkbox checked={form.isCliente} onCheckedChange={(v) => setForm({ ...form, isCliente: v === true })} />
+                  <Checkbox
+                    checked={form.isCliente}
+                    onCheckedChange={(v) => setForm({ ...form, isCliente: v === true })}
+                  />
                   Cliente
                 </label>
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <Checkbox checked={form.isFornecedor} onCheckedChange={(v) => setForm({ ...form, isFornecedor: v === true })} />
+                  <Checkbox
+                    checked={form.isFornecedor}
+                    onCheckedChange={(v) => setForm({ ...form, isFornecedor: v === true })}
+                  />
                   Fornecedor
                 </label>
               </div>
             </div>
           )}
           <div className="grid gap-3 sm:grid-cols-2">
-            <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="h-10 rounded-xl" /></div>
-            <div><Label>Telefone</Label><Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} className="h-10 rounded-xl" /></div>
+            <div>
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="h-10 rounded-xl"
+              />
+            </div>
+            <div>
+              <Label>Telefone</Label>
+              <Input
+                value={form.telefone}
+                onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+                className="h-10 rounded-xl"
+              />
+            </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-[160px_1fr]">
-            <div><Label>CEP</Label><Input value={form.cep} onChange={(e) => setForm({ ...form, cep: e.target.value })} className="h-10 rounded-xl" /></div>
-            <div><Label>Logradouro</Label><Input value={form.logradouro} onChange={(e) => setForm({ ...form, logradouro: e.target.value })} className="h-10 rounded-xl" /></div>
+            <div>
+              <Label>CEP</Label>
+              <Input
+                value={form.cep}
+                onChange={(e) => setForm({ ...form, cep: e.target.value })}
+                className="h-10 rounded-xl"
+              />
+            </div>
+            <div>
+              <Label>Logradouro</Label>
+              <Input
+                value={form.logradouro}
+                onChange={(e) => setForm({ ...form, logradouro: e.target.value })}
+                className="h-10 rounded-xl"
+              />
+            </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-[140px_1fr]">
-            <div><Label>Número</Label><Input value={form.numero} onChange={(e) => setForm({ ...form, numero: e.target.value })} className="h-10 rounded-xl" /></div>
-            <div><Label>Complemento</Label><Input value={form.complemento} onChange={(e) => setForm({ ...form, complemento: e.target.value })} className="h-10 rounded-xl" /></div>
+            <div>
+              <Label>Número</Label>
+              <Input
+                value={form.numero}
+                onChange={(e) => setForm({ ...form, numero: e.target.value })}
+                className="h-10 rounded-xl"
+              />
+            </div>
+            <div>
+              <Label>Complemento</Label>
+              <Input
+                value={form.complemento}
+                onChange={(e) => setForm({ ...form, complemento: e.target.value })}
+                className="h-10 rounded-xl"
+              />
+            </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
-            <div><Label>Bairro</Label><Input value={form.bairro} onChange={(e) => setForm({ ...form, bairro: e.target.value })} className="h-10 rounded-xl" /></div>
-            <div><Label>Cidade</Label><Input value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} className="h-10 rounded-xl" /></div>
-            <div><Label>UF</Label><Input maxLength={2} value={form.uf} onChange={(e) => setForm({ ...form, uf: e.target.value.toUpperCase() })} className="h-10 rounded-xl" /></div>
+            <div>
+              <Label>Bairro</Label>
+              <Input
+                value={form.bairro}
+                onChange={(e) => setForm({ ...form, bairro: e.target.value })}
+                className="h-10 rounded-xl"
+              />
+            </div>
+            <div>
+              <Label>Cidade</Label>
+              <Input
+                value={form.cidade}
+                onChange={(e) => setForm({ ...form, cidade: e.target.value })}
+                className="h-10 rounded-xl"
+              />
+            </div>
+            <div>
+              <Label>UF</Label>
+              <Input
+                maxLength={2}
+                value={form.uf}
+                onChange={(e) => setForm({ ...form, uf: e.target.value.toUpperCase() })}
+                className="h-10 rounded-xl"
+              />
+            </div>
           </div>
           <div>
             <Label>Observações</Label>
-            <Textarea rows={3} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} className="rounded-xl" />
+            <Textarea
+              rows={3}
+              value={form.observacoes}
+              onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
+              className="rounded-xl"
+            />
           </div>
         </div>
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="h-10 rounded-xl">Cancelar</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="h-10 rounded-xl">
+            Cancelar
+          </Button>
           <Button
             onClick={() => void salvar()}
             disabled={salvando || (!form.isCliente && !form.isFornecedor)}

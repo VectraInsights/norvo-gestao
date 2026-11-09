@@ -4,7 +4,13 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-export type ComboOption = { value: string; label: string; icone?: string; busca?: string; detalhe?: string };
+export type ComboOption = {
+  value: string;
+  label: string;
+  icone?: string;
+  busca?: string;
+  detalhe?: string;
+};
 
 type Props = {
   value: string;
@@ -24,11 +30,7 @@ type Props = {
 };
 
 const norm = (s: string) =>
-  (s ?? "")
-    .trim()
-    .toLocaleLowerCase("pt-BR")
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "");
+  (s ?? "").trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[̀-ͯ]/g, "");
 
 // Limite de linhas renderizadas: evita travar a rolagem com listas longas
 // (o usuário refina digitando na busca).
@@ -124,11 +126,23 @@ export function Combobox({
           type="button"
           aria-expanded={open}
           disabled={disabled}
-          className={cn("h-10 w-full justify-between rounded-xl px-3 font-normal shadow-sm transition-all hover:shadow-md", className)}
+          className={cn(
+            "h-10 w-full justify-between rounded-xl px-3 font-normal shadow-sm transition-all hover:shadow-md",
+            className,
+          )}
         >
-          <span className={cn("flex min-w-0 items-center gap-2 truncate text-[15px]", !sel && "text-muted-foreground")}>
+          <span
+            className={cn(
+              "flex min-w-0 items-center gap-2 truncate text-[15px]",
+              !sel && "text-muted-foreground",
+            )}
+          >
             {sel?.icone && (
-              <img src={sel.icone} alt="" className="h-6 w-6 rounded-lg object-contain bg-white p-0.5 ring-1 ring-border shrink-0" />
+              <img
+                src={sel.icone}
+                alt=""
+                className="h-6 w-6 rounded-lg object-contain bg-white p-0.5 ring-1 ring-border shrink-0"
+              />
             )}
             <span className="truncate">{sel ? rotulo(sel) : placeholder}</span>
           </span>
@@ -138,8 +152,17 @@ export function Combobox({
               tabIndex={0}
               aria-label="Limpar seleção"
               onMouseDown={(e) => e.preventDefault()}
-              onClick={(e) => { e.stopPropagation(); onChange(""); }}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onChange(""); } }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange("");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onChange("");
+                }
+              }}
               className="ml-2 grid h-5 w-5 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <X className="h-3.5 w-3.5" />
@@ -149,7 +172,10 @@ export function Combobox({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[min(28rem,90vw)] overflow-hidden rounded-2xl p-0 shadow-xl" align="start">
+      <PopoverContent
+        className="w-[min(28rem,90vw)] overflow-hidden rounded-2xl p-0 shadow-xl"
+        align="start"
+      >
         <div className="flex items-center border-b px-3">
           <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
           <input
@@ -189,13 +215,26 @@ export function Combobox({
                   hl === i && "bg-accent text-accent-foreground",
                 )}
               >
-                <Check className={cn("mr-2 h-4 w-4 shrink-0", value === o.value ? "opacity-100" : "opacity-0")} />
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4 shrink-0",
+                    value === o.value ? "opacity-100" : "opacity-0",
+                  )}
+                />
                 {o.icone && (
-                  <img src={o.icone} alt="" className="mr-2 h-6 w-6 rounded-lg object-contain bg-white p-0.5 ring-1 ring-border shrink-0" />
+                  <img
+                    src={o.icone}
+                    alt=""
+                    className="mr-2 h-6 w-6 rounded-lg object-contain bg-white p-0.5 ring-1 ring-border shrink-0"
+                  />
                 )}
                 <span className="min-w-0 flex-1 text-left">
                   <span className="block truncate whitespace-nowrap text-[15px]">{rotulo(o)}</span>
-                  {o.detalhe && <span className="block truncate text-xs text-muted-foreground">{o.detalhe}</span>}
+                  {o.detalhe && (
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {o.detalhe}
+                    </span>
+                  )}
                 </span>
               </button>
             </li>
@@ -214,7 +253,8 @@ export function Combobox({
               footer.onClick();
             }}
           >
-            <Plus className="h-3.5 w-3.5" />{footer.label}
+            <Plus className="h-3.5 w-3.5" />
+            {footer.label}
           </button>
         )}
       </PopoverContent>

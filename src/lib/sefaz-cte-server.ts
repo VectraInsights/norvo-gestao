@@ -1,178 +1,388 @@
 import { createServerFn } from "@tanstack/react-start";
 import { SEFAZ_AMBIENTE, SEFAZ_TP_AMB, maskDoc } from "@/lib/sefaz-ambiente";
-const SEFAZ_URL = (() => { try { const imp = typeof import.meta !== "undefined" ? (import.meta as any).env : undefined; const a = imp?.SEFAZ_URL || imp?.VITE_SEFAZ_URL || ""; const b = typeof process !== "undefined" ? (process.env.SEFAZ_URL || process.env.VITE_SEFAZ_URL || "") : ""; return a || b; } catch { return ""; } })();
+const SEFAZ_URL = (() => {
+  try {
+    const imp = typeof import.meta !== "undefined" ? (import.meta as any).env : undefined;
+    const a = imp?.SEFAZ_URL || imp?.VITE_SEFAZ_URL || "";
+    const b =
+      typeof process !== "undefined"
+        ? process.env.SEFAZ_URL || process.env.VITE_SEFAZ_URL || ""
+        : "";
+    return a || b;
+  } catch {
+    return "";
+  }
+})();
 async function callProxy(action: string, body: Record<string, unknown>) {
-  const res = await fetch(SEFAZ_URL, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY || ""}` }, body: JSON.stringify({ action, ...body, ambiente: SEFAZ_AMBIENTE, tpAmb: SEFAZ_TP_AMB }) });
-  if (!res.ok) throw new Error((await res.json().catch(() => ({ error: `HTTP ${res.status}` }))).error);
+  const res = await fetch(SEFAZ_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY || ""}`,
+    },
+    body: JSON.stringify({ action, ...body, ambiente: SEFAZ_AMBIENTE, tpAmb: SEFAZ_TP_AMB }),
+  });
+  if (!res.ok)
+    throw new Error((await res.json().catch(() => ({ error: `HTTP ${res.status}` }))).error);
   return res.json();
 }
-export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { empresaId: string; input: any; form?: any }) => d).handler(async ({ data }) => {
-  if (SEFAZ_URL) return callProxy("emitirCte", data);
-  const { buscarCertificadoAtivo, buildCteXml, formUfsDoXml, emitirCte } = await import("@/lib/sefaz-cte");
-  const cert = await buscarCertificadoAtivo(data.empresaId);
-  const { createClient } = await import("@supabase/supabase-js");
-  const supa = createClient(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
-  const { data: emp } = await supa.from("empresas").select("cnpj, uf, ie, nome_fantasia, razao_social, logradouro, numero, bairro, cidade, cep, regime_tributario").eq("id", data.empresaId).single();
-  const ambiente = SEFAZ_AMBIENTE;
-  console.log(`[CTE-DEBUG] empresa=${data.empresaId} ambiente=${ambiente} tpAmb=${SEFAZ_TP_AMB} configIgnorada=true`);
-  const { data: ultimos } = await supa.from("cte_documentos").select("numero").eq("empresa_id", data.empresaId).eq("ambiente", ambiente).order("created_at",{ascending:false}).limit(50);
-  const baseNum = Math.max(0, ...(((ultimos as any[]) || []).map(r => parseInt((r as any)?.numero || "0", 10) || 0)));
-  const proximo = ambiente === "homologacao"
-    ? String(Math.max(baseNum + 1, 500))
-    : String(baseNum + 1);
-  const cli = data.input.emit || {};
-  const form = (data.input as any).form || {};
-  const emitCnpj = emp?.cnpj || cli.cnpj || "";
-  const emitUf = emp?.uf || cli.uf || "MG";
-  console.log("[CTE-DEBUG] empCnpj:", maskDoc(emp?.cnpj), "empUf:", emp?.uf, "emitCnpj:", maskDoc(emitCnpj), "emitUf:", emitUf, "ambiente:", ambiente);
-  console.log("[CTE-DEBUG] form campos:", Object.keys(form).length, "tomador:", maskDoc(form.cnpjTomador));
-  const input = { ...data.input, ambiente, numero: proximo, serie: data.input.serie || "1",
-    cfop: data.input.cfop || form.cfop || "6352",
-    vPrest: Number(data.input.vPrest || form.vPrest || 0),
-    vCarga: Number(data.input.vCarga || form.vCarga || 0),
-    pesoKg: Number(data.input.pesoKg || form.peso || 0),
-    cMunEnv: data.input.cMunEnv || form.cMunEnv || "3106209",
-    xMunEnv: data.input.xMunEnv || form.xMunEnv || "FORMIGA",
-    ufEnv: data.input.ufEnv || form.ufEnv || "MG",
-    cMunIni: data.input.cMunIni || form.cMunIni || "3106209",
-    xMunIni: data.input.xMunIni || form.xMunIni || "FORMIGA",
-    ufIni: data.input.ufIni || form.ufIni || "MG",
-    cMunFim: data.input.cMunFim || form.cMunFim || "3106209",
-    xMunFim: data.input.xMunFim || form.xMunFim || "FORMIGA",
-    ufFim: data.input.ufFim || form.ufFim || "MG",
-    chavesNFe: data.input.chavesNFe || [],
-    tomador: data.input.tomador || {
-      toma: form.toma || "0",
-      cnpj: (form.cnpjTomador || "").replace(/\D/g,""),
-      xNome: form.xNomeTomador || "",
-      ie: form.ieTomador || "",
-      uf: form.ufTomador || "MG",
-      cMun: form.cMunTomador || "3106209",
-      xMun: form.xMunTomador || "",
-      cep: form.cepTomador || "",
-      logradouro: form.logradouroTomador || "",
-      nro: form.nroTomador || "",
-      bairro: form.bairroTomador || "",
-      fone: form.foneTomador || "",
-      email: form.emailTomador || "",
-    },
-    emit: {
-      cnpj: emitCnpj,
-      xNome: cli.xNome || emp?.razao_social || emp?.nome_fantasia || "EMITENTE",
-      ie: cli.ie || emp?.ie || "ISENTO",
-      uf: emitUf,
-      cMun: cli.cMun || "3106200",
-      xMun: cli.xMun || emp?.cidade || "BELO HORIZONTE",
-      crt: cli.crt || emp?.regime_tributario || "3",
-      logradouro: cli.logradouro || emp?.logradouro || "RUA",
-      nro: cli.nro || emp?.numero || "SN",
-      complemento: cli.complemento || emp?.complemento || "",
-      bairro: cli.bairro || emp?.bairro || "CENTRO",
-      cep: cli.cep || emp?.cep || "00000000",
-    },
-    modalRod: data.input.modalRod || { rntrc: form.rntrc || "ISENTO" },
-    icms: data.input.icms || { CST: form.icmsCST || "00", vBC: Number(form.icmsBase || 0), pICMS: Number(form.icmsAliq || 7), vICMS: Number(form.icmsValor || 0) },
-  };
-  console.log("[CTE-DEBUG] tomador xNome:", input.tomador?.xNome, "CNPJ:", maskDoc(input.tomador?.cnpj));
-  console.log("[CTE-DEBUG] rem/dest:", JSON.stringify({ toma: (input as any).tomador?.toma ?? (input as any).toma, modelo: (input as any).modelo, rem: (input as any).rem?.xNome, dest: (input as any).dest?.xNome }));
-  const { xml, chave } = buildCteXml(input);
-  console.info("[CTE] XML gerado", { chave: maskDoc(chave), bytes: Buffer.byteLength(xml, "utf8") });
-  console.info("[CTE] dados de emissão preparados", { temTomador: Boolean(input.tomador), temEmitente: Boolean(input.emit) });
-  const ret = await emitirCte(cert.pfx, cert.senha, xml, ambiente, cert.uf);
-  if (ret.sucesso) {
-    await supa.from("cte_documentos").insert({ empresa_id: data.empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "autorizado", xml_assinado: JSON.stringify({ xml, form: formUfsDoXml(xml, (data as any).form || {}) }), protocolo_sefaz: ret.protocolo, ambiente, data_autorizacao: new Date().toISOString(), valor_servico: input.vPrest, peso_carga: input.pesoKg, responsavel_emissao: (data as any).responsavel || null } as any);
-    // Baixa as NF-es (fonte da verdade no servidor — front repete por segurança)
-    const chUsadas = (input.chavesNFe || []).map((c: any) => String(c).replace(/\D/g, "")).filter(Boolean);
-    if (chUsadas.length > 0) await supa.from("cte_nfes_pendentes" as any).update({ status: "embarcada" }).in("chave", chUsadas).eq("empresa_id", data.empresaId);
-  } else {
-    await supa.from("cte_documentos").insert({ empresa_id: data.empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "rejeitado", xml_assinado: xml, motivo_rejeicao: ret.xMotivo, ambiente } as any);
-  }
-  return { ...ret, chave, xml };
-});
-export const consultarCteFn = createServerFn({ method: "POST" }).validator((d:{empresaId:string;chave:string})=>d).handler(async ({data})=>{
-  if(SEFAZ_URL) return callProxy("consultarCte", data);
-  const { buscarCertificadoAtivo, consultarCte } = await import("@/lib/sefaz-cte");
-  const cert=await buscarCertificadoAtivo(data.empresaId);
-  const ambiente = SEFAZ_AMBIENTE;
-  console.log(`[CTE-DEBUG] empresa=${data.empresaId} acao=consultar ambiente=${ambiente} tpAmb=${SEFAZ_TP_AMB} configIgnorada=true`);
-  return consultarCte(cert.pfx, cert.senha, data.chave, ambiente, cert.uf);
-});
-export const consultarCteChaveFn = createServerFn({ method: "POST" }).validator((d:{empresaId:string;chave:string})=>d).handler(async ({data})=>{
-  if(SEFAZ_URL) return callProxy("consultarCteChave", data);
-  const { buscarCertificadoAtivo, consultarCtePorChave } = await import("@/lib/sefaz-cte");
-  const cert=await buscarCertificadoAtivo(data.empresaId);
-  const ambiente = SEFAZ_AMBIENTE;
-  console.log(`[CTE-DEBUG] empresa=${data.empresaId} acao=consultarChave ambiente=${ambiente} tpAmb=${SEFAZ_TP_AMB} configIgnorada=true`);
-  return consultarCtePorChave(cert.pfx, cert.senha, data.chave, ambiente, cert.cnpj, cert.uf);
-});
-export const previewCteXmlFn = createServerFn({ method: "POST" }).validator((d: { empresaId: string; input: any }) => d).handler(async ({ data }) => {
-  const { buildCteXml } = await import("@/lib/sefaz-cte");
-  const { createClient } = await import("@supabase/supabase-js");
-  const supa = createClient(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
-  const { data: emp } = await supa.from("empresas").select("cnpj, uf, ie, nome_fantasia, razao_social, logradouro, numero, complemento, bairro, cidade, cep, regime_tributario").eq("id", data.empresaId).single();
-  const ambiente = SEFAZ_AMBIENTE;
-  console.log(`[CTE-DEBUG] empresa=${data.empresaId} acao=preview ambiente=${ambiente} tpAmb=${SEFAZ_TP_AMB} configIgnorada=true`);
-  const { data: ultimos } = await supa.from("cte_documentos").select("numero").eq("empresa_id", data.empresaId).eq("ambiente", ambiente).order("created_at",{ascending:false}).limit(50);
-  const baseNum = Math.max(0, ...(((ultimos as any[]) || []).map(r => parseInt((r as any)?.numero || "0", 10) || 0)));
-  const proximo = ambiente === "homologacao"
-    ? String(Math.max(baseNum + 1, 500))
-    : String(baseNum + 1);
-  const cli = data.input.emit || {};
-  const emitCnpj = emp?.cnpj || cli.cnpj || "";
-  const emitUf = emp?.uf || cli.uf || "MG";
-  const input = { ...data.input, ambiente, numero: proximo, serie: data.input.serie || "1", emit: {
-    cnpj: emitCnpj,
-    xNome: cli.xNome || emp?.razao_social || emp?.nome_fantasia || "EMITENTE",
-    ie: cli.ie || emp?.ie || "ISENTO",
-    uf: emitUf,
-    cMun: cli.cMun || "3106200",
-    xMun: cli.xMun || emp?.cidade || "BELO HORIZONTE",
-    crt: cli.crt || emp?.regime_tributario || "3",
-    logradouro: cli.logradouro || emp?.logradouro || "RUA",
-    nro: cli.nro || emp?.numero || "SN",
-    complemento: cli.complemento || emp?.complemento || "",
-    bairro: cli.bairro || emp?.bairro || "CENTRO",
-    cep: cli.cep || emp?.cep || "00000000",
-  } };
-  const { xml, chave } = buildCteXml(input);
-  return { xml, chave, proximo, ambiente, form: data.input };
-});
+export const emitirCteFn = createServerFn({ method: "POST" })
+  .validator((d: { empresaId: string; input: any; form?: any }) => d)
+  .handler(async ({ data }) => {
+    if (SEFAZ_URL) return callProxy("emitirCte", data);
+    const { buscarCertificadoAtivo, buildCteXml, formUfsDoXml, emitirCte } =
+      await import("@/lib/sefaz-cte");
+    const cert = await buscarCertificadoAtivo(data.empresaId);
+    const { createClient } = await import("@supabase/supabase-js");
+    const supa = createClient(
+      process.env.SUPABASE_URL || "",
+      process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+    );
+    const { data: emp } = await supa
+      .from("empresas")
+      .select(
+        "cnpj, uf, ie, nome_fantasia, razao_social, logradouro, numero, bairro, cidade, cep, regime_tributario",
+      )
+      .eq("id", data.empresaId)
+      .single();
+    const ambiente = SEFAZ_AMBIENTE;
+    console.log(
+      `[CTE-DEBUG] empresa=${data.empresaId} ambiente=${ambiente} tpAmb=${SEFAZ_TP_AMB} configIgnorada=true`,
+    );
+    const { data: ultimos } = await supa
+      .from("cte_documentos")
+      .select("numero")
+      .eq("empresa_id", data.empresaId)
+      .eq("ambiente", ambiente)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    const baseNum = Math.max(
+      0,
+      ...((ultimos as any[]) || []).map((r) => parseInt((r as any)?.numero || "0", 10) || 0),
+    );
+    const proximo =
+      ambiente === "homologacao" ? String(Math.max(baseNum + 1, 500)) : String(baseNum + 1);
+    const cli = data.input.emit || {};
+    const form = (data.input as any).form || {};
+    const emitCnpj = emp?.cnpj || cli.cnpj || "";
+    const emitUf = emp?.uf || cli.uf || "MG";
+    console.log(
+      "[CTE-DEBUG] empCnpj:",
+      maskDoc(emp?.cnpj),
+      "empUf:",
+      emp?.uf,
+      "emitCnpj:",
+      maskDoc(emitCnpj),
+      "emitUf:",
+      emitUf,
+      "ambiente:",
+      ambiente,
+    );
+    console.log(
+      "[CTE-DEBUG] form campos:",
+      Object.keys(form).length,
+      "tomador:",
+      maskDoc(form.cnpjTomador),
+    );
+    const input = {
+      ...data.input,
+      ambiente,
+      numero: proximo,
+      serie: data.input.serie || "1",
+      cfop: data.input.cfop || form.cfop || "6352",
+      vPrest: Number(data.input.vPrest || form.vPrest || 0),
+      vCarga: Number(data.input.vCarga || form.vCarga || 0),
+      pesoKg: Number(data.input.pesoKg || form.peso || 0),
+      cMunEnv: data.input.cMunEnv || form.cMunEnv || "3106209",
+      xMunEnv: data.input.xMunEnv || form.xMunEnv || "FORMIGA",
+      ufEnv: data.input.ufEnv || form.ufEnv || "MG",
+      cMunIni: data.input.cMunIni || form.cMunIni || "3106209",
+      xMunIni: data.input.xMunIni || form.xMunIni || "FORMIGA",
+      ufIni: data.input.ufIni || form.ufIni || "MG",
+      cMunFim: data.input.cMunFim || form.cMunFim || "3106209",
+      xMunFim: data.input.xMunFim || form.xMunFim || "FORMIGA",
+      ufFim: data.input.ufFim || form.ufFim || "MG",
+      chavesNFe: data.input.chavesNFe || [],
+      tomador: data.input.tomador || {
+        toma: form.toma || "0",
+        cnpj: (form.cnpjTomador || "").replace(/\D/g, ""),
+        xNome: form.xNomeTomador || "",
+        ie: form.ieTomador || "",
+        uf: form.ufTomador || "MG",
+        cMun: form.cMunTomador || "3106209",
+        xMun: form.xMunTomador || "",
+        cep: form.cepTomador || "",
+        logradouro: form.logradouroTomador || "",
+        nro: form.nroTomador || "",
+        bairro: form.bairroTomador || "",
+        fone: form.foneTomador || "",
+        email: form.emailTomador || "",
+      },
+      emit: {
+        cnpj: emitCnpj,
+        xNome: cli.xNome || emp?.razao_social || emp?.nome_fantasia || "EMITENTE",
+        ie: cli.ie || emp?.ie || "ISENTO",
+        uf: emitUf,
+        cMun: cli.cMun || "3106200",
+        xMun: cli.xMun || emp?.cidade || "BELO HORIZONTE",
+        crt: cli.crt || emp?.regime_tributario || "3",
+        logradouro: cli.logradouro || emp?.logradouro || "RUA",
+        nro: cli.nro || emp?.numero || "SN",
+        complemento: cli.complemento || emp?.complemento || "",
+        bairro: cli.bairro || emp?.bairro || "CENTRO",
+        cep: cli.cep || emp?.cep || "00000000",
+      },
+      modalRod: data.input.modalRod || { rntrc: form.rntrc || "ISENTO" },
+      icms: data.input.icms || {
+        CST: form.icmsCST || "00",
+        vBC: Number(form.icmsBase || 0),
+        pICMS: Number(form.icmsAliq || 7),
+        vICMS: Number(form.icmsValor || 0),
+      },
+    };
+    console.log(
+      "[CTE-DEBUG] tomador xNome:",
+      input.tomador?.xNome,
+      "CNPJ:",
+      maskDoc(input.tomador?.cnpj),
+    );
+    console.log(
+      "[CTE-DEBUG] rem/dest:",
+      JSON.stringify({
+        toma: (input as any).tomador?.toma ?? (input as any).toma,
+        modelo: (input as any).modelo,
+        rem: (input as any).rem?.xNome,
+        dest: (input as any).dest?.xNome,
+      }),
+    );
+    const { xml, chave } = buildCteXml(input);
+    console.info("[CTE] XML gerado", {
+      chave: maskDoc(chave),
+      bytes: Buffer.byteLength(xml, "utf8"),
+    });
+    console.info("[CTE] dados de emissão preparados", {
+      temTomador: Boolean(input.tomador),
+      temEmitente: Boolean(input.emit),
+    });
+    const ret = await emitirCte(cert.pfx, cert.senha, xml, ambiente, cert.uf);
+    if (ret.sucesso) {
+      await supa.from("cte_documentos").insert({
+        empresa_id: data.empresaId,
+        chave_acesso: chave,
+        numero: proximo,
+        serie: input.serie,
+        status: "autorizado",
+        xml_assinado: JSON.stringify({ xml, form: formUfsDoXml(xml, (data as any).form || {}) }),
+        protocolo_sefaz: ret.protocolo,
+        ambiente,
+        data_autorizacao: new Date().toISOString(),
+        valor_servico: input.vPrest,
+        peso_carga: input.pesoKg,
+        responsavel_emissao: (data as any).responsavel || null,
+      } as any);
+      // Baixa as NF-es (fonte da verdade no servidor — front repete por segurança)
+      const chUsadas = (input.chavesNFe || [])
+        .map((c: any) => String(c).replace(/\D/g, ""))
+        .filter(Boolean);
+      if (chUsadas.length > 0)
+        await supa
+          .from("cte_nfes_pendentes" as any)
+          .update({ status: "embarcada" })
+          .in("chave", chUsadas)
+          .eq("empresa_id", data.empresaId);
+    } else {
+      await supa.from("cte_documentos").insert({
+        empresa_id: data.empresaId,
+        chave_acesso: chave,
+        numero: proximo,
+        serie: input.serie,
+        status: "rejeitado",
+        xml_assinado: xml,
+        motivo_rejeicao: ret.xMotivo,
+        ambiente,
+      } as any);
+    }
+    return { ...ret, chave, xml };
+  });
+export const consultarCteFn = createServerFn({ method: "POST" })
+  .validator((d: { empresaId: string; chave: string }) => d)
+  .handler(async ({ data }) => {
+    if (SEFAZ_URL) return callProxy("consultarCte", data);
+    const { buscarCertificadoAtivo, consultarCte } = await import("@/lib/sefaz-cte");
+    const cert = await buscarCertificadoAtivo(data.empresaId);
+    const ambiente = SEFAZ_AMBIENTE;
+    console.log(
+      `[CTE-DEBUG] empresa=${data.empresaId} acao=consultar ambiente=${ambiente} tpAmb=${SEFAZ_TP_AMB} configIgnorada=true`,
+    );
+    return consultarCte(cert.pfx, cert.senha, data.chave, ambiente, cert.uf);
+  });
+export const consultarCteChaveFn = createServerFn({ method: "POST" })
+  .validator((d: { empresaId: string; chave: string }) => d)
+  .handler(async ({ data }) => {
+    if (SEFAZ_URL) return callProxy("consultarCteChave", data);
+    const { buscarCertificadoAtivo, consultarCtePorChave } = await import("@/lib/sefaz-cte");
+    const cert = await buscarCertificadoAtivo(data.empresaId);
+    const ambiente = SEFAZ_AMBIENTE;
+    console.log(
+      `[CTE-DEBUG] empresa=${data.empresaId} acao=consultarChave ambiente=${ambiente} tpAmb=${SEFAZ_TP_AMB} configIgnorada=true`,
+    );
+    return consultarCtePorChave(cert.pfx, cert.senha, data.chave, ambiente, cert.cnpj, cert.uf);
+  });
+export const previewCteXmlFn = createServerFn({ method: "POST" })
+  .validator((d: { empresaId: string; input: any }) => d)
+  .handler(async ({ data }) => {
+    const { buildCteXml } = await import("@/lib/sefaz-cte");
+    const { createClient } = await import("@supabase/supabase-js");
+    const supa = createClient(
+      process.env.SUPABASE_URL || "",
+      process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+    );
+    const { data: emp } = await supa
+      .from("empresas")
+      .select(
+        "cnpj, uf, ie, nome_fantasia, razao_social, logradouro, numero, complemento, bairro, cidade, cep, regime_tributario",
+      )
+      .eq("id", data.empresaId)
+      .single();
+    const ambiente = SEFAZ_AMBIENTE;
+    console.log(
+      `[CTE-DEBUG] empresa=${data.empresaId} acao=preview ambiente=${ambiente} tpAmb=${SEFAZ_TP_AMB} configIgnorada=true`,
+    );
+    const { data: ultimos } = await supa
+      .from("cte_documentos")
+      .select("numero")
+      .eq("empresa_id", data.empresaId)
+      .eq("ambiente", ambiente)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    const baseNum = Math.max(
+      0,
+      ...((ultimos as any[]) || []).map((r) => parseInt((r as any)?.numero || "0", 10) || 0),
+    );
+    const proximo =
+      ambiente === "homologacao" ? String(Math.max(baseNum + 1, 500)) : String(baseNum + 1);
+    const cli = data.input.emit || {};
+    const emitCnpj = emp?.cnpj || cli.cnpj || "";
+    const emitUf = emp?.uf || cli.uf || "MG";
+    const input = {
+      ...data.input,
+      ambiente,
+      numero: proximo,
+      serie: data.input.serie || "1",
+      emit: {
+        cnpj: emitCnpj,
+        xNome: cli.xNome || emp?.razao_social || emp?.nome_fantasia || "EMITENTE",
+        ie: cli.ie || emp?.ie || "ISENTO",
+        uf: emitUf,
+        cMun: cli.cMun || "3106200",
+        xMun: cli.xMun || emp?.cidade || "BELO HORIZONTE",
+        crt: cli.crt || emp?.regime_tributario || "3",
+        logradouro: cli.logradouro || emp?.logradouro || "RUA",
+        nro: cli.nro || emp?.numero || "SN",
+        complemento: cli.complemento || emp?.complemento || "",
+        bairro: cli.bairro || emp?.bairro || "CENTRO",
+        cep: cli.cep || emp?.cep || "00000000",
+      },
+    };
+    const { xml, chave } = buildCteXml(input);
+    return { xml, chave, proximo, ambiente, form: data.input };
+  });
 
-export const cancelarCteFn = createServerFn({ method: "POST" }).validator((d:{empresaId:string;chave:string;justificativa:string;protocolo?:string;ambiente?:string})=>d).handler(async ({data})=>{
-  if(SEFAZ_URL) return callProxy("cancelarCte", data);
-  const { buscarCertificadoAtivo, cancelarCte } = await import("@/lib/sefaz-cte");
-  const cert=await buscarCertificadoAtivo(data.empresaId);
-  const { createClient }=await import("@supabase/supabase-js");
-  const supa=createClient(process.env.SUPABASE_URL||"",process.env.SUPABASE_SERVICE_ROLE_KEY||"");
-  const ambiente = SEFAZ_AMBIENTE;
-  console.log(`[CTE-CANCEL] empresa=${data.empresaId} ambiente=${ambiente} tpAmb=${SEFAZ_TP_AMB} chave=${maskDoc(data.chave)} configIgnorada=true`);
-  const ret=await cancelarCte(cert.pfx, cert.senha, data.chave, data.justificativa, ambiente, cert.cnpj, cert.uf, data.protocolo);
-  if(ret.sucesso) {
-    await supa.from("cte_documentos").update({status:"cancelado"} as any).eq("chave_acesso",data.chave);
-    // Devolve as NF-es para pendentes (fonte da verdade no servidor)
-    const { extrairChavesNFeXml } = await import("@/lib/sefaz-cte");
-    const { data: docXml } = await supa.from("cte_documentos").select("xml_assinado").eq("chave_acesso", data.chave).maybeSingle();
-    let xmlStr = (docXml as any)?.xml_assinado || "";
-    try { const p = JSON.parse(xmlStr); if (p.xml) xmlStr = p.xml; } catch {}
-    const chavesNfe = extrairChavesNFeXml(xmlStr);
-    if (chavesNfe.length > 0) await supa.from("cte_nfes_pendentes" as any).update({ status: "pendente" }).in("chave", chavesNfe).eq("empresa_id", data.empresaId);
-  }
-  return ret;
-});
+export const cancelarCteFn = createServerFn({ method: "POST" })
+  .validator(
+    (d: {
+      empresaId: string;
+      chave: string;
+      justificativa: string;
+      protocolo?: string;
+      ambiente?: string;
+    }) => d,
+  )
+  .handler(async ({ data }) => {
+    if (SEFAZ_URL) return callProxy("cancelarCte", data);
+    const { buscarCertificadoAtivo, cancelarCte } = await import("@/lib/sefaz-cte");
+    const cert = await buscarCertificadoAtivo(data.empresaId);
+    const { createClient } = await import("@supabase/supabase-js");
+    const supa = createClient(
+      process.env.SUPABASE_URL || "",
+      process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+    );
+    const ambiente = SEFAZ_AMBIENTE;
+    console.log(
+      `[CTE-CANCEL] empresa=${data.empresaId} ambiente=${ambiente} tpAmb=${SEFAZ_TP_AMB} chave=${maskDoc(data.chave)} configIgnorada=true`,
+    );
+    const ret = await cancelarCte(
+      cert.pfx,
+      cert.senha,
+      data.chave,
+      data.justificativa,
+      ambiente,
+      cert.cnpj,
+      cert.uf,
+      data.protocolo,
+    );
+    if (ret.sucesso) {
+      await supa
+        .from("cte_documentos")
+        .update({ status: "cancelado" } as any)
+        .eq("chave_acesso", data.chave);
+      // Devolve as NF-es para pendentes (fonte da verdade no servidor)
+      const { extrairChavesNFeXml } = await import("@/lib/sefaz-cte");
+      const { data: docXml } = await supa
+        .from("cte_documentos")
+        .select("xml_assinado")
+        .eq("chave_acesso", data.chave)
+        .maybeSingle();
+      let xmlStr = (docXml as any)?.xml_assinado || "";
+      try {
+        const p = JSON.parse(xmlStr);
+        if (p.xml) xmlStr = p.xml;
+      } catch {}
+      const chavesNfe = extrairChavesNFeXml(xmlStr);
+      if (chavesNfe.length > 0)
+        await supa
+          .from("cte_nfes_pendentes" as any)
+          .update({ status: "pendente" })
+          .in("chave", chavesNfe)
+          .eq("empresa_id", data.empresaId);
+    }
+    return ret;
+  });
 
-export const excluirRejeitadosCteFn = createServerFn({ method: "POST" }).validator((d:{empresaId:string})=>d).handler(async ({data})=>{
-  const { createClient }=await import("@supabase/supabase-js");
-  const supa=createClient(process.env.SUPABASE_URL||"",process.env.SUPABASE_SERVICE_ROLE_KEY||"");
-  const { error }=await supa.from("cte_documentos" as any).delete().eq("empresa_id",data.empresaId).eq("status","rejeitado");
-  if(error) throw new Error(error.message);
-  return { ok:true };
-});
+export const excluirRejeitadosCteFn = createServerFn({ method: "POST" })
+  .validator((d: { empresaId: string }) => d)
+  .handler(async ({ data }) => {
+    const { createClient } = await import("@supabase/supabase-js");
+    const supa = createClient(
+      process.env.SUPABASE_URL || "",
+      process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+    );
+    const { error } = await supa
+      .from("cte_documentos" as any)
+      .delete()
+      .eq("empresa_id", data.empresaId)
+      .eq("status", "rejeitado");
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
 
-export const enviarCceCteFn = createServerFn({ method: "POST" }).validator((d:{empresaId:string;chave:string;correcao:string})=>d).handler(async ({data})=>{
-  if(SEFAZ_URL) return callProxy("enviarCceCte", data);
-  const { buscarCertificadoAtivo, enviarCceCte } = await import("@/lib/sefaz-cte");
-  const cert=await buscarCertificadoAtivo(data.empresaId);
-  const ambiente = SEFAZ_AMBIENTE;
-  console.log(`[CTE-CCE] empresa=${data.empresaId} ambiente=${ambiente} chave=${maskDoc(data.chave)}`);
-  return enviarCceCte(cert.pfx, cert.senha, data.chave, data.correcao, ambiente, cert.cnpj, cert.uf);
-});
+export const enviarCceCteFn = createServerFn({ method: "POST" })
+  .validator((d: { empresaId: string; chave: string; correcao: string }) => d)
+  .handler(async ({ data }) => {
+    if (SEFAZ_URL) return callProxy("enviarCceCte", data);
+    const { buscarCertificadoAtivo, enviarCceCte } = await import("@/lib/sefaz-cte");
+    const cert = await buscarCertificadoAtivo(data.empresaId);
+    const ambiente = SEFAZ_AMBIENTE;
+    console.log(
+      `[CTE-CCE] empresa=${data.empresaId} ambiente=${ambiente} chave=${maskDoc(data.chave)}`,
+    );
+    return enviarCceCte(
+      cert.pfx,
+      cert.senha,
+      data.chave,
+      data.correcao,
+      ambiente,
+      cert.cnpj,
+      cert.uf,
+    );
+  });

@@ -14,8 +14,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 const isDesktop =
-  typeof window !== "undefined" &&
-  ["127.0.0.1", "localhost"].includes(window.location.hostname);
+  typeof window !== "undefined" && ["127.0.0.1", "localhost"].includes(window.location.hostname);
 
 export function friendlyAuthError(error: { message?: string } | null | undefined): string {
   const msg = error?.message ?? "";
@@ -26,8 +25,7 @@ export function friendlyAuthError(error: { message?: string } | null | undefined
     return "Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente novamente.";
   if (m.includes("already exists") || m.includes("already registered"))
     return "Já existe uma conta com este email. Tente entrar ou recuperar a senha.";
-  if (m.includes("invalid login credentials"))
-    return "Email ou senha incorretos.";
+  if (m.includes("invalid login credentials")) return "Email ou senha incorretos.";
   if (m.includes("email not confirmed"))
     return "Confirme seu email antes de entrar. Verifique a caixa de entrada e a pasta de spam/lixo eletrônico.";
   if (m.includes("signup") && (m.includes("not allowed") || m.includes("disabled")))
@@ -57,8 +55,7 @@ function AuthPage() {
     });
     // Troca do código OAuth pode terminar depois: navega assim que entrar.
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session)
-        navigate({ to: "/dashboard", replace: true });
+      if (event === "SIGNED_IN" && session) navigate({ to: "/dashboard", replace: true });
     });
     return () => {
       vivo = false;
@@ -70,7 +67,7 @@ function AuthPage() {
     if (isDesktop) {
       toast.info(
         "Entrar com Google está disponível apenas na versão web do Norvo. Neste aplicativo, use email e senha.",
-        { duration: 8000 }
+        { duration: 8000 },
       );
       return;
     }
@@ -101,8 +98,12 @@ function AuthPage() {
     e.preventDefault();
     setLoading(true);
     const { error } = await supabase.auth.signUp({
-      email, password,
-      options: { emailRedirectTo: window.location.origin + "/dashboard", data: { full_name: nome } },
+      email,
+      password,
+      options: {
+        emailRedirectTo: window.location.origin + "/dashboard",
+        data: { full_name: nome },
+      },
     });
     setLoading(false);
     if (error) return toast.error(friendlyAuthError(error));
@@ -111,7 +112,11 @@ function AuthPage() {
 
   if (checking) {
     return (
-      <main className="grid min-h-screen place-items-center bg-background px-4" aria-busy="true" aria-label="Conectando">
+      <main
+        className="grid min-h-screen place-items-center bg-background px-4"
+        aria-busy="true"
+        aria-label="Conectando"
+      >
         <div className="erp-surface flex flex-col items-center gap-3 rounded-2xl p-8 text-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
           <p className="text-sm font-medium">Conectando…</p>
@@ -133,9 +138,13 @@ function AuthPage() {
         </Link>
         <div>
           <p className="text-display text-4xl leading-tight tracking-tight xl:text-5xl">
-            "Menos abas abertas.<br /><em>Mais decisões tomadas.</em>"
+            "Menos abas abertas.
+            <br />
+            <em>Mais decisões tomadas.</em>"
           </p>
-          <p className="mt-5 max-w-md text-sm leading-relaxed text-primary-foreground/70">Gestão financeira, comercial, estoque e fiscal em um só ambiente.</p>
+          <p className="mt-5 max-w-md text-sm leading-relaxed text-primary-foreground/70">
+            Gestão financeira, comercial, estoque e fiscal em um só ambiente.
+          </p>
         </div>
         <p className="text-xs uppercase tracking-widest text-primary-foreground/60">Norvo · v0.1</p>
       </aside>
@@ -146,8 +155,18 @@ function AuthPage() {
           <h1 className="text-display text-3xl tracking-tight">Acesse sua conta</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">Ou crie uma nova em segundos.</p>
 
-          <Button variant="outline" className="mt-6 h-10 w-full rounded-xl shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={handleGoogle} disabled={loading}>
-            <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 10v4h5.5c-.7 2-2.6 3.5-5.5 3.5A5.5 5.5 0 016.5 12 5.5 5.5 0 0112 6.5c1.4 0 2.6.5 3.6 1.4L18.4 5C16.7 3.4 14.5 2.5 12 2.5A9.5 9.5 0 002.5 12 9.5 9.5 0 0012 21.5c5.4 0 9.3-3.8 9.3-9.2 0-.7-.1-1.4-.2-2H12z"/></svg>
+          <Button
+            variant="outline"
+            className="mt-6 h-10 w-full rounded-xl shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+            onClick={handleGoogle}
+            disabled={loading}
+          >
+            <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+              <path
+                fill="#EA4335"
+                d="M12 10v4h5.5c-.7 2-2.6 3.5-5.5 3.5A5.5 5.5 0 016.5 12 5.5 5.5 0 0112 6.5c1.4 0 2.6.5 3.6 1.4L18.4 5C16.7 3.4 14.5 2.5 12 2.5A9.5 9.5 0 002.5 12 9.5 9.5 0 0012 21.5c5.4 0 9.3-3.8 9.3-9.2 0-.7-.1-1.4-.2-2H12z"
+              />
+            </svg>
             Continuar com Google
           </Button>
 
@@ -162,9 +181,33 @@ function AuthPage() {
             </TabsList>
             <TabsContent value="login" className="mt-5">
               <form onSubmit={handleLogin} className="space-y-4">
-                <div className="grid gap-1.5"><Label htmlFor="e1">Email</Label><Input id="e1" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="h-10 rounded-xl" /></div>
-                <div className="grid gap-1.5"><Label htmlFor="p1">Senha</Label><Input id="p1" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="h-10 rounded-xl" /></div>
-                <Button type="submit" className="h-10 w-full rounded-xl shadow-sm transition-all hover:-translate-y-px hover:shadow-md" disabled={loading}>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="e1">Email</Label>
+                  <Input
+                    id="e1"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-10 rounded-xl"
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="p1">Senha</Label>
+                  <Input
+                    id="p1"
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-10 rounded-xl"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="h-10 w-full rounded-xl shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                  disabled={loading}
+                >
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Entrar
                 </Button>
                 <div className="text-right">
@@ -179,10 +222,44 @@ function AuthPage() {
             </TabsContent>
             <TabsContent value="signup" className="mt-5">
               <form onSubmit={handleSignup} className="space-y-4">
-                <div className="grid gap-1.5"><Label htmlFor="n2">Nome completo</Label><Input id="n2" required value={nome} onChange={(e) => setNome(e.target.value)} className="h-10 rounded-xl" /></div>
-                <div className="grid gap-1.5"><Label htmlFor="e2">Email</Label><Input id="e2" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="h-10 rounded-xl" /></div>
-                <div className="grid gap-1.5"><Label htmlFor="p2">Senha</Label><Input id="p2" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} className="h-10 rounded-xl" /></div>
-                <Button type="submit" className="h-10 w-full rounded-xl shadow-sm transition-all hover:-translate-y-px hover:shadow-md" disabled={loading}>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="n2">Nome completo</Label>
+                  <Input
+                    id="n2"
+                    required
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                    className="h-10 rounded-xl"
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="e2">Email</Label>
+                  <Input
+                    id="e2"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-10 rounded-xl"
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="p2">Senha</Label>
+                  <Input
+                    id="p2"
+                    type="password"
+                    required
+                    minLength={6}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-10 rounded-xl"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="h-10 w-full rounded-xl shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                  disabled={loading}
+                >
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Criar conta
                 </Button>
               </form>
@@ -190,7 +267,12 @@ function AuthPage() {
           </Tabs>
 
           <p className="mt-8 text-center text-xs text-muted-foreground">
-            <Link to="/" className="underline underline-offset-4 transition-colors hover:text-foreground">← Voltar para o site</Link>
+            <Link
+              to="/"
+              className="underline underline-offset-4 transition-colors hover:text-foreground"
+            >
+              ← Voltar para o site
+            </Link>
           </p>
         </div>
       </main>

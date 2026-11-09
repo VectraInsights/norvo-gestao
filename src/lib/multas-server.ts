@@ -27,8 +27,7 @@ async function assertAcessoEmpresa(token: string, empresaId: string) {
     .eq("empresa_id", empresaId)
     .eq("user_id", uid)
     .maybeSingle();
-  if (!(eu.data as any)?.user_id)
-    throw new Error("Você não tem acesso a esta empresa.");
+  if (!(eu.data as any)?.user_id) throw new Error("Você não tem acesso a esta empresa.");
 }
 
 export type SincronizarResultado = {
@@ -70,11 +69,9 @@ export const sincronizarMultasSENATRANFn = createServerFn({ method: "POST" })
       };
     }
 
-    const auth =
-      "Basic " + Buffer.from(`${c.usuario ?? ""}:${c.senha ?? ""}`).toString("base64");
+    const auth = "Basic " + Buffer.from(`${c.usuario ?? ""}:${c.senha ?? ""}`).toString("base64");
     const res = await fetch(c.endpoint, { headers: { Authorization: auth } });
-    if (!res.ok)
-      throw new Error(`SENATRAN respondeu HTTP ${res.status} ${res.statusText}`);
+    if (!res.ok) throw new Error(`SENATRAN respondeu HTTP ${res.status} ${res.statusText}`);
 
     const payload = (await res.json()) as {
       autuacoes?: Array<Record<string, unknown>>;

@@ -102,8 +102,7 @@ export function UsuariosPage() {
     const q = busca.trim().toLowerCase();
     return (lista.data ?? []).filter((m) => {
       if (!q) return true;
-      return (m.nome || "").toLowerCase().includes(q)
-        || (m.email || "").toLowerCase().includes(q);
+      return (m.nome || "").toLowerCase().includes(q) || (m.email || "").toLowerCase().includes(q);
     });
   }, [lista.data, busca]);
 
@@ -273,7 +272,11 @@ export function UsuariosPage() {
           </div>
         ) : !filtrados || filtrados.length === 0 ? (
           <div className="p-4 sm:p-6">
-            <EmptyState icon={Users} title="Nenhum usuário" description={busca ? "Nada encontrado para a busca." : "Crie o primeiro acesso."} />
+            <EmptyState
+              icon={Users}
+              title="Nenhum usuário"
+              description={busca ? "Nada encontrado para a busca." : "Crie o primeiro acesso."}
+            />
           </div>
         ) : (
           <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
@@ -309,59 +312,67 @@ export function UsuariosPage() {
                   <TableCell className="text-sm text-muted-foreground">{labelModulos(m)}</TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-lg"
-                          title="Editar permissões"
-                          onClick={() => abrirEdicao(m)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        {m.role !== "owner" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-lg"
+                        title="Editar permissões"
+                        onClick={() => abrirEdicao(m)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      {m.role !== "owner" && (
                         <>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-lg"
-                          title="Resetar senha"
-                          onClick={() => {
-                            setResetando(m);
-                            setNovaSenha(SENHA_PADRAO);
-                          }}
-                        >
-                          <KeyRound className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-lg"
-                              title="Remover acesso"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="rounded-2xl">
-                            <AlertDialogHeader className="gap-1.5">
-                              <AlertDialogTitle className="tracking-tight">Remover acesso de {m.nome}?</AlertDialogTitle>
-                              <AlertDialogDescription className="leading-relaxed">
-                                Ele perderá o acesso a esta empresa imediatamente. A conta de login
-                                continua existindo.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter className="gap-2">
-                              <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
-                              <AlertDialogAction data-acao onClick={() => remover.mutate(m.id)} className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                Remover
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-lg"
+                            title="Resetar senha"
+                            onClick={() => {
+                              setResetando(m);
+                              setNovaSenha(SENHA_PADRAO);
+                            }}
+                          >
+                            <KeyRound className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-lg"
+                                title="Remover acesso"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="rounded-2xl">
+                              <AlertDialogHeader className="gap-1.5">
+                                <AlertDialogTitle className="tracking-tight">
+                                  Remover acesso de {m.nome}?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className="leading-relaxed">
+                                  Ele perderá o acesso a esta empresa imediatamente. A conta de
+                                  login continua existindo.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter className="gap-2">
+                                <AlertDialogCancel className="h-10 rounded-xl">
+                                  Cancelar
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                  data-acao
+                                  onClick={() => remover.mutate(m.id)}
+                                  className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Remover
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </>
-                        )}
-                      </div>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -427,7 +438,10 @@ export function UsuariosPage() {
                 <Label>Módulos permitidos</Label>
                 <div className="grid grid-cols-1 gap-1 rounded-2xl border bg-muted/30 p-4 sm:grid-cols-2">
                   {MODULOS.map((m) => (
-                    <label key={m.key} className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-accent">
+                    <label
+                      key={m.key}
+                      className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-accent"
+                    >
                       <input
                         type="checkbox"
                         checked={formN.modulos.includes(m.key)}
@@ -447,10 +461,18 @@ export function UsuariosPage() {
             )}
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setOpenNovo(false)} className="h-10 rounded-xl">
+            <Button
+              variant="outline"
+              onClick={() => setOpenNovo(false)}
+              className="h-10 rounded-xl"
+            >
               Cancelar
             </Button>
-            <Button onClick={() => criar.mutate()} disabled={criar.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+            <Button
+              onClick={() => criar.mutate()}
+              disabled={criar.isPending}
+              className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+            >
               Criar acesso
             </Button>
           </DialogFooter>
@@ -467,7 +489,11 @@ export function UsuariosPage() {
             <div className="grid gap-4">
               <div className="grid gap-1.5">
                 <Label>Nome</Label>
-                <Input value={formE.nome} onChange={(e) => setFormE((f) => ({ ...f, nome: e.target.value }))} className="h-10 rounded-xl" />
+                <Input
+                  value={formE.nome}
+                  onChange={(e) => setFormE((f) => ({ ...f, nome: e.target.value }))}
+                  className="h-10 rounded-xl"
+                />
               </div>
               {editando.role !== "owner" && (
                 <div className="grid gap-1.5">
@@ -491,7 +517,10 @@ export function UsuariosPage() {
                   <Label>Módulos permitidos</Label>
                   <div className="grid grid-cols-1 gap-1 rounded-2xl border bg-muted/30 p-4 sm:grid-cols-2">
                     {MODULOS.map((m) => (
-                      <label key={m.key} className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-accent">
+                      <label
+                        key={m.key}
+                        className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-accent"
+                      >
                         <input
                           type="checkbox"
                           checked={formE.modulos.includes(m.key)}
@@ -512,7 +541,11 @@ export function UsuariosPage() {
             <Button variant="outline" onClick={() => setEditando(null)} className="h-10 rounded-xl">
               Cancelar
             </Button>
-            <Button onClick={() => salvarEdicao.mutate()} disabled={salvarEdicao.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+            <Button
+              onClick={() => salvarEdicao.mutate()}
+              disabled={salvarEdicao.isPending}
+              className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+            >
               Salvar
             </Button>
           </DialogFooter>
@@ -523,17 +556,31 @@ export function UsuariosPage() {
       <Dialog open={!!resetando} onOpenChange={(o) => !o && setResetando(null)}>
         <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
           <DialogHeader className="gap-1.5 pb-1">
-            <DialogTitle className="tracking-tight">Redefinir senha de {resetando?.nome}</DialogTitle>
+            <DialogTitle className="tracking-tight">
+              Redefinir senha de {resetando?.nome}
+            </DialogTitle>
           </DialogHeader>
           <div className="grid gap-1.5">
             <Label>Nova senha padrão</Label>
-            <Input value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} className="h-10 rounded-xl" />
+            <Input
+              value={novaSenha}
+              onChange={(e) => setNovaSenha(e.target.value)}
+              className="h-10 rounded-xl"
+            />
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setResetando(null)} className="h-10 rounded-xl">
+            <Button
+              variant="outline"
+              onClick={() => setResetando(null)}
+              className="h-10 rounded-xl"
+            >
               Cancelar
             </Button>
-            <Button onClick={() => resetar.mutate()} disabled={resetar.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+            <Button
+              onClick={() => resetar.mutate()}
+              disabled={resetar.isPending}
+              className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+            >
               Redefinir
             </Button>
           </DialogFooter>

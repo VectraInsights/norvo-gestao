@@ -379,11 +379,21 @@ function Multas() {
     if (!busca.trim()) return true;
     const s = busca.toLowerCase();
     const sDig = s.replace(/\D/g, "");
-    if ([m.placa, m.auto_infracao, m.orgao_autuador, m.renavam, m.descricao].some((x) =>
-      (x ?? "").toLowerCase().includes(s),
-    )) return true;
+    if (
+      [m.placa, m.auto_infracao, m.orgao_autuador, m.renavam, m.descricao].some((x) =>
+        (x ?? "").toLowerCase().includes(s),
+      )
+    )
+      return true;
     // Pesquisa por valor: "25,00" acha 25.00 (a partir de 2 dígitos)
-    if (sDig.length >= 2 && Number(m.valor || 0).toFixed(2).replace(/\D/g, "").includes(sDig)) return true;
+    if (
+      sDig.length >= 2 &&
+      Number(m.valor || 0)
+        .toFixed(2)
+        .replace(/\D/g, "")
+        .includes(sDig)
+    )
+      return true;
     return false;
   });
 
@@ -431,7 +441,14 @@ function Multas() {
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} className="max-w-sm" />
+        <SearchField
+          value={busca}
+          onChange={(v) => {
+            setBusca(v);
+            setPagina(1);
+          }}
+          className="max-w-sm"
+        />
         <Select
           value={filtroStatus}
           onValueChange={(value) => {
@@ -459,9 +476,7 @@ function Multas() {
             onClick={() => sincronizar.mutate()}
             disabled={sincronizar.isPending || !configSENATRAN?.ativo}
           >
-            <RefreshCw
-              className={`mr-1 h-4 w-4 ${sincronizar.isPending ? "animate-spin" : ""}`}
-            />
+            <RefreshCw className={`mr-1 h-4 w-4 ${sincronizar.isPending ? "animate-spin" : ""}`} />
             {sincronizar.isPending ? "Sincronizando…" : "Sincronizar SENATRAN"}
           </Button>
           <Dialog
@@ -491,8 +506,7 @@ function Multas() {
                       value={form.veiculo_id}
                       onChange={escolherVeiculo}
                       options={(veiculos ?? []).map((v) => ({ value: v.id, label: v.placa }))}
-                     
-                     
+
                       emptyText="Nenhum item encontrado."
                     />
                   </div>
@@ -508,10 +522,7 @@ function Multas() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>RENAVAM</Label>
-                    <Input
-                      value={form.renavam}
-                      onChange={(e) => set("renavam", e.target.value)}
-                    />
+                    <Input value={form.renavam} onChange={(e) => set("renavam", e.target.value)} />
                   </div>
                   <div>
                     <Label>PONTOS</Label>
@@ -686,7 +697,11 @@ function Multas() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction data-acao className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => excluir.mutate(m.id)}>
+                              <AlertDialogAction
+                                data-acao
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                onClick={() => excluir.mutate(m.id)}
+                              >
                                 Excluir
                               </AlertDialogAction>
                             </AlertDialogFooter>
@@ -722,7 +737,6 @@ function Multas() {
             <div>
               <Label>Endpoint da API</Label>
               <Input
-               
                 value={configForm.endpoint}
                 onChange={(e) => setConfig("endpoint", e.target.value)}
               />

@@ -7,23 +7,48 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useMemo, useState } from "react";
 import { brl } from "@/lib/format";
 import {
-  calcSalarioLiquido, calcFerias, calcDecimoTerceiro, calcHoraExtra, calcRescisao,
-  TIPOS_RESCISAO, type TipoRescisao,
+  calcSalarioLiquido,
+  calcFerias,
+  calcDecimoTerceiro,
+  calcHoraExtra,
+  calcRescisao,
+  TIPOS_RESCISAO,
+  type TipoRescisao,
 } from "@/lib/calculos-trabalhistas";
 
 export const Route = createFileRoute("/_authenticated/rh/calculadora")({
   component: CalculadoraPage,
-  errorComponent: RouteErrorState
+  errorComponent: RouteErrorState,
 });
 
-function Linha({ rotulo, valor, subtrair, total }: { rotulo: string; valor: number; subtrair?: boolean; total?: boolean }) {
+function Linha({
+  rotulo,
+  valor,
+  subtrair,
+  total,
+}: {
+  rotulo: string;
+  valor: number;
+  subtrair?: boolean;
+  total?: boolean;
+}) {
   return (
-    <div className={`flex justify-between py-1 ${total ? "border-t border-border font-semibold" : ""}`}>
-      <span className={subtrair ? "text-muted-foreground" : ""}>{subtrair ? `− ${rotulo}` : rotulo}</span>
+    <div
+      className={`flex justify-between py-1 ${total ? "border-t border-border font-semibold" : ""}`}
+    >
+      <span className={subtrair ? "text-muted-foreground" : ""}>
+        {subtrair ? `− ${rotulo}` : rotulo}
+      </span>
       <span className="text-tabular">{subtrair ? `−${brl(valor)}` : brl(valor)}</span>
     </div>
   );
@@ -38,10 +63,16 @@ function CalculadoraPage() {
   const [salSaude, setSalSaude] = useState("0");
   const [salOdonto, setSalOdonto] = useState("0");
   const [salAlim, setSalAlim] = useState("0");
-  const vtDesc = salVT ? Math.round(((Number(salBruto) || 0) * 0.06) * 100) / 100 : 0;
-  const outrosDet = vtDesc + (Number(salSaude) || 0) + (Number(salOdonto) || 0) + (Number(salAlim) || 0);
+  const vtDesc = salVT ? Math.round((Number(salBruto) || 0) * 0.06 * 100) / 100 : 0;
+  const outrosDet =
+    vtDesc + (Number(salSaude) || 0) + (Number(salOdonto) || 0) + (Number(salAlim) || 0);
   const rSal = useMemo(
-    () => calcSalarioLiquido(Number(salBruto) || 0, Number(salProv) || 0, outrosDet + (Number(salDesc) || 0)),
+    () =>
+      calcSalarioLiquido(
+        Number(salBruto) || 0,
+        Number(salProv) || 0,
+        outrosDet + (Number(salDesc) || 0),
+      ),
     [salBruto, salProv, salDesc, outrosDet],
   );
 
@@ -81,11 +112,14 @@ function CalculadoraPage() {
   const [reVencSel, setReVencSel] = useState("30");
   const [reAviso, setReAviso] = useState("30");
   const rRe = useMemo(
-    () => calcRescisao(reTipo, {
-      salario: Number(reSal) || 0,
-      admissao: reAdm, rescisao: reResc,
-      feriasVencidasDias: reTemVenc ? Number(reVencSel) || 0 : 0, avisoDias: Number(reAviso) || 0,
-    }),
+    () =>
+      calcRescisao(reTipo, {
+        salario: Number(reSal) || 0,
+        admissao: reAdm,
+        rescisao: reResc,
+        feriasVencidasDias: reTemVenc ? Number(reVencSel) || 0 : 0,
+        avisoDias: Number(reAviso) || 0,
+      }),
     [reTipo, reSal, reAdm, reResc, reTemVenc, reVencSel, reAviso],
   );
 
@@ -98,26 +132,54 @@ function CalculadoraPage() {
       />
       <Tabs defaultValue="salario">
         <TabsList className="rounded-xl shadow-sm">
-          <TabsTrigger value="salario" className="rounded-lg">Salário líquido</TabsTrigger>
-          <TabsTrigger value="ferias" className="rounded-lg">Férias</TabsTrigger>
-          <TabsTrigger value="decimo" className="rounded-lg">13º salário</TabsTrigger>
-          <TabsTrigger value="extras" className="rounded-lg">Horas extras</TabsTrigger>
-          <TabsTrigger value="rescisao" className="rounded-lg">Rescisão</TabsTrigger>
+          <TabsTrigger value="salario" className="rounded-lg">
+            Salário líquido
+          </TabsTrigger>
+          <TabsTrigger value="ferias" className="rounded-lg">
+            Férias
+          </TabsTrigger>
+          <TabsTrigger value="decimo" className="rounded-lg">
+            13º salário
+          </TabsTrigger>
+          <TabsTrigger value="extras" className="rounded-lg">
+            Horas extras
+          </TabsTrigger>
+          <TabsTrigger value="rescisao" className="rounded-lg">
+            Rescisão
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="salario">
           <div className="grid gap-4 md:grid-cols-2">
             <Card className="space-y-3 rounded-2xl p-5 shadow-panel">
-              <div><Label>Salário bruto</Label><MoneyInput value={salBruto} onChange={setSalBruto} /></div>
-              <div><Label>Outros proventos</Label><MoneyInput value={salProv} onChange={setSalProv} /></div>
-              <div><Label>Outros descontos</Label><MoneyInput value={salDesc} onChange={setSalDesc} /></div>
+              <div>
+                <Label>Salário bruto</Label>
+                <MoneyInput value={salBruto} onChange={setSalBruto} />
+              </div>
+              <div>
+                <Label>Outros proventos</Label>
+                <MoneyInput value={salProv} onChange={setSalProv} />
+              </div>
+              <div>
+                <Label>Outros descontos</Label>
+                <MoneyInput value={salDesc} onChange={setSalDesc} />
+              </div>
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox checked={salVT} onCheckedChange={(v) => setSalVT(v === true)} />
                 Vale-transporte (6% do bruto)
               </label>
-              <div><Label>Plano de saúde</Label><MoneyInput value={salSaude} onChange={setSalSaude} /></div>
-              <div><Label>Odontológico</Label><MoneyInput value={salOdonto} onChange={setSalOdonto} /></div>
-              <div><Label>Alimentação</Label><MoneyInput value={salAlim} onChange={setSalAlim} /></div>
+              <div>
+                <Label>Plano de saúde</Label>
+                <MoneyInput value={salSaude} onChange={setSalSaude} />
+              </div>
+              <div>
+                <Label>Odontológico</Label>
+                <MoneyInput value={salOdonto} onChange={setSalOdonto} />
+              </div>
+              <div>
+                <Label>Alimentação</Label>
+                <MoneyInput value={salAlim} onChange={setSalAlim} />
+              </div>
             </Card>
             <Card className="rounded-2xl p-5 shadow-panel">
               <Linha rotulo="Salário bruto" valor={rSal.bruto} />
@@ -125,9 +187,15 @@ function CalculadoraPage() {
               <Linha rotulo="INSS" valor={rSal.inss} subtrair />
               <Linha rotulo="IRRF" valor={rSal.irrf} subtrair />
               {vtDesc > 0 && <Linha rotulo="Vale-transporte (6%)" valor={vtDesc} subtrair />}
-              {Number(salSaude) > 0 && <Linha rotulo="Plano de saúde" valor={Number(salSaude)} subtrair />}
-              {Number(salOdonto) > 0 && <Linha rotulo="Odontológico" valor={Number(salOdonto)} subtrair />}
-              {Number(salAlim) > 0 && <Linha rotulo="Alimentação" valor={Number(salAlim)} subtrair />}
+              {Number(salSaude) > 0 && (
+                <Linha rotulo="Plano de saúde" valor={Number(salSaude)} subtrair />
+              )}
+              {Number(salOdonto) > 0 && (
+                <Linha rotulo="Odontológico" valor={Number(salOdonto)} subtrair />
+              )}
+              {Number(salAlim) > 0 && (
+                <Linha rotulo="Alimentação" valor={Number(salAlim)} subtrair />
+              )}
               <Linha rotulo="Outros descontos" valor={Number(salDesc) || 0} subtrair />
               <Linha rotulo="Salário líquido" valor={rSal.liquido} total />
             </Card>
@@ -137,9 +205,32 @@ function CalculadoraPage() {
         <TabsContent value="ferias">
           <div className="grid gap-4 md:grid-cols-2">
             <Card className="space-y-3 rounded-2xl p-5 shadow-panel">
-              <div><Label>Salário base</Label><MoneyInput value={ferSal} onChange={setFerSal} /></div>
-              <div><Label>Dias de gozo (1–30)</Label><Input type="number" className="h-10 rounded-xl shadow-sm" min={1} max={30} value={ferDias} onChange={(e) => setFerDias(e.target.value)} /></div>
-              <div><Label>Abono vendido em dias (0–10)</Label><Input type="number" className="h-10 rounded-xl shadow-sm" min={0} max={10} value={ferAbono} onChange={(e) => setFerAbono(e.target.value)} /></div>
+              <div>
+                <Label>Salário base</Label>
+                <MoneyInput value={ferSal} onChange={setFerSal} />
+              </div>
+              <div>
+                <Label>Dias de gozo (1–30)</Label>
+                <Input
+                  type="number"
+                  className="h-10 rounded-xl shadow-sm"
+                  min={1}
+                  max={30}
+                  value={ferDias}
+                  onChange={(e) => setFerDias(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Abono vendido em dias (0–10)</Label>
+                <Input
+                  type="number"
+                  className="h-10 rounded-xl shadow-sm"
+                  min={0}
+                  max={10}
+                  value={ferAbono}
+                  onChange={(e) => setFerAbono(e.target.value)}
+                />
+              </div>
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox checked={ferDecimo} onCheckedChange={(v) => setFerDecimo(v === true)} />
                 Adiantar 13º junto
@@ -152,7 +243,12 @@ function CalculadoraPage() {
               <Linha rotulo="IRRF" valor={rFer.irrfFerias} subtrair />
               <Linha rotulo="Líquido das férias" valor={rFer.liquidoFerias} total />
               {rFer.abonoDias > 0 && (
-                <><Linha rotulo={`Abono pecuniário (${rFer.abonoDias}d, isento)`} valor={rFer.valorAbono} /></>
+                <>
+                  <Linha
+                    rotulo={`Abono pecuniário (${rFer.abonoDias}d, isento)`}
+                    valor={rFer.valorAbono}
+                  />
+                </>
               )}
               {ferDecimo && (
                 <>
@@ -170,9 +266,25 @@ function CalculadoraPage() {
         <TabsContent value="decimo">
           <div className="grid gap-4 md:grid-cols-2">
             <Card className="space-y-3 rounded-2xl p-5 shadow-panel">
-              <div><Label>Salário bruto mensal</Label><MoneyInput value={decSal} onChange={setDecSal} /></div>
-              <div><Label>Meses trabalhados (1–12)</Label><Input type="number" className="h-10 rounded-xl shadow-sm" min={1} max={12} value={decMeses} onChange={(e) => setDecMeses(e.target.value)} /></div>
-              <p className="text-xs text-muted-foreground">Na prática, a 1ª parcela (até novembro) sai sem descontos; os descontos incidem na 2ª parcela.</p>
+              <div>
+                <Label>Salário bruto mensal</Label>
+                <MoneyInput value={decSal} onChange={setDecSal} />
+              </div>
+              <div>
+                <Label>Meses trabalhados (1–12)</Label>
+                <Input
+                  type="number"
+                  className="h-10 rounded-xl shadow-sm"
+                  min={1}
+                  max={12}
+                  value={decMeses}
+                  onChange={(e) => setDecMeses(e.target.value)}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Na prática, a 1ª parcela (até novembro) sai sem descontos; os descontos incidem na
+                2ª parcela.
+              </p>
             </Card>
             <Card className="rounded-2xl p-5 shadow-panel">
               <Linha rotulo={`13º bruto (${rDec.meses}/12)`} valor={rDec.bruto} />
@@ -186,9 +298,30 @@ function CalculadoraPage() {
         <TabsContent value="extras">
           <div className="grid gap-4 md:grid-cols-2">
             <Card className="space-y-3 rounded-2xl p-5 shadow-panel">
-              <div><Label>Salário base</Label><MoneyInput value={heSal} onChange={setHeSal} /></div>
-              <div><Label>Horas a 50%</Label><Input type="number" className="h-10 rounded-xl shadow-sm" min={0} value={he50} onChange={(e) => setHe50(e.target.value)} /></div>
-              <div><Label>Horas a 100%</Label><Input type="number" className="h-10 rounded-xl shadow-sm" min={0} value={he100} onChange={(e) => setHe100(e.target.value)} /></div>
+              <div>
+                <Label>Salário base</Label>
+                <MoneyInput value={heSal} onChange={setHeSal} />
+              </div>
+              <div>
+                <Label>Horas a 50%</Label>
+                <Input
+                  type="number"
+                  className="h-10 rounded-xl shadow-sm"
+                  min={0}
+                  value={he50}
+                  onChange={(e) => setHe50(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Horas a 100%</Label>
+                <Input
+                  type="number"
+                  className="h-10 rounded-xl shadow-sm"
+                  min={0}
+                  value={he100}
+                  onChange={(e) => setHe100(e.target.value)}
+                />
+              </div>
             </Card>
             <Card className="rounded-2xl p-5 shadow-panel">
               <Linha rotulo="Valor da hora (sal/220)" valor={rHe.valorHora} />
@@ -202,25 +335,54 @@ function CalculadoraPage() {
         <TabsContent value="rescisao">
           <div className="grid gap-4 md:grid-cols-2">
             <Card className="space-y-3 rounded-2xl p-5 shadow-panel">
-              <div><Label>Tipo de rescisão</Label>
+              <div>
+                <Label>Tipo de rescisão</Label>
                 <Select value={reTipo} onValueChange={(v) => setReTipo(v as TipoRescisao)}>
-                  <SelectTrigger className="h-10 rounded-xl shadow-sm"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-10 rounded-xl shadow-sm">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {TIPOS_RESCISAO.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                    {TIPOS_RESCISAO.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>
+                        {t.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>Salário base</Label><MoneyInput value={reSal} onChange={setReSal} /></div>
-              <div><Label>Data de admissão</Label><Input type="date" className="h-10 rounded-xl shadow-sm" value={reAdm} onChange={(e) => setReAdm(e.target.value)} /></div>
-              <div><Label>Data de rescisão</Label><Input type="date" className="h-10 rounded-xl shadow-sm" value={reResc} onChange={(e) => setReResc(e.target.value)} /></div>
+              <div>
+                <Label>Salário base</Label>
+                <MoneyInput value={reSal} onChange={setReSal} />
+              </div>
+              <div>
+                <Label>Data de admissão</Label>
+                <Input
+                  type="date"
+                  className="h-10 rounded-xl shadow-sm"
+                  value={reAdm}
+                  onChange={(e) => setReAdm(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Data de rescisão</Label>
+                <Input
+                  type="date"
+                  className="h-10 rounded-xl shadow-sm"
+                  value={reResc}
+                  onChange={(e) => setReResc(e.target.value)}
+                />
+              </div>
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox checked={reTemVenc} onCheckedChange={(v) => setReTemVenc(v === true)} />
                 Tem férias vencidas
               </label>
               {reTemVenc && (
-                <div><Label>Quantidade</Label>
+                <div>
+                  <Label>Quantidade</Label>
                   <Select value={reVencSel} onValueChange={setReVencSel}>
-                    <SelectTrigger className="h-10 rounded-xl shadow-sm"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-10 rounded-xl shadow-sm">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="30">30 dias (1 período)</SelectItem>
                       <SelectItem value="60">60 dias (2 períodos)</SelectItem>
@@ -228,26 +390,49 @@ function CalculadoraPage() {
                   </Select>
                 </div>
               )}
-              <div><Label>Aviso prévio (dias, 0 = trabalhado)</Label><Input type="number" className="h-10 rounded-xl shadow-sm" min={0} max={90} value={reAviso} onChange={(e) => setReAviso(e.target.value)} /></div>
+              <div>
+                <Label>Aviso prévio (dias, 0 = trabalhado)</Label>
+                <Input
+                  type="number"
+                  className="h-10 rounded-xl shadow-sm"
+                  min={0}
+                  max={90}
+                  value={reAviso}
+                  onChange={(e) => setReAviso(e.target.value)}
+                />
+              </div>
             </Card>
             <Card className="rounded-2xl p-5 shadow-panel">
               {rRe.verbas.map((v) => (
-                <Linha key={v.nome} rotulo={v.nome} valor={Math.abs(v.valor)} subtrair={v.valor < 0} />
+                <Linha
+                  key={v.nome}
+                  rotulo={v.nome}
+                  valor={Math.abs(v.valor)}
+                  subtrair={v.valor < 0}
+                />
               ))}
               <Linha rotulo="Total bruto" valor={rRe.bruto} total />
               <Linha rotulo="INSS" valor={rRe.inss} subtrair />
               <Linha rotulo="IRRF" valor={rRe.irrf} subtrair />
               <Linha rotulo="Líquido da rescisão" valor={rRe.liquido} total />
               <Linha rotulo="FGTS do mês (8%)" valor={rRe.fgtsMes} />
-              {rRe.multaPct > 0 && <Linha rotulo={`Multa FGTS (${Math.round(rRe.multaPct * 100)}%)`} valor={rRe.multaFGTS} />}
+              {rRe.multaPct > 0 && (
+                <Linha
+                  rotulo={`Multa FGTS (${Math.round(rRe.multaPct * 100)}%)`}
+                  valor={rRe.multaFGTS}
+                />
+              )}
               <Linha rotulo="Total FGTS (saldo + multa)" valor={rRe.totalFGTS} total />
-              <p className="mt-1 text-xs text-muted-foreground">Aviso indenizado e férias indenizadas (+⅓) não têm INSS/IRRF.</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Aviso indenizado e férias indenizadas (+⅓) não têm INSS/IRRF.
+              </p>
             </Card>
           </div>
         </TabsContent>
       </Tabs>
       <p className="mt-4 text-xs text-muted-foreground">
-        Tabelas 2026: INSS progressivo (teto R$ 988,09) e IRRF Lei 15.270/2025. Valores estimados para noção rápida.
+        Tabelas 2026: INSS progressivo (teto R$ 988,09) e IRRF Lei 15.270/2025. Valores estimados
+        para noção rápida.
       </p>
     </div>
   );

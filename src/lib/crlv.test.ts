@@ -54,16 +54,14 @@ describe("tipoVeiculoDoCrlv", () => {
   });
 
   it("picape continua Caminhonete mesmo com espécie genérica (o modelo desempata)", () => {
-    expect(
-      tipoVeiculoDoCrlv("CARGA CAMINHAO", "CARROCERIA ABERTA", "I/TOYOTA HILUX CS4X2"),
-    ).toBe("Caminhonete");
+    expect(tipoVeiculoDoCrlv("CARGA CAMINHAO", "CARROCERIA ABERTA", "I/TOYOTA HILUX CS4X2")).toBe(
+      "Caminhonete",
+    );
     expect(tipoVeiculoDoCrlv("CARGA CAMINHAO", "", "GM S10 2.8")).toBe("Caminhonete");
   });
 
   it("ônibus e microônibus são tipos próprios", () => {
-    expect(tipoVeiculoDoCrlv("PASSAGEIRO MICROONIBUS", "NÃO APLICÁVEL")).toBe(
-      "Microônibus",
-    );
+    expect(tipoVeiculoDoCrlv("PASSAGEIRO MICROONIBUS", "NÃO APLICÁVEL")).toBe("Microônibus");
     expect(tipoVeiculoDoCrlv("PASSAGEIRO ONIBUS", "NÃO APLICÁVEL")).toBe("Onibus");
     expect(tipoVeiculoDoCrlv("PASSAGEIRO AUTOMOVEL", "NÃO APLICÁVEL")).toBe("Automóvel");
     expect(tipoVeiculoDoCrlv("PASSAGEIRO MOTOCICLETA", "")).toBe("Motocicleta");
@@ -74,9 +72,7 @@ describe("tipoVeiculoDoCrlv", () => {
   });
 
   it("cavalo de carreta (sem carroceria) é Cavalo Mecânico", () => {
-    expect(tipoVeiculoDoCrlv("TRACAO CAMINHAO TRATOR", "NÃO APLICÁVEL")).toBe(
-      "Cavalo Mecânico",
-    );
+    expect(tipoVeiculoDoCrlv("TRACAO CAMINHAO TRATOR", "NÃO APLICÁVEL")).toBe("Cavalo Mecânico");
     expect(tipoVeiculoDoCrlv("TRACAO CAMINHAO TRATOR", "")).toBe("Cavalo Mecânico");
   });
 
@@ -90,9 +86,7 @@ describe("tipoVeiculoDoCrlv", () => {
   });
 
   it("nomes explícitos têm prioridade", () => {
-    expect(tipoVeiculoDoCrlv("CAVALO MECANICO", "CARROCERIA FECHADA")).toBe(
-      "Cavalo Mecânico",
-    );
+    expect(tipoVeiculoDoCrlv("CAVALO MECANICO", "CARROCERIA FECHADA")).toBe("Cavalo Mecânico");
     expect(tipoVeiculoDoCrlv("TRUCK", "")).toBe("Truck");
     expect(tipoVeiculoDoCrlv("TOCO", "")).toBe("Toco");
   });

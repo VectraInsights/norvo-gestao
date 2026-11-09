@@ -42,11 +42,20 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { brl } from "@/lib/format";
 import { format } from "date-fns";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/rh/comissoes")({
   component: ComissoesPage,
-  errorComponent: RouteErrorState
+  errorComponent: RouteErrorState,
 });
 
 type Comissao = {
@@ -146,9 +155,10 @@ function ComissoesPage() {
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
     if (!q) return lista ?? [];
-    return (lista ?? []).filter((c) =>
-      (c.colaboradores?.nome || "").toLowerCase().includes(q)
-      || (c.descricao || "").toLowerCase().includes(q),
+    return (lista ?? []).filter(
+      (c) =>
+        (c.colaboradores?.nome || "").toLowerCase().includes(q) ||
+        (c.descricao || "").toLowerCase().includes(q),
     );
   }, [lista, busca]);
 
@@ -332,107 +342,105 @@ function ComissoesPage() {
         <SearchField value={busca} onChange={setBusca} size="xs" />
         <div className="flex flex-wrap items-center gap-2">
           <Select value={String(mes)} onValueChange={(v) => setMes(Number(v))}>
-              <SelectTrigger className="h-9 w-[110px] rounded-xl shadow-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {MESES.map((m, i) => (
-                  <SelectItem key={m} value={String(i + 1)}>
-                    {m}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
-              <SelectTrigger className="h-9 w-[100px] rounded-xl shadow-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 6 }, (_, i) => now.getFullYear() - 3 + i).map((a) => (
-                  <SelectItem key={a} value={String(a)}>
-                    {a}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95"
-              disabled={
-                gerarEmLote.isPending ||
-                !(lista ?? []).some((c) => !c.lancamento_id && c.status !== "cancelada")
-              }
-              onClick={() => setConfLote(true)}
-            >
-              <HandCoins className="mr-1 h-3.5 w-3.5" />
-              Gerar contas a pagar
-            </Button>
-            <Dialog
-              open={open}
-              onOpenChange={(o) => {
-                setOpen(o);
-                if (!o) reset();
-              }}
-            >
-              <DialogTrigger asChild>
-                <PrimaryButton size="sm">
-                  <Plus className="mr-1 h-3.5 w-3.5" /> Nova comissão
-                </PrimaryButton>
-              </DialogTrigger>
-              <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
-                <DialogHeader className="gap-1.5 pb-1">
-                  <DialogTitle className="tracking-tight">
-                    {editing ? "Editar comissão" : `Nova comissão · ${MESES[mes - 1]}/${ano}`}
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4">
-                  <div className="space-y-1.5">
-                    <Label>Colaborador (motoristas)</Label>
-                    <Combobox
-                      value={colaborador}
-                      onChange={setColaborador}
-                      options={colabs.map((c) => ({ value: c.id, label: c.nome }))}
-                     
-                     
-                      emptyText="Nenhum item encontrado."
-                    />
-                    {colabs.length === 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        Nenhum motorista ativo com cargo cadastrado — cadastre em DP →
-                        Colaboradores.
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Descrição</Label>
-                    <Input
-                      value={descricao}
-                      onChange={(e) => setDescricao(e.target.value)}
-                     
-                    />
-                  </div>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label>Base de cálculo</Label>
-                      <MoneyInput value={base} onChange={setBase} />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Percentual (%)</Label>
-                      <MoneyInput prefix="" value={percentual} onChange={setPercentual} />
-                    </div>
-                  </div>
-                  <p className="rounded-md bg-muted/50 p-3 text-sm">
-                    Comissão: <strong>{brl(valor)}</strong>
-                  </p>
+            <SelectTrigger className="h-9 w-[110px] rounded-xl shadow-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {MESES.map((m, i) => (
+                <SelectItem key={m} value={String(i + 1)}>
+                  {m}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
+            <SelectTrigger className="h-9 w-[100px] rounded-xl shadow-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: 6 }, (_, i) => now.getFullYear() - 3 + i).map((a) => (
+                <SelectItem key={a} value={String(a)}>
+                  {a}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95"
+            disabled={
+              gerarEmLote.isPending ||
+              !(lista ?? []).some((c) => !c.lancamento_id && c.status !== "cancelada")
+            }
+            onClick={() => setConfLote(true)}
+          >
+            <HandCoins className="mr-1 h-3.5 w-3.5" />
+            Gerar contas a pagar
+          </Button>
+          <Dialog
+            open={open}
+            onOpenChange={(o) => {
+              setOpen(o);
+              if (!o) reset();
+            }}
+          >
+            <DialogTrigger asChild>
+              <PrimaryButton size="sm">
+                <Plus className="mr-1 h-3.5 w-3.5" /> Nova comissão
+              </PrimaryButton>
+            </DialogTrigger>
+            <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
+              <DialogHeader className="gap-1.5 pb-1">
+                <DialogTitle className="tracking-tight">
+                  {editing ? "Editar comissão" : `Nova comissão · ${MESES[mes - 1]}/${ano}`}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4">
+                <div className="space-y-1.5">
+                  <Label>Colaborador (motoristas)</Label>
+                  <Combobox
+                    value={colaborador}
+                    onChange={setColaborador}
+                    options={colabs.map((c) => ({ value: c.id, label: c.nome }))}
+
+                    emptyText="Nenhum item encontrado."
+                  />
+                  {colabs.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Nenhum motorista ativo com cargo cadastrado — cadastre em DP → Colaboradores.
+                    </p>
+                  )}
                 </div>
-                <DialogFooter className="gap-2">
-                  <Button onClick={() => criar.mutate()} disabled={criar.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
-                    {criar.isPending ? "Salvando..." : editing ? "Salvar" : "Lançar"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                <div className="space-y-1.5">
+                  <Label>Descrição</Label>
+                  <Input value={descricao} onChange={(e) => setDescricao(e.target.value)} />
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label>Base de cálculo</Label>
+                    <MoneyInput value={base} onChange={setBase} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Percentual (%)</Label>
+                    <MoneyInput prefix="" value={percentual} onChange={setPercentual} />
+                  </div>
+                </div>
+                <p className="rounded-md bg-muted/50 p-3 text-sm">
+                  Comissão: <strong>{brl(valor)}</strong>
+                </p>
+              </div>
+              <DialogFooter className="gap-2">
+                <Button
+                  onClick={() => criar.mutate()}
+                  disabled={criar.isPending}
+                  className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                >
+                  {criar.isPending ? "Salvando..." : editing ? "Salvar" : "Lançar"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -537,16 +545,18 @@ function ComissoesPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              data-acao
-              onClick={() => gerarEmLote.mutate()}
-            >
+            <AlertDialogAction data-acao onClick={() => gerarEmLote.mutate()}>
               Gerar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <AlertDialog open={!!confExcluir} onOpenChange={(v) => { if (!v) setConfExcluir(null); }}>
+      <AlertDialog
+        open={!!confExcluir}
+        onOpenChange={(v) => {
+          if (!v) setConfExcluir(null);
+        }}
+      >
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir comissão</AlertDialogTitle>
@@ -561,7 +571,10 @@ function ComissoesPage() {
             <AlertDialogAction
               data-acao
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => { if (confExcluir) excluir.mutate(confExcluir); setConfExcluir(null); }}
+              onClick={() => {
+                if (confExcluir) excluir.mutate(confExcluir);
+                setConfExcluir(null);
+              }}
             >
               Excluir
             </AlertDialogAction>

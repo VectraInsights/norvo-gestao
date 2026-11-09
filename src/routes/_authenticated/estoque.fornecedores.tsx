@@ -27,15 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Loader2,
-  Plus,
-  Search,
-  Trash2,
-  Users,
-  Pencil,
-  WandSparkles,
-} from "lucide-react";
+import { Loader2, Plus, Search, Trash2, Users, Pencil, WandSparkles } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -113,7 +105,14 @@ function Fornecedores() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Delete") return;
       const t = e.target as HTMLElement;
-      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      if (
+        t &&
+        (t.tagName === "INPUT" ||
+          t.tagName === "TEXTAREA" ||
+          t.tagName === "SELECT" ||
+          t.isContentEditable)
+      )
+        return;
       if (document.querySelector('[role="dialog"]')) return;
       e.preventDefault();
       setConfLote(true);
@@ -143,7 +142,7 @@ function Fornecedores() {
             "id,nome,documento,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes",
           )
           .eq("empresa_id", empresa!.id)
-                    .order("nome")
+          .order("nome")
           .range(ini, ini + 999)
           .abortSignal(signal);
         if (error) throw error;
@@ -172,10 +171,7 @@ function Fornecedores() {
   const pageSize = 25;
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / pageSize));
   const paginaAtual = Math.min(pagina, totalPaginas);
-  const contatosVisiveis = filtrados.slice(
-    (paginaAtual - 1) * pageSize,
-    paginaAtual * pageSize,
-  );
+  const contatosVisiveis = filtrados.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
 
   const lookupCnpj = async () => {
     const digits = onlyDigits(form.documento);
@@ -237,7 +233,7 @@ function Fornecedores() {
       const { error } = await supabase.from("fornecedores").insert({
         empresa_id: empresa.id,
         nome: input.nome,
-                documento: doc || null,
+        documento: doc || null,
         email: input.email || null,
         telefone: input.telefone || null,
         cep: input.cep || null,
@@ -323,7 +319,11 @@ function Fornecedores() {
   const excluirLote = useMutation({
     mutationFn: async (ids: string[]) => {
       if (!empresa) throw new Error("Empresa não selecionada");
-      const { error } = await supabase.from("fornecedores").delete().eq("empresa_id", empresa.id).in("id", ids);
+      const { error } = await supabase
+        .from("fornecedores")
+        .delete()
+        .eq("empresa_id", empresa.id)
+        .in("id", ids);
       if (error) throw error;
       return ids.length;
     },
@@ -362,7 +362,8 @@ function Fornecedores() {
     setOpen(true);
   };
 
-  const todosVisiveisSel = contatosVisiveis.length > 0 && contatosVisiveis.every((c) => selecionados.has(c.id));
+  const todosVisiveisSel =
+    contatosVisiveis.length > 0 && contatosVisiveis.every((c) => selecionados.has(c.id));
   const alternarTodosVisiveis = () => {
     setSelecionados((ant) => {
       const prox = new Set(ant);
@@ -388,7 +389,13 @@ function Fornecedores() {
         description="Fornecedores cadastrados para compras e reposição de estoque."
       />
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} />
+        <SearchField
+          value={busca}
+          onChange={(v) => {
+            setBusca(v);
+            setPagina(1);
+          }}
+        />
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -423,14 +430,23 @@ function Fornecedores() {
         <EmptyState
           icon={Users}
           title="Nenhum fornecedor"
-          description={busca ? "Nada encontrado para a busca." : "Cadastre seu primeiro fornecedor."}
+          description={
+            busca ? "Nada encontrado para a busca." : "Cadastre seu primeiro fornecedor."
+          }
         />
       ) : (
         <Card className="overflow-hidden shadow-panel">
           {selecionados.size > 0 && (
             <div className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-2">
-              <span className="text-xs text-muted-foreground">{selecionados.size} selecionado(s)</span>
-              <Button variant="destructive" size="sm" className="h-8 rounded-xl px-4" onClick={() => setConfLote(true)}>
+              <span className="text-xs text-muted-foreground">
+                {selecionados.size} selecionado(s)
+              </span>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-8 rounded-xl px-4"
+                onClick={() => setConfLote(true)}
+              >
                 <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Excluir selecionados
               </Button>
             </div>
@@ -439,7 +455,11 @@ function Fornecedores() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10">
-                  <Checkbox checked={todosVisiveisSel} onCheckedChange={alternarTodosVisiveis} aria-label="Selecionar visíveis" />
+                  <Checkbox
+                    checked={todosVisiveisSel}
+                    onCheckedChange={alternarTodosVisiveis}
+                    aria-label="Selecionar visíveis"
+                  />
                 </TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead>Documento</TableHead>
@@ -451,10 +471,16 @@ function Fornecedores() {
               {contatosVisiveis.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell>
-                    <Checkbox checked={selecionados.has(c.id)} onCheckedChange={() => alternarUm(c.id)} aria-label={`Selecionar ${c.nome}`} />
+                    <Checkbox
+                      checked={selecionados.has(c.id)}
+                      onCheckedChange={() => alternarUm(c.id)}
+                      aria-label={`Selecionar ${c.nome}`}
+                    />
                   </TableCell>
                   <TableCell className="font-medium">{c.nome}</TableCell>
-                  <TableCell className="text-tabular">{c.documento ? maskDoc(c.documento) : "—"}</TableCell>
+                  <TableCell className="text-tabular">
+                    {c.documento ? maskDoc(c.documento) : "—"}
+                  </TableCell>
                   <TableCell className="text-muted-foreground">
                     {c.email ?? c.telefone ?? "—"}
                   </TableCell>
@@ -650,7 +676,11 @@ function Fornecedores() {
               />
             </div>
             <DialogFooter>
-              <Button type="submit" disabled={criar.isPending || editar.isPending} className="h-10 rounded-xl px-6">
+              <Button
+                type="submit"
+                disabled={criar.isPending || editar.isPending}
+                className="h-10 rounded-xl px-6"
+              >
                 {(criar.isPending || editar.isPending) && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
@@ -688,12 +718,18 @@ function Fornecedores() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={confLote} onOpenChange={(v) => { if (!v) setConfLote(false); }}>
+      <AlertDialog
+        open={confLote}
+        onOpenChange={(v) => {
+          if (!v) setConfLote(false);
+        }}
+      >
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir selecionados</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir {selecionados.size} fornecedor(es)? Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir {selecionados.size} fornecedor(es)? Esta ação não pode
+              ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -5,7 +5,13 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { MDFE_AMBIENTE, MDFE_TP_AMB, SEFAZ_AMBIENTE, SEFAZ_TP_AMB, maskDoc } from "@/lib/sefaz-ambiente";
+import {
+  MDFE_AMBIENTE,
+  MDFE_TP_AMB,
+  SEFAZ_AMBIENTE,
+  SEFAZ_TP_AMB,
+  maskDoc,
+} from "@/lib/sefaz-ambiente";
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -80,7 +86,13 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
       const preview = pfxBytes.slice(0, 200).toString("utf8");
       console.error("[sefaz-proxy] PFX header inesperado:", first4, "preview:", preview);
       if (preview.includes("<!") || preview.includes("<html")) {
-        return json({ error: "Storage retornou HTML em vez do certificado — verifique as permissões do bucket" }, 500);
+        return json(
+          {
+            error:
+              "Storage retornou HTML em vez do certificado — verifique as permissões do bucket",
+          },
+          500,
+        );
       }
       return json({ error: `Formato de certificado inválido (header: ${first4})` }, 500);
     }
@@ -111,7 +123,20 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
     const ambiente = SEFAZ_AMBIENTE;
     const startNsu = nfeConfig?.last_nsu || undefined;
     const configuredAmbiente = nfeConfig?.ambiente || "(vazio)";
-    console.log("[sefaz-proxy] ambiente:", ambiente, "tpAmb:", SEFAZ_TP_AMB, "configIgnorada:", configuredAmbiente, "cnpj:", maskDoc(cnpj), "uf:", uf, "startNsu:", startNsu || "(zero)");
+    console.log(
+      "[sefaz-proxy] ambiente:",
+      ambiente,
+      "tpAmb:",
+      SEFAZ_TP_AMB,
+      "configIgnorada:",
+      configuredAmbiente,
+      "cnpj:",
+      maskDoc(cnpj),
+      "uf:",
+      uf,
+      "startNsu:",
+      startNsu || "(zero)",
+    );
 
     // Cooldown: verificar se já passou o tempo mínimo entre consultas
     if (action === "consultar" && nfeConfig?.last_query_at) {
@@ -139,7 +164,8 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
     }
 
     // Import dinâmico de sefaz (usa node:https — só funciona no Node.js)
-    const { consultarDestinatario, enviarEventoManifestacao, emitirNFe, consultarPorChave } = await import("@/lib/sefaz");
+    const { consultarDestinatario, enviarEventoManifestacao, emitirNFe, consultarPorChave } =
+      await import("@/lib/sefaz");
 
     let result: unknown;
 
@@ -147,42 +173,131 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
       case "emitirCte": {
         const { buildCteXml, emitirCte, formUfsDoXml } = await import("@/lib/sefaz-cte");
         const { createClient: createClient2 } = await import("@supabase/supabase-js");
-        const supa2 = createClient2(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
-        const { data: emp } = await supa2.from("empresas").select("cnpj, uf, ie, razao_social, nome_fantasia, logradouro, numero, complemento, bairro, cidade, cep, regime_tributario").eq("id", empresaId).single();
+        const supa2 = createClient2(
+          process.env.SUPABASE_URL || "",
+          process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+        );
+        const { data: emp } = await supa2
+          .from("empresas")
+          .select(
+            "cnpj, uf, ie, razao_social, nome_fantasia, logradouro, numero, complemento, bairro, cidade, cep, regime_tributario",
+          )
+          .eq("id", empresaId)
+          .single();
         const inp = (body as any).input || {};
         const cteAmbiente = SEFAZ_AMBIENTE;
-        const { data: ultimos } = await supa2.from("cte_documentos").select("numero").eq("empresa_id", empresaId).eq("ambiente", cteAmbiente).order("created_at",{ascending:false}).limit(50);
-        const baseNum = Math.max(0, ...(((ultimos as any[]) || []).map(r => parseInt((r as any)?.numero || "0", 10) || 0)));
-        const proximo = cteAmbiente === "homologacao" ? String(Math.max(baseNum + 1, 500)) : String(baseNum + 1);
+        const { data: ultimos } = await supa2
+          .from("cte_documentos")
+          .select("numero")
+          .eq("empresa_id", empresaId)
+          .eq("ambiente", cteAmbiente)
+          .order("created_at", { ascending: false })
+          .limit(50);
+        const baseNum = Math.max(
+          0,
+          ...((ultimos as any[]) || []).map((r) => parseInt((r as any)?.numero || "0", 10) || 0),
+        );
+        const proximo =
+          cteAmbiente === "homologacao" ? String(Math.max(baseNum + 1, 500)) : String(baseNum + 1);
         const cli = inp.emit || {};
         const emitCnpj = cli.cnpj || emp?.cnpj || "";
         const emitUf = emp?.uf || cli.uf || uf;
-        console.log("[CTE-PROXY-DEBUG] empCnpj:", maskDoc(emp?.cnpj), "empUf:", emp?.uf, "emitCnpj:", maskDoc(emitCnpj), "emitUf:", emitUf, "ambiente:", cteAmbiente);
-        const input = { ...inp, ambiente: cteAmbiente, numero: proximo, serie: inp.serie || "1", emit: {
-          cnpj: emitCnpj,
-          xNome: cli.xNome || emp?.razao_social || emp?.nome_fantasia || "EMITENTE",
-          ie: cli.ie || emp?.ie || "ISENTO",
-          uf: emitUf,
-          cMun: cli.cMun || "3106200",
-          xMun: cli.xMun || emp?.cidade || "BELO HORIZONTE",
-          crt: cli.crt || emp?.regime_tributario || "3",
-          logradouro: cli.logradouro || emp?.logradouro || "RUA",
-          nro: cli.nro || emp?.numero || "SN",
-          complemento: cli.complemento || emp?.complemento || "",
-          bairro: cli.bairro || emp?.bairro || "CENTRO",
-          cep: cli.cep || emp?.cep || "00000000",
-        } };
+        console.log(
+          "[CTE-PROXY-DEBUG] empCnpj:",
+          maskDoc(emp?.cnpj),
+          "empUf:",
+          emp?.uf,
+          "emitCnpj:",
+          maskDoc(emitCnpj),
+          "emitUf:",
+          emitUf,
+          "ambiente:",
+          cteAmbiente,
+        );
+        const input = {
+          ...inp,
+          ambiente: cteAmbiente,
+          numero: proximo,
+          serie: inp.serie || "1",
+          emit: {
+            cnpj: emitCnpj,
+            xNome: cli.xNome || emp?.razao_social || emp?.nome_fantasia || "EMITENTE",
+            ie: cli.ie || emp?.ie || "ISENTO",
+            uf: emitUf,
+            cMun: cli.cMun || "3106200",
+            xMun: cli.xMun || emp?.cidade || "BELO HORIZONTE",
+            crt: cli.crt || emp?.regime_tributario || "3",
+            logradouro: cli.logradouro || emp?.logradouro || "RUA",
+            nro: cli.nro || emp?.numero || "SN",
+            complemento: cli.complemento || emp?.complemento || "",
+            bairro: cli.bairro || emp?.bairro || "CENTRO",
+            cep: cli.cep || emp?.cep || "00000000",
+          },
+        };
         const { xml, chave } = buildCteXml(input);
-        console.log("[CTE-PROXY-DEBUG] tomador xNome:", input.tomador?.xNome, "CNPJ:", maskDoc(input.tomador?.cnpj));
-        console.log("[CTE-PROXY-DEBUG] rem/dest:", JSON.stringify({ toma: (input as any).tomador?.toma ?? (input as any).toma, modelo: (input as any).modelo, rem: (input as any).rem?.xNome, dest: (input as any).dest?.xNome }));
-        console.info("[CTE-PROXY] XML gerado para emissão", { chave: maskDoc(chave), ambiente: cteAmbiente });
+        console.log(
+          "[CTE-PROXY-DEBUG] tomador xNome:",
+          input.tomador?.xNome,
+          "CNPJ:",
+          maskDoc(input.tomador?.cnpj),
+        );
+        console.log(
+          "[CTE-PROXY-DEBUG] rem/dest:",
+          JSON.stringify({
+            toma: (input as any).tomador?.toma ?? (input as any).toma,
+            modelo: (input as any).modelo,
+            rem: (input as any).rem?.xNome,
+            dest: (input as any).dest?.xNome,
+          }),
+        );
+        console.info("[CTE-PROXY] XML gerado para emissão", {
+          chave: maskDoc(chave),
+          ambiente: cteAmbiente,
+        });
         const ret = await emitirCte(pfxBytes, senha, xml, cteAmbiente, emitUf);
-        const supa3 = createClient(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
-        if (ret.sucesso) await supa3.from("cte_documentos").insert({ empresa_id: empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "autorizado", xml_assinado: JSON.stringify({ xml, form: formUfsDoXml(xml, (body as any).form || {}) }), protocolo_sefaz: ret.protocolo, ambiente: cteAmbiente, data_autorizacao: new Date().toISOString(), valor_servico: input.vPrest, peso_carga: Number((input as any).pesoKg ?? (body as any)?.form?.peso ?? 0) || null, responsavel_emissao: (body as any).responsavel || null } as any);
-        else await supa3.from("cte_documentos").insert({ empresa_id: empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "rejeitado", xml_assinado: xml, motivo_rejeicao: ret.xMotivo, ambiente: cteAmbiente } as any);
+        const supa3 = createClient(
+          process.env.SUPABASE_URL || "",
+          process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+        );
+        if (ret.sucesso)
+          await supa3.from("cte_documentos").insert({
+            empresa_id: empresaId,
+            chave_acesso: chave,
+            numero: proximo,
+            serie: input.serie,
+            status: "autorizado",
+            xml_assinado: JSON.stringify({
+              xml,
+              form: formUfsDoXml(xml, (body as any).form || {}),
+            }),
+            protocolo_sefaz: ret.protocolo,
+            ambiente: cteAmbiente,
+            data_autorizacao: new Date().toISOString(),
+            valor_servico: input.vPrest,
+            peso_carga: Number((input as any).pesoKg ?? (body as any)?.form?.peso ?? 0) || null,
+            responsavel_emissao: (body as any).responsavel || null,
+          } as any);
+        else
+          await supa3.from("cte_documentos").insert({
+            empresa_id: empresaId,
+            chave_acesso: chave,
+            numero: proximo,
+            serie: input.serie,
+            status: "rejeitado",
+            xml_assinado: xml,
+            motivo_rejeicao: ret.xMotivo,
+            ambiente: cteAmbiente,
+          } as any);
         if (ret.sucesso) {
-          const chUsadas = ((inp as any).chavesNFe || []).map((c: any) => String(c).replace(/\D/g, "")).filter(Boolean);
-          if (chUsadas.length > 0) await supa3.from("cte_nfes_pendentes" as any).update({ status: "embarcada" }).in("chave", chUsadas).eq("empresa_id", empresaId);
+          const chUsadas = ((inp as any).chavesNFe || [])
+            .map((c: any) => String(c).replace(/\D/g, ""))
+            .filter(Boolean);
+          if (chUsadas.length > 0)
+            await supa3
+              .from("cte_nfes_pendentes" as any)
+              .update({ status: "embarcada" })
+              .in("chave", chUsadas)
+              .eq("empresa_id", empresaId);
         }
         return json({ ...ret, chave, xml });
       }
@@ -193,29 +308,76 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
       }
       case "consultarCteChave": {
         const { consultarCtePorChave } = await import("@/lib/sefaz-cte");
-        result = await consultarCtePorChave(pfxBytes, senha, (body as any).chave, SEFAZ_AMBIENTE, cnpj, uf);
+        result = await consultarCtePorChave(
+          pfxBytes,
+          senha,
+          (body as any).chave,
+          SEFAZ_AMBIENTE,
+          cnpj,
+          uf,
+        );
         break;
       }
       case "cancelarCte": {
         const { cancelarCte, extrairChavesNFeXml } = await import("@/lib/sefaz-cte");
         const ambCanc = SEFAZ_AMBIENTE;
-        console.log("[CTE-CANCEL] ambiente:", ambCanc, "tpAmb:", SEFAZ_TP_AMB, "chave:", maskDoc((body as any).chave), "configIgnorada: true");
-        result = await cancelarCte(pfxBytes, senha, (body as any).chave, (body as any).justificativa, ambCanc, cnpj, uf, (body as any).protocolo);
+        console.log(
+          "[CTE-CANCEL] ambiente:",
+          ambCanc,
+          "tpAmb:",
+          SEFAZ_TP_AMB,
+          "chave:",
+          maskDoc((body as any).chave),
+          "configIgnorada: true",
+        );
+        result = await cancelarCte(
+          pfxBytes,
+          senha,
+          (body as any).chave,
+          (body as any).justificativa,
+          ambCanc,
+          cnpj,
+          uf,
+          (body as any).protocolo,
+        );
         if ((result as any).sucesso) {
           const { createClient: cc } = await import("@supabase/supabase-js");
-          const s = cc(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
-          await s.from("cte_documentos").update({ status: "cancelado" } as any).eq("chave_acesso", (body as any).chave);
-          const { data: docXml } = await s.from("cte_documentos").select("xml_assinado").eq("chave_acesso", (body as any).chave).maybeSingle();
+          const s = cc(process.env.SUPABASE_URL || "", process.env.SUPABASE_SERVICE_ROLE_KEY || "");
+          await s
+            .from("cte_documentos")
+            .update({ status: "cancelado" } as any)
+            .eq("chave_acesso", (body as any).chave);
+          const { data: docXml } = await s
+            .from("cte_documentos")
+            .select("xml_assinado")
+            .eq("chave_acesso", (body as any).chave)
+            .maybeSingle();
           let xmlStr = (docXml as any)?.xml_assinado || "";
-          try { const p = JSON.parse(xmlStr); if (p.xml) xmlStr = p.xml; } catch {}
+          try {
+            const p = JSON.parse(xmlStr);
+            if (p.xml) xmlStr = p.xml;
+          } catch {}
           const chavesNfe = extrairChavesNFeXml(xmlStr);
-          if (chavesNfe.length > 0) await s.from("cte_nfes_pendentes" as any).update({ status: "pendente" }).in("chave", chavesNfe).eq("empresa_id", empresaId);
+          if (chavesNfe.length > 0)
+            await s
+              .from("cte_nfes_pendentes" as any)
+              .update({ status: "pendente" })
+              .in("chave", chavesNfe)
+              .eq("empresa_id", empresaId);
         }
         return json(result);
       }
       case "enviarCceCte": {
         const { enviarCceCte } = await import("@/lib/sefaz-cte");
-        result = await enviarCceCte(pfxBytes, senha, (body as any).chave, (body as any).correcao, SEFAZ_AMBIENTE, cnpj, uf);
+        result = await enviarCceCte(
+          pfxBytes,
+          senha,
+          (body as any).chave,
+          (body as any).correcao,
+          SEFAZ_AMBIENTE,
+          cnpj,
+          uf,
+        );
         break;
       }
       case "consultarMdf": {
@@ -224,73 +386,210 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         break;
       }
       case "emitirMdf": {
-        const { emitirMdf, dadosDoCteVinculado, completarSegMdf, garantirContratanteMdf, garantirProdPredMdf } = await import("@/lib/sefaz-mdf");
+        const {
+          emitirMdf,
+          dadosDoCteVinculado,
+          completarSegMdf,
+          garantirContratanteMdf,
+          garantirProdPredMdf,
+        } = await import("@/lib/sefaz-mdf");
         const b = body as any;
         const ambMdf = MDFE_AMBIENTE;
         // 698/699 (seg), 578 (contratante) e 725 (prodPred): completa com dados do CT-e.
         try {
           const dados = await dadosDoCteVinculado(supabase, empresaId, String(b.xml || ""));
-          if (dados.seg) { const antes = String(b.xml || ""); b.xml = completarSegMdf(antes, dados.seg); if (b.xml !== antes) console.log("[mdf-debug] seg completado do CT-e:", JSON.stringify({ xSeg: dados.seg.xSeg, nApol: dados.seg.nApol, temCnpj: !!dados.seg.cnpjSeg })); }
-          if (dados.contratantes.length) { const antes = String(b.xml || ""); b.xml = garantirContratanteMdf(antes, dados.contratantes); if (b.xml !== antes) console.log("[mdf-debug] contratante do CT-e:", JSON.stringify(dados.contratantes)); }
-          { const antes = String(b.xml || ""); b.xml = garantirProdPredMdf(antes, dados.proPred); if (b.xml !== antes) console.log("[mdf-debug] prodPred do CT-e:", JSON.stringify(dados.proPred || "CARGA GERAL")); }
+          if (dados.seg) {
+            const antes = String(b.xml || "");
+            b.xml = completarSegMdf(antes, dados.seg);
+            if (b.xml !== antes)
+              console.log(
+                "[mdf-debug] seg completado do CT-e:",
+                JSON.stringify({
+                  xSeg: dados.seg.xSeg,
+                  nApol: dados.seg.nApol,
+                  temCnpj: !!dados.seg.cnpjSeg,
+                }),
+              );
+          }
+          if (dados.contratantes.length) {
+            const antes = String(b.xml || "");
+            b.xml = garantirContratanteMdf(antes, dados.contratantes);
+            if (b.xml !== antes)
+              console.log("[mdf-debug] contratante do CT-e:", JSON.stringify(dados.contratantes));
+          }
+          {
+            const antes = String(b.xml || "");
+            b.xml = garantirProdPredMdf(antes, dados.proPred);
+            if (b.xml !== antes)
+              console.log(
+                "[mdf-debug] prodPred do CT-e:",
+                JSON.stringify(dados.proPred || "CARGA GERAL"),
+              );
+          }
         } catch {}
         const retMdf = await emitirMdf(pfxBytes, senha, b.xml, ambMdf);
         const { createClient: ccMdf } = await import("@supabase/supabase-js");
-        const sMdf = ccMdf(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
+        const sMdf = ccMdf(
+          process.env.SUPABASE_URL || "",
+          process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+        );
         // Limpa rejeitados anteriores com os mesmos documentos (não acumula).
-        const chavesDeMdf = (x: string) => [...x.matchAll(/<chCTe>(\d{44})<\/chCTe>/g), ...x.matchAll(/<chMDFe>(\d{44})<\/chMDFe>/g)].map(m => m[1]).sort();
+        const chavesDeMdf = (x: string) =>
+          [...x.matchAll(/<chCTe>(\d{44})<\/chCTe>/g), ...x.matchAll(/<chMDFe>(\d{44})<\/chMDFe>/g)]
+            .map((m) => m[1])
+            .sort();
         try {
           const chavesNovoMdf = chavesDeMdf(String(b.xml || ""));
           if (chavesNovoMdf.length) {
-            const { data: rejAntMdf } = await sMdf.from("mdf_documentos").select("id,xml_assinado").eq("empresa_id", empresaId).eq("status", "rejeitado");
+            const { data: rejAntMdf } = await sMdf
+              .from("mdf_documentos")
+              .select("id,xml_assinado")
+              .eq("empresa_id", empresaId)
+              .eq("status", "rejeitado");
             for (const r of (rejAntMdf as any[]) || []) {
               const ch = chavesDeMdf(String((r as any).xml_assinado || ""));
-              if (ch.length && ch.some(c => chavesNovoMdf.includes(c))) {
-                await sMdf.from("mdf_documentos").delete().eq("id", (r as any).id);
+              if (ch.length && ch.some((c) => chavesNovoMdf.includes(c))) {
+                await sMdf
+                  .from("mdf_documentos")
+                  .delete()
+                  .eq("id", (r as any).id);
               }
             }
           }
         } catch {}
         if ((retMdf as any).sucesso && (retMdf as any).chave) {
-          await sMdf.from("mdf_documentos").upsert({ empresa_id: empresaId, chave_acesso: (retMdf as any).chave, status: "autorizado", numero: String((b as any).numero || String(b.xml || "").match(/<nMDF>(\d+)<\/nMDF>/)?.[1] || ""), serie: String((b as any).serie || String(b.xml || "").match(/<serie>(\d+)<\/serie>/)?.[1] || ""), responsavel_emissao: (b as any).responsavel || null, protocolo_sefaz: (retMdf as any).protocolo || null, veiculo_tracao_id: b.veiculoTracaoId || null, motorista_id: b.motoristaId || null, uf_carregamento: b.ufCarregamento, uf_descarregamento: b.ufDescarregamento, qtd_cte: b.qtdCtes, valor_total_carga: b.valorTotalCarga, peso_total: b.pesoTotal, ambiente: ambMdf, data_autorizacao: new Date().toISOString(), xml_assinado: JSON.stringify({ xml: b.xml, percursoUFs: b.percursoUFs || [], observacoes: b.observacoes || "", infoFisco: b.infoFisco || "", tipoMdf: b.tipoMdf || "Normal", isTransbordo: !!b.isTransbordo, transbordos: [b.transbordo1, b.transbordo2, b.transbordo3].filter(Boolean) }) } as never, { onConflict: "chave_acesso" });
+          await sMdf.from("mdf_documentos").upsert(
+            {
+              empresa_id: empresaId,
+              chave_acesso: (retMdf as any).chave,
+              status: "autorizado",
+              numero: String(
+                (b as any).numero || String(b.xml || "").match(/<nMDF>(\d+)<\/nMDF>/)?.[1] || "",
+              ),
+              serie: String(
+                (b as any).serie || String(b.xml || "").match(/<serie>(\d+)<\/serie>/)?.[1] || "",
+              ),
+              responsavel_emissao: (b as any).responsavel || null,
+              protocolo_sefaz: (retMdf as any).protocolo || null,
+              veiculo_tracao_id: b.veiculoTracaoId || null,
+              motorista_id: b.motoristaId || null,
+              uf_carregamento: b.ufCarregamento,
+              uf_descarregamento: b.ufDescarregamento,
+              qtd_cte: b.qtdCtes,
+              valor_total_carga: b.valorTotalCarga,
+              peso_total: b.pesoTotal,
+              ambiente: ambMdf,
+              data_autorizacao: new Date().toISOString(),
+              xml_assinado: JSON.stringify({
+                xml: b.xml,
+                percursoUFs: b.percursoUFs || [],
+                observacoes: b.observacoes || "",
+                infoFisco: b.infoFisco || "",
+                tipoMdf: b.tipoMdf || "Normal",
+                isTransbordo: !!b.isTransbordo,
+                transbordos: [b.transbordo1, b.transbordo2, b.transbordo3].filter(Boolean),
+              }),
+            } as never,
+            { onConflict: "chave_acesso" },
+          );
         } else if ((retMdf as any).cStat) {
           const numero = String(b.xml || "").match(/<nMDF>(\d+)<\/nMDF>/)?.[1] || "";
           const serie = String(b.xml || "").match(/<serie>(\d+)<\/serie>/)?.[1] || "1";
           // Substitui rejeitado anterior com os mesmos documentos (não duplica a cada tentativa)
           try {
-            const chavesDeP = (x: string) => [...x.matchAll(/<chCTe>(\d{44})<\/chCTe>/g), ...x.matchAll(/<chMDFe>(\d{44})<\/chMDFe>/g)].map(m => m[1]).sort();
+            const chavesDeP = (x: string) =>
+              [
+                ...x.matchAll(/<chCTe>(\d{44})<\/chCTe>/g),
+                ...x.matchAll(/<chMDFe>(\d{44})<\/chMDFe>/g),
+              ]
+                .map((m) => m[1])
+                .sort();
             const chavesNovoP = chavesDeP(String(b.xml || ""));
-            const { data: rejAntP } = await sMdf.from("mdf_documentos").select("id,xml_assinado").eq("empresa_id", empresaId).eq("status", "rejeitado");
+            const { data: rejAntP } = await sMdf
+              .from("mdf_documentos")
+              .select("id,xml_assinado")
+              .eq("empresa_id", empresaId)
+              .eq("status", "rejeitado");
             for (const r of (rejAntP as any[]) || []) {
               const ch = chavesDeP(String((r as any).xml_assinado || ""));
-              if (ch.length && ch.some(c => chavesNovoP.includes(c))) {
-                await sMdf.from("mdf_documentos").delete().eq("id", (r as any).id);
+              if (ch.length && ch.some((c) => chavesNovoP.includes(c))) {
+                await sMdf
+                  .from("mdf_documentos")
+                  .delete()
+                  .eq("id", (r as any).id);
               }
             }
           } catch {}
-          await sMdf.from("mdf_documentos").insert({ empresa_id: empresaId, numero, serie, status: "rejeitado", motivo_rejeicao: `${(retMdf as any).cStat} - ${(retMdf as any).xMotivo}`, uf_carregamento: b.ufCarregamento, uf_descarregamento: b.ufDescarregamento, qtd_cte: b.qtdCtes, valor_total_carga: b.valorTotalCarga, peso_total: b.pesoTotal, ambiente: ambMdf, xml_assinado: b.xml } as never);
+          await sMdf.from("mdf_documentos").insert({
+            empresa_id: empresaId,
+            numero,
+            serie,
+            status: "rejeitado",
+            motivo_rejeicao: `${(retMdf as any).cStat} - ${(retMdf as any).xMotivo}`,
+            uf_carregamento: b.ufCarregamento,
+            uf_descarregamento: b.ufDescarregamento,
+            qtd_cte: b.qtdCtes,
+            valor_total_carga: b.valorTotalCarga,
+            peso_total: b.pesoTotal,
+            ambiente: ambMdf,
+            xml_assinado: b.xml,
+          } as never);
         }
         return json(retMdf);
       }
       case "encerrarMdf": {
         const { encerrarMdf } = await import("@/lib/sefaz-mdf");
         const b = body as any;
-        const retEnc = await encerrarMdf(pfxBytes, senha, b.chave, MDFE_AMBIENTE, b.cnpj || cnpj, b.uf || uf, b.protocolo || "", b.cMun || "");
+        const retEnc = await encerrarMdf(
+          pfxBytes,
+          senha,
+          b.chave,
+          MDFE_AMBIENTE,
+          b.cnpj || cnpj,
+          b.uf || uf,
+          b.protocolo || "",
+          b.cMun || "",
+        );
         if ((retEnc as any).sucesso) {
           const { createClient: ccEnc } = await import("@supabase/supabase-js");
-          const sEnc = ccEnc(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
-          await sEnc.from("mdf_documentos").update({ status: "encerrado", data_encerramento: new Date().toISOString(), responsavel_encerramento: (b as any).responsavel || null } as never).eq("chave_acesso", b.chave);
+          const sEnc = ccEnc(
+            process.env.SUPABASE_URL || "",
+            process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+          );
+          await sEnc
+            .from("mdf_documentos")
+            .update({
+              status: "encerrado",
+              data_encerramento: new Date().toISOString(),
+              responsavel_encerramento: (b as any).responsavel || null,
+            } as never)
+            .eq("chave_acesso", b.chave);
         }
         return json(retEnc);
       }
       case "cancelarMdf": {
         const { cancelarMdf } = await import("@/lib/sefaz-mdf");
         const b = body as any;
-        const retCanc = await cancelarMdf(pfxBytes, senha, b.chave, b.justificativa, MDFE_AMBIENTE, b.cnpj || cnpj, b.uf || uf, b.protocolo || "");
+        const retCanc = await cancelarMdf(
+          pfxBytes,
+          senha,
+          b.chave,
+          b.justificativa,
+          MDFE_AMBIENTE,
+          b.cnpj || cnpj,
+          b.uf || uf,
+          b.protocolo || "",
+        );
         if ((retCanc as any).sucesso) {
           const { createClient: ccCanc } = await import("@supabase/supabase-js");
-          const sCanc = ccCanc(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
-          await sCanc.from("mdf_documentos").update({ status: "cancelado" } as never).eq("chave_acesso", b.chave);
+          const sCanc = ccCanc(
+            process.env.SUPABASE_URL || "",
+            process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+          );
+          await sCanc
+            .from("mdf_documentos")
+            .update({ status: "cancelado" } as never)
+            .eq("chave_acesso", b.chave);
         }
         return json(retCanc);
       }
@@ -309,9 +608,15 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         if (r.debug?.cStat === "138" || r.debug?.cStat === "137") {
           // Sucesso: atualizar last_query_at e last_nsu
           const now = new Date().toISOString();
-          await supabase.from("nfe_config").update({ last_query_at: now }).eq("empresa_id", empresaId);
+          await supabase
+            .from("nfe_config")
+            .update({ last_query_at: now })
+            .eq("empresa_id", empresaId);
           if (r.maxNsuObtido) {
-            await supabase.from("nfe_config").update({ last_nsu: r.maxNsuObtido }).eq("empresa_id", empresaId);
+            await supabase
+              .from("nfe_config")
+              .update({ last_nsu: r.maxNsuObtido })
+              .eq("empresa_id", empresaId);
           }
         } else if (r.debug?.cStat === "656") {
           // Consumo Indevido: SEFAZ pede 1h + usar ultNSU — salva para respeitar cooldown e avançar cursor
@@ -327,7 +632,14 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
       }
       case "manifestar":
         result = await enviarEventoManifestacao(
-          pfxBytes, senha, body.chave, body.tipoEvento, cnpj, uf, ambiente, body.justificativa,
+          pfxBytes,
+          senha,
+          body.chave,
+          body.tipoEvento,
+          cnpj,
+          uf,
+          ambiente,
+          body.justificativa,
         );
         break;
       case "emitir":
@@ -381,4 +693,3 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
     return json({ error: String(err) }, 500);
   }
 }
-

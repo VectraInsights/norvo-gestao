@@ -7,13 +7,41 @@ import { Pagination } from "@/components/erp/pagination";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Plus, Search, Trash2, Users, Pencil, WandSparkles } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,24 +57,45 @@ import { useCorrigirPelaReceita } from "@/hooks/use-corrigir-receita";
 
 export const Route = createFileRoute("/_authenticated/fiscal/cadastro")({
   component: Cadastro,
-  errorComponent: RouteErrorState
+  errorComponent: RouteErrorState,
 });
 
 type Contato = {
-  id: string; nome: string;
-  documento: string | null; ie: string | null; email: string | null; telefone: string | null;
-  cep: string | null; logradouro: string | null; numero: string | null;
-  complemento: string | null; bairro: string | null; cidade: string | null;
-  uf: string | null; observacoes: string | null;
+  id: string;
+  nome: string;
+  documento: string | null;
+  ie: string | null;
+  email: string | null;
+  telefone: string | null;
+  cep: string | null;
+  logradouro: string | null;
+  numero: string | null;
+  complemento: string | null;
+  bairro: string | null;
+  cidade: string | null;
+  uf: string | null;
+  observacoes: string | null;
 };
 
 const emptyForm = () => ({
-  nome: "", documento: "", ie: "", email: "", telefone: "",
-  cep: "", logradouro: "", numero: "", complemento: "",
-  bairro: "", cidade: "", uf: "", observacoes: "",
+  nome: "",
+  documento: "",
+  ie: "",
+  email: "",
+  telefone: "",
+  cep: "",
+  logradouro: "",
+  numero: "",
+  complemento: "",
+  bairro: "",
+  cidade: "",
+  uf: "",
+  observacoes: "",
 });
 
-function onlyDigits(s: string) { return s.replace(/\D/g, ""); }
+function onlyDigits(s: string) {
+  return s.replace(/\D/g, "");
+}
 
 function Cadastro() {
   const { data: empresa } = useEmpresaAtual();
@@ -59,7 +108,10 @@ function Cadastro() {
   const [busca, setBusca] = useState("");
   const [pageSize, setPageSize] = useState(10);
   const [pagina, setPagina] = useState(1);
-  const [ordem, setOrdem] = useState<{ key: "nome" | "documento" | "ie" | "cidade" | "endereco" | "contato"; dir: 1 | -1 }>({
+  const [ordem, setOrdem] = useState<{
+    key: "nome" | "documento" | "ie" | "cidade" | "endereco" | "contato";
+    dir: 1 | -1;
+  }>({
     key: "nome",
     dir: 1,
   });
@@ -75,66 +127,120 @@ function Cadastro() {
     const flag = `norvo:mig-fiscal:${empId}`;
     try {
       if (localStorage.getItem(flag)) return;
-    } catch { return; }
+    } catch {
+      return;
+    }
     let cancelado = false;
     const marcaFeito = () => {
-      try { localStorage.setItem(flag, "1"); } catch { /* sem storage */ }
+      try {
+        localStorage.setItem(flag, "1");
+      } catch {
+        /* sem storage */
+      }
     };
     (async () => {
       try {
         const antigos: Record<string, string | null>[] = [];
         for (let ini = 0; ; ini += 500) {
-          const { data, error } = await supabase.from("fiscal_cadastros" as never)
-            .select("nome,documento,ie,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
-            .eq("empresa_id", empId).range(ini, ini + 499);
+          const { data, error } = await supabase
+            .from("fiscal_cadastros" as never)
+            .select(
+              "nome,documento,ie,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes",
+            )
+            .eq("empresa_id", empId)
+            .range(ini, ini + 499);
           if (error) throw error;
           antigos.push(...((data ?? []) as Record<string, string | null>[]));
           if (!data || data.length < 500) break;
         }
         if (cancelado) return;
-        if (!antigos.length) { marcaFeito(); return; }
-        const { data: atuais, error: errAtuais } = await supabase.from("transportes")
-          .select("id,nome,documento,email,telefone,ie,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
+        if (!antigos.length) {
+          marcaFeito();
+          return;
+        }
+        const { data: atuais, error: errAtuais } = await supabase
+          .from("transportes")
+          .select(
+            "id,nome,documento,email,telefone,ie,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes",
+          )
           .eq("empresa_id", empId);
         if (errAtuais) throw errAtuais;
         if (cancelado) return;
         const dig = (s: unknown) => String(s ?? "").replace(/\D/g, "");
-        const chave = (nome: unknown, documento: unknown) => dig(documento) || `nome:${String(nome ?? "").trim().toLowerCase()}`;
-        const porChave = new Map(((atuais ?? []) as Record<string, string | null>[]).map((c) => [chave(c.nome, c.documento), c]));
+        const chave = (nome: unknown, documento: unknown) =>
+          dig(documento) ||
+          `nome:${String(nome ?? "")
+            .trim()
+            .toLowerCase()}`;
+        const porChave = new Map(
+          ((atuais ?? []) as Record<string, string | null>[]).map((c) => [
+            chave(c.nome, c.documento),
+            c,
+          ]),
+        );
         const limpo = (v: unknown) => {
           const s = String(v ?? "").trim();
           return s ? s : null;
         };
-        let inseridos = 0, preenchidos = 0;
+        let inseridos = 0,
+          preenchidos = 0;
         for (const f of antigos) {
           const c = porChave.get(chave(f.nome, f.documento));
           if (!c) {
             const { error } = await supabase.from("transportes").insert({
-              empresa_id: empId, nome: String(f.nome ?? "").trim() || "Sem nome",
-              documento: limpo(dig(f.documento)), ie: limpo(f.ie), email: limpo(f.email),
-              telefone: limpo(f.telefone), cep: limpo(f.cep), logradouro: limpo(f.logradouro),
-              numero: limpo(f.numero), complemento: limpo(f.complemento), bairro: limpo(f.bairro),
-              cidade: limpo(f.cidade), uf: limpo(f.uf), observacoes: limpo(f.observacoes),
+              empresa_id: empId,
+              nome: String(f.nome ?? "").trim() || "Sem nome",
+              documento: limpo(dig(f.documento)),
+              ie: limpo(f.ie),
+              email: limpo(f.email),
+              telefone: limpo(f.telefone),
+              cep: limpo(f.cep),
+              logradouro: limpo(f.logradouro),
+              numero: limpo(f.numero),
+              complemento: limpo(f.complemento),
+              bairro: limpo(f.bairro),
+              cidade: limpo(f.cidade),
+              uf: limpo(f.uf),
+              observacoes: limpo(f.observacoes),
             });
             if (!error) inseridos++;
             continue;
           }
           const patch: Record<string, string> = {};
-          for (const campo of ["email", "telefone", "ie", "cep", "logradouro", "numero", "complemento", "bairro", "cidade", "uf", "observacoes"] as const) {
-            if (!String(c[campo] ?? "").trim() && String(f[campo] ?? "").trim()) patch[campo] = String(f[campo]).trim();
+          for (const campo of [
+            "email",
+            "telefone",
+            "ie",
+            "cep",
+            "logradouro",
+            "numero",
+            "complemento",
+            "bairro",
+            "cidade",
+            "uf",
+            "observacoes",
+          ] as const) {
+            if (!String(c[campo] ?? "").trim() && String(f[campo] ?? "").trim())
+              patch[campo] = String(f[campo]).trim();
           }
-          if (!String(c.nome ?? "").trim() && String(f.nome ?? "").trim()) patch.nome = String(f.nome).trim();
+          if (!String(c.nome ?? "").trim() && String(f.nome ?? "").trim())
+            patch.nome = String(f.nome).trim();
           if (Object.keys(patch).length) {
-            const { error } = await supabase.from("transportes").update(patch as never).eq("id", c.id as string);
+            const { error } = await supabase
+              .from("transportes")
+              .update(patch as never)
+              .eq("id", c.id as string);
             if (!error) preenchidos++;
           }
         }
         marcaFeito();
         if (inseridos || preenchidos) {
-          toast.success(`Cadastros fiscais unificados: ${inseridos} novo(s), ${preenchidos} completado(s)`);
+          toast.success(
+            `Cadastros fiscais unificados: ${inseridos} novo(s), ${preenchidos} completado(s)`,
+          );
           qc.invalidateQueries({ queryKey: ["contatos-fiscal"] });
-      qc.invalidateQueries({ queryKey: ["contatos-clientes"] });
-      qc.invalidateQueries({ queryKey: ["fornecedores"] });
+          qc.invalidateQueries({ queryKey: ["contatos-clientes"] });
+          qc.invalidateQueries({ queryKey: ["fornecedores"] });
         }
       } catch (e) {
         // Tabela antiga aposentada/ausente: nada a migrar (marca p/ não tentar de novo).
@@ -142,7 +248,9 @@ function Cadastro() {
         if (/fiscal_cadastros|PGRST|does not exist|404|not find/i.test(msg)) marcaFeito();
       }
     })();
-    return () => { cancelado = true; };
+    return () => {
+      cancelado = true;
+    };
   }, [empresa?.id]);
 
   // Delete abre a confirmação de excluir selecionados.
@@ -151,7 +259,14 @@ function Cadastro() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Delete") return;
       const t = e.target as HTMLElement;
-      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      if (
+        t &&
+        (t.tagName === "INPUT" ||
+          t.tagName === "TEXTAREA" ||
+          t.tagName === "SELECT" ||
+          t.isContentEditable)
+      )
+        return;
       if (document.querySelector('[role="dialog"]')) return;
       e.preventDefault();
       setConfirmLote(true);
@@ -169,10 +284,13 @@ function Cadastro() {
       // Busca em páginas para nunca cortar a lista (sem limite silencioso)
       const todos: unknown[] = [];
       for (let ini = 0; ; ini += 500) {
-        const { data, error } = await supabase.from("transportes")
-          .select("id,nome,documento,ie,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
+        const { data, error } = await supabase
+          .from("transportes")
+          .select(
+            "id,nome,documento,ie,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes",
+          )
           .eq("empresa_id", empresa!.id)
-                    .order("nome")
+          .order("nome")
           .range(ini, ini + 499)
           .abortSignal(signal);
         if (error) throw error;
@@ -187,9 +305,11 @@ function Cadastro() {
     const q = busca.trim().toLowerCase();
     return (contatos ?? []).filter((c) => {
       if (!q) return true;
-      return (c.nome || "").toLowerCase().includes(q)
-        || (c.documento || "").replace(/\D/g, "").includes(q.replace(/\D/g, ""))
-        || (c.cidade || "").toLowerCase().includes(q);
+      return (
+        (c.nome || "").toLowerCase().includes(q) ||
+        (c.documento || "").replace(/\D/g, "").includes(q.replace(/\D/g, "")) ||
+        (c.cidade || "").toLowerCase().includes(q)
+      );
     });
   }, [contatos, busca]);
 
@@ -203,7 +323,9 @@ function Cadastro() {
     if (ordem.key === "contato") return (c.telefone || c.email || "").toLowerCase();
     return (c.nome || "").toLowerCase();
   };
-  const ordenados = [...filtrados].sort((a, b) => chOrd(a).localeCompare(chOrd(b), "pt-BR") * ordem.dir);
+  const ordenados = [...filtrados].sort(
+    (a, b) => chOrd(a).localeCompare(chOrd(b), "pt-BR") * ordem.dir,
+  );
   const visiveis = ordenados.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
   const alternarOrdem = (key: typeof ordem.key) => {
     setOrdem((o) => (o.key === key ? { key, dir: o.dir === 1 ? -1 : 1 } : { key, dir: 1 }));
@@ -230,7 +352,10 @@ function Cadastro() {
 
   const lookupCnpj = async () => {
     const digits = onlyDigits(form.documento);
-    if (digits.length === 11) { toast.info("CPF sem consulta automática — preencha manualmente"); return; }
+    if (digits.length === 11) {
+      toast.info("CPF sem consulta automática — preencha manualmente");
+      return;
+    }
     if (digits.length !== 14) return toast.error("CNPJ deve ter 14 dígitos");
     setLookingUp(true);
     try {
@@ -269,23 +394,37 @@ function Cadastro() {
       if (!empresa) throw new Error("Empresa não selecionada");
       const doc = onlyDigits(input.documento);
       if (doc) {
-        const { data: existente } = await supabase.from("transportes")
-          .select("id,nome").eq("empresa_id", empresa.id).eq("documento", doc).maybeSingle();
+        const { data: existente } = await supabase
+          .from("transportes")
+          .select("id,nome")
+          .eq("empresa_id", empresa.id)
+          .eq("documento", doc)
+          .maybeSingle();
         if (existente) throw new Error(`Já cadastrado: ${existente.nome}`);
       }
       const logrFinal = await completarLogradouro(input.logradouro || "", input.cep || "");
       const { error } = await supabase.from("transportes").insert({
-        empresa_id: empresa.id, nome: input.nome,
-        documento: doc || null, ie: input.ie || null, email: input.email || null, telefone: input.telefone || null,
-        cep: input.cep || null, logradouro: logrFinal || null, numero: input.numero || null,
-        complemento: input.complemento || null, bairro: input.bairro || null,
-        cidade: input.cidade || null, uf: input.uf || null, observacoes: input.observacoes || null,
+        empresa_id: empresa.id,
+        nome: input.nome,
+        documento: doc || null,
+        ie: input.ie || null,
+        email: input.email || null,
+        telefone: input.telefone || null,
+        cep: input.cep || null,
+        logradouro: logrFinal || null,
+        numero: input.numero || null,
+        complemento: input.complemento || null,
+        bairro: input.bairro || null,
+        cidade: input.cidade || null,
+        uf: input.uf || null,
+        observacoes: input.observacoes || null,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Cadastro criado");
-      setOpen(false); setForm(emptyForm());
+      setOpen(false);
+      setForm(emptyForm());
       qc.invalidateQueries({ queryKey: ["contatos-fiscal"] });
       qc.invalidateQueries({ queryKey: ["contatos-clientes"] });
       qc.invalidateQueries({ queryKey: ["fornecedores"] });
@@ -298,23 +437,42 @@ function Cadastro() {
       if (!empresa) throw new Error("Empresa não selecionada");
       const doc = onlyDigits(input.documento);
       if (doc) {
-        const { data: existente } = await supabase.from("transportes")
-          .select("id,nome").eq("empresa_id", empresa.id).eq("documento", doc).neq("id", input.id).maybeSingle();
-        if (existente) throw new Error(`Já existe outro cadastro com este CPF/CNPJ: ${existente.nome}`);
+        const { data: existente } = await supabase
+          .from("transportes")
+          .select("id,nome")
+          .eq("empresa_id", empresa.id)
+          .eq("documento", doc)
+          .neq("id", input.id)
+          .maybeSingle();
+        if (existente)
+          throw new Error(`Já existe outro cadastro com este CPF/CNPJ: ${existente.nome}`);
       }
       const logrFinal = await completarLogradouro(input.logradouro || "", input.cep || "");
-      const { error } = await supabase.from("transportes").update({
-        nome: input.nome,
-        documento: doc || null, ie: input.ie || null, email: input.email || null, telefone: input.telefone || null,
-        cep: input.cep || null, logradouro: logrFinal || null, numero: input.numero || null,
-        complemento: input.complemento || null, bairro: input.bairro || null,
-        cidade: input.cidade || null, uf: input.uf || null, observacoes: input.observacoes || null,
-      }).eq("id", input.id);
+      const { error } = await supabase
+        .from("transportes")
+        .update({
+          nome: input.nome,
+          documento: doc || null,
+          ie: input.ie || null,
+          email: input.email || null,
+          telefone: input.telefone || null,
+          cep: input.cep || null,
+          logradouro: logrFinal || null,
+          numero: input.numero || null,
+          complemento: input.complemento || null,
+          bairro: input.bairro || null,
+          cidade: input.cidade || null,
+          uf: input.uf || null,
+          observacoes: input.observacoes || null,
+        })
+        .eq("id", input.id);
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Cadastro atualizado");
-      setOpen(false); setEditing(null); setForm(emptyForm());
+      setOpen(false);
+      setEditing(null);
+      setForm(emptyForm());
       qc.invalidateQueries({ queryKey: ["contatos-fiscal"] });
       qc.invalidateQueries({ queryKey: ["contatos-clientes"] });
       qc.invalidateQueries({ queryKey: ["fornecedores"] });
@@ -340,7 +498,11 @@ function Cadastro() {
   const excluirLote = useMutation({
     mutationFn: async (ids: string[]) => {
       if (!empresa) throw new Error("Empresa não selecionada");
-      const { error } = await supabase.from("transportes").delete().eq("empresa_id", empresa.id).in("id", ids);
+      const { error } = await supabase
+        .from("transportes")
+        .delete()
+        .eq("empresa_id", empresa.id)
+        .in("id", ids);
       if (error) throw error;
       return ids.length;
     },
@@ -359,24 +521,52 @@ function Cadastro() {
   const openEdit = (c: Contato) => {
     setEditing(c);
     setForm({
-      nome: c.nome, documento: maskDoc(c.documento ?? ""), ie: c.ie ?? "", email: c.email ?? "", telefone: c.telefone ?? "",
-      cep: c.cep ?? "", logradouro: c.logradouro ?? "", numero: c.numero ?? "",
-      complemento: c.complemento ?? "", bairro: c.bairro ?? "", cidade: c.cidade ?? "",
-      uf: c.uf ?? "", observacoes: c.observacoes ?? "",
+      nome: c.nome,
+      documento: maskDoc(c.documento ?? ""),
+      ie: c.ie ?? "",
+      email: c.email ?? "",
+      telefone: c.telefone ?? "",
+      cep: c.cep ?? "",
+      logradouro: c.logradouro ?? "",
+      numero: c.numero ?? "",
+      complemento: c.complemento ?? "",
+      bairro: c.bairro ?? "",
+      cidade: c.cidade ?? "",
+      uf: c.uf ?? "",
+      observacoes: c.observacoes ?? "",
     });
     setOpen(true);
   };
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm()); setOpen(true); };
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyForm());
+    setOpen(true);
+  };
 
   return (
     <>
-      <PageHeader eyebrow="Fiscal" title="Contatos" description="Cadastro de transporte — os envolvidos do CT-e (remetente, destinatário, tomador, consignatário e redespacho)." />
+      <PageHeader
+        eyebrow="Fiscal"
+        title="Contatos"
+        description="Cadastro de transporte — os envolvidos do CT-e (remetente, destinatário, tomador, consignatário e redespacho)."
+      />
       <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
-        <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} />
+        <SearchField
+          value={busca}
+          onChange={(v) => {
+            setBusca(v);
+            setPagina(1);
+          }}
+        />
         <div className="flex items-center gap-2">
           {selecionados.size > 0 && (
-            <Button variant="destructive" size="sm" onClick={() => setConfirmLote(true)} className="h-10 rounded-xl px-4">
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setConfirmLote(true)}
+              className="h-10 rounded-xl px-4"
+            >
               <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Excluir selecionados ({selecionados.size})
             </Button>
           )}
@@ -395,27 +585,78 @@ function Cadastro() {
             )}
             {corrigindo ? "Corrigindo..." : "Corrigir pela Receita"}
           </Button>
-          <PrimaryButton onClick={openCreate}><Plus className="mr-1.5 h-4 w-4" />Novo cadastro</PrimaryButton>
+          <PrimaryButton onClick={openCreate}>
+            <Plus className="mr-1.5 h-4 w-4" />
+            Novo cadastro
+          </PrimaryButton>
         </div>
       </div>
       {isLoading ? (
-        <div className="space-y-2.5">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}</div>
+        <div className="space-y-2.5">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />
+          ))}
+        </div>
       ) : !filtrados?.length ? (
-        <EmptyState icon={Users} title="Nenhum contato" description={busca ? "Nada encontrado para a busca." : "Nenhum contato cadastrado."} />
+        <EmptyState
+          icon={Users}
+          title="Nenhum contato"
+          description={busca ? "Nada encontrado para a busca." : "Nenhum contato cadastrado."}
+        />
       ) : (
         <Card className="overflow-hidden rounded-2xl shadow-panel">
           <Table className="min-w-[1280px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10">
-                  <Checkbox checked={todosVisiveisSel} onCheckedChange={alternarTodosVisiveis} aria-label="Selecionar visíveis" />
+                  <Checkbox
+                    checked={todosVisiveisSel}
+                    onCheckedChange={alternarTodosVisiveis}
+                    aria-label="Selecionar visíveis"
+                  />
                 </TableHead>
-                <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("nome")} title="Ordenar por nome">Nome{setaOrdem("nome")}</TableHead>
-                <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("documento")} title="Ordenar por CPF/CNPJ">CPF/CNPJ{setaOrdem("documento")}</TableHead>
-                <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("ie")} title="Ordenar por IE">IE{setaOrdem("ie")}</TableHead>
-                <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("cidade")} title="Ordenar por cidade">Cidade/UF{setaOrdem("cidade")}</TableHead>
-                <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("endereco")} title="Ordenar por endereço">Endereço{setaOrdem("endereco")}</TableHead>
-                <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("contato")} title="Ordenar por contato">Contato{setaOrdem("contato")}</TableHead>
+                <TableHead
+                  className="cursor-pointer select-none whitespace-nowrap"
+                  onClick={() => alternarOrdem("nome")}
+                  title="Ordenar por nome"
+                >
+                  Nome{setaOrdem("nome")}
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer select-none whitespace-nowrap"
+                  onClick={() => alternarOrdem("documento")}
+                  title="Ordenar por CPF/CNPJ"
+                >
+                  CPF/CNPJ{setaOrdem("documento")}
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer select-none whitespace-nowrap"
+                  onClick={() => alternarOrdem("ie")}
+                  title="Ordenar por IE"
+                >
+                  IE{setaOrdem("ie")}
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer select-none whitespace-nowrap"
+                  onClick={() => alternarOrdem("cidade")}
+                  title="Ordenar por cidade"
+                >
+                  Cidade/UF{setaOrdem("cidade")}
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer select-none whitespace-nowrap"
+                  onClick={() => alternarOrdem("endereco")}
+                  title="Ordenar por endereço"
+                >
+                  Endereço{setaOrdem("endereco")}
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer select-none whitespace-nowrap"
+                  onClick={() => alternarOrdem("contato")}
+                  title="Ordenar por contato"
+                >
+                  Contato{setaOrdem("contato")}
+                </TableHead>
                 <TableHead className="w-20" />
               </TableRow>
             </TableHeader>
@@ -423,22 +664,46 @@ function Cadastro() {
               {visiveis.map((c) => (
                 <TableRow key={c.id} className="transition-colors hover:bg-accent/30">
                   <TableCell>
-                    <Checkbox checked={selecionados.has(c.id)} onCheckedChange={() => alternarUm(c.id)} aria-label={`Selecionar ${c.nome}`} />
-                  </TableCell>                  <TableCell className="font-medium whitespace-nowrap">{c.nome}</TableCell>
-                  <TableCell className="text-tabular whitespace-nowrap">{c.documento ? maskDoc(c.documento) : "—"}</TableCell>
-                  <TableCell className="text-muted-foreground whitespace-nowrap">{c.ie || "—"}</TableCell>
-                  <TableCell className="text-muted-foreground whitespace-nowrap">{c.cidade ? `${c.cidade}${c.uf ? `/${c.uf}` : ""}` : "—"}</TableCell>
-                  <TableCell className="text-muted-foreground whitespace-nowrap" title={[c.logradouro, c.numero, c.bairro].filter(Boolean).join(", ")}>
-                    {([c.logradouro, c.numero].filter(Boolean).join(", ") || "—") + (c.bairro ? ` — ${c.bairro}` : "")}
+                    <Checkbox
+                      checked={selecionados.has(c.id)}
+                      onCheckedChange={() => alternarUm(c.id)}
+                      aria-label={`Selecionar ${c.nome}`}
+                    />
+                  </TableCell>{" "}
+                  <TableCell className="font-medium whitespace-nowrap">{c.nome}</TableCell>
+                  <TableCell className="text-tabular whitespace-nowrap">
+                    {c.documento ? maskDoc(c.documento) : "—"}
                   </TableCell>
-                  <TableCell className="text-muted-foreground whitespace-nowrap">{c.telefone ?? c.email ?? "—"}</TableCell>
-                  <TableCell className="text-muted-foreground whitespace-nowrap">{c.telefone ?? c.email ?? "—"}</TableCell>
+                  <TableCell className="text-muted-foreground whitespace-nowrap">
+                    {c.ie || "—"}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground whitespace-nowrap">
+                    {c.cidade ? `${c.cidade}${c.uf ? `/${c.uf}` : ""}` : "—"}
+                  </TableCell>
+                  <TableCell
+                    className="text-muted-foreground whitespace-nowrap"
+                    title={[c.logradouro, c.numero, c.bairro].filter(Boolean).join(", ")}
+                  >
+                    {([c.logradouro, c.numero].filter(Boolean).join(", ") || "—") +
+                      (c.bairro ? ` — ${c.bairro}` : "")}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground whitespace-nowrap">
+                    {c.telefone ?? c.email ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground whitespace-nowrap">
+                    {c.telefone ?? c.email ?? "—"}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button size="sm" variant="ghost" className="h-8 w-8 rounded-lg p-0" onClick={() => openEdit(c)}>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 rounded-lg p-0"
+                              onClick={() => openEdit(c)}
+                            >
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
                           </TooltipTrigger>
@@ -448,7 +713,12 @@ function Cadastro() {
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button size="sm" variant="ghost" className="h-8 w-8 rounded-lg p-0 text-destructive hover:bg-destructive/10" onClick={() => setDeleting(c)}>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 rounded-lg p-0 text-destructive hover:bg-destructive/10"
+                              onClick={() => setDeleting(c)}
+                            >
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </TooltipTrigger>
@@ -468,66 +738,215 @@ function Cadastro() {
             pageSize={pageSize}
             onPagina={setPagina}
             pageSizes={[10, 20, 50, 100]}
-            onPageSize={(n) => { setPageSize(n); setPagina(1); }}
+            onPageSize={(n) => {
+              setPageSize(n);
+              setPagina(1);
+            }}
             summary={
               <span>
-                {filtrados.length} contato(s){selecionados.size > 0 && ` · ${selecionados.size} selecionado(s)`}
+                {filtrados.length} contato(s)
+                {selecionados.size > 0 && ` · ${selecionados.size} selecionado(s)`}
               </span>
             }
           />
         </Card>
       )}
 
-      <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending && !editar.isPending) { setOpen(v); if (!v) { setEditing(null); setForm(emptyForm()); } } }}>
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          if (!criar.isPending && !editar.isPending) {
+            setOpen(v);
+            if (!v) {
+              setEditing(null);
+              setForm(emptyForm());
+            }
+          }
+        }}
+      >
         <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
-          <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">{editing ? "Editar cadastro" : "Novo cadastro"}</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); if (editing) { editar.mutate({ ...form, id: editing.id }); } else { criar.mutate(form); } }} className="space-y-4">
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">
+              {editing ? "Editar cadastro" : "Novo cadastro"}
+            </DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (editing) {
+                editar.mutate({ ...form, id: editing.id });
+              } else {
+                criar.mutate(form);
+              }
+            }}
+            className="space-y-4"
+          >
             <div className="grid gap-1.5">
               <Label>CPF/CNPJ</Label>
               <div className="flex gap-2">
-                <Input value={form.documento} onChange={(e) => setForm({ ...form, documento: maskDoc(e.target.value) })} className="h-10 rounded-xl"
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); lookupCnpj(); } }} />
-                <Button type="button" variant="outline" onClick={lookupCnpj} disabled={lookingUp || !form.documento} className="h-10 w-10 shrink-0 rounded-xl shadow-sm">
-                  {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                <Input
+                  value={form.documento}
+                  onChange={(e) => setForm({ ...form, documento: maskDoc(e.target.value) })}
+                  className="h-10 rounded-xl"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      lookupCnpj();
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={lookupCnpj}
+                  disabled={lookingUp || !form.documento}
+                  className="h-10 w-10 shrink-0 rounded-xl shadow-sm"
+                >
+                  {lookingUp ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Search className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>
-            <div className="grid gap-1.5"><Label>Nome / Razão social *</Label><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} className="h-10 rounded-xl" /></div>
+            <div className="grid gap-1.5">
+              <Label>Nome / Razão social *</Label>
+              <Input
+                required
+                value={form.nome}
+                onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                className="h-10 rounded-xl"
+              />
+            </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="grid gap-1.5"><Label>IE / ISENTO</Label><Input value={form.ie} onChange={(e) => setForm({ ...form, ie: e.target.value.toUpperCase() })} className="h-10 rounded-xl" /></div>
-              <div className="grid gap-1.5"><Label>Telefone</Label><Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} className="h-10 rounded-xl" /></div>
+              <div className="grid gap-1.5">
+                <Label>IE / ISENTO</Label>
+                <Input
+                  value={form.ie}
+                  onChange={(e) => setForm({ ...form, ie: e.target.value.toUpperCase() })}
+                  className="h-10 rounded-xl"
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Telefone</Label>
+                <Input
+                  value={form.telefone}
+                  onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+                  className="h-10 rounded-xl"
+                />
+              </div>
             </div>
-            <div className="grid gap-1.5"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="h-10 rounded-xl" /></div>
+            <div className="grid gap-1.5">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="h-10 rounded-xl"
+              />
+            </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <div className="grid gap-1.5"><Label>CEP</Label><Input value={form.cep} onChange={(e) => setForm({ ...form, cep: e.target.value })} className="h-10 rounded-xl" /></div>
-              <div className="col-span-2 grid gap-1.5"><Label>Logradouro</Label><Input value={form.logradouro} onChange={(e) => setForm({ ...form, logradouro: e.target.value })} className="h-10 rounded-xl" /></div>
+              <div className="grid gap-1.5">
+                <Label>CEP</Label>
+                <Input
+                  value={form.cep}
+                  onChange={(e) => setForm({ ...form, cep: e.target.value })}
+                  className="h-10 rounded-xl"
+                />
+              </div>
+              <div className="col-span-2 grid gap-1.5">
+                <Label>Logradouro</Label>
+                <Input
+                  value={form.logradouro}
+                  onChange={(e) => setForm({ ...form, logradouro: e.target.value })}
+                  className="h-10 rounded-xl"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <div className="grid gap-1.5"><Label>Número</Label><Input value={form.numero} onChange={(e) => setForm({ ...form, numero: e.target.value })} className="h-10 rounded-xl" /></div>
-              <div className="col-span-2 grid gap-1.5"><Label>Complemento</Label><Input value={form.complemento} onChange={(e) => setForm({ ...form, complemento: e.target.value })} className="h-10 rounded-xl" /></div>
+              <div className="grid gap-1.5">
+                <Label>Número</Label>
+                <Input
+                  value={form.numero}
+                  onChange={(e) => setForm({ ...form, numero: e.target.value })}
+                  className="h-10 rounded-xl"
+                />
+              </div>
+              <div className="col-span-2 grid gap-1.5">
+                <Label>Complemento</Label>
+                <Input
+                  value={form.complemento}
+                  onChange={(e) => setForm({ ...form, complemento: e.target.value })}
+                  className="h-10 rounded-xl"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <div className="grid gap-1.5"><Label>Bairro</Label><Input value={form.bairro} onChange={(e) => setForm({ ...form, bairro: e.target.value })} className="h-10 rounded-xl" /></div>
-              <div className="grid gap-1.5"><Label>Cidade</Label><Input value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} className="h-10 rounded-xl" /></div>
-              <div className="grid gap-1.5"><Label>UF</Label><Input maxLength={2} value={form.uf} onChange={(e) => setForm({ ...form, uf: e.target.value.toUpperCase() })} className="h-10 rounded-xl" /></div>
+              <div className="grid gap-1.5">
+                <Label>Bairro</Label>
+                <Input
+                  value={form.bairro}
+                  onChange={(e) => setForm({ ...form, bairro: e.target.value })}
+                  className="h-10 rounded-xl"
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Cidade</Label>
+                <Input
+                  value={form.cidade}
+                  onChange={(e) => setForm({ ...form, cidade: e.target.value })}
+                  className="h-10 rounded-xl"
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>UF</Label>
+                <Input
+                  maxLength={2}
+                  value={form.uf}
+                  onChange={(e) => setForm({ ...form, uf: e.target.value.toUpperCase() })}
+                  className="h-10 rounded-xl"
+                />
+              </div>
             </div>
-            <div className="grid gap-1.5"><Label>Observações</Label><Textarea rows={3} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} className="rounded-xl" /></div>
+            <div className="grid gap-1.5">
+              <Label>Observações</Label>
+              <Textarea
+                rows={3}
+                value={form.observacoes}
+                onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
+                className="rounded-xl"
+              />
+            </div>
             <DialogFooter className="gap-2">
-              <Button type="submit" disabled={criar.isPending || editar.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
-                {(criar.isPending || editar.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
+              <Button
+                type="submit"
+                disabled={criar.isPending || editar.isPending}
+                className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+              >
+                {(criar.isPending || editar.isPending) && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Salvar
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deleting} onOpenChange={(v) => { if (!v) setDeleting(null); }}>
+      <AlertDialog
+        open={!!deleting}
+        onOpenChange={(v) => {
+          if (!v) setDeleting(null);
+        }}
+      >
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader className="gap-1.5">
             <AlertDialogTitle className="tracking-tight">Excluir cadastro</AlertDialogTitle>
             <AlertDialogDescription className="leading-relaxed">
-              Tem certeza que deseja excluir <strong>{deleting?.nome}</strong>? Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir <strong>{deleting?.nome}</strong>? Esta ação não pode
+              ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">
@@ -543,12 +962,18 @@ function Cadastro() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={confirmLote} onOpenChange={(v) => { if (!v) setConfirmLote(false); }}>
+      <AlertDialog
+        open={confirmLote}
+        onOpenChange={(v) => {
+          if (!v) setConfirmLote(false);
+        }}
+      >
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader className="gap-1.5">
             <AlertDialogTitle className="tracking-tight">Excluir selecionados</AlertDialogTitle>
             <AlertDialogDescription className="leading-relaxed">
-              Tem certeza que deseja excluir <strong>{selecionados.size} cadastro(s)</strong>? Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir <strong>{selecionados.size} cadastro(s)</strong>? Esta
+              ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">

@@ -301,7 +301,9 @@ function Dashboard() {
         .limit(5)
         .abortSignal(signal);
       if (error) throw error;
-      const linhas = (data ?? []) as unknown as (ProximoReceberRow & { contato_id: string | null })[];
+      const linhas = (data ?? []) as unknown as (ProximoReceberRow & {
+        contato_id: string | null;
+      })[];
       const nomes = await nomesContatosFinanceiros(linhas.map((l) => l.contato_id || ""));
       return linhas.map((l) => ({
         ...l,
@@ -324,7 +326,12 @@ function Dashboard() {
 
   const atalhos = [
     { label: "Nova venda", desc: "Emita em segundos", to: "/vendas/vendas", icon: ShoppingCart },
-    { label: "Lançamento financeiro", desc: "Pagar ou receber", to: "/financeiro/extrato", icon: Wallet },
+    {
+      label: "Lançamento financeiro",
+      desc: "Pagar ou receber",
+      to: "/financeiro/extrato",
+      icon: Wallet,
+    },
     { label: "Novo produto", desc: "Amplie o catálogo", to: "/estoque/produtos", icon: Package },
     { label: "Novo contato", desc: "Cliente ou fornecedor", to: "/vendas/clientes", icon: Users },
   ];
@@ -392,9 +399,17 @@ function Dashboard() {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {loadingStats
           ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
-          : cards.slice(0, 4).map((c) => (
-              <StatCard key={c.label} icon={c.icon} label={c.label} value={c.value} tone={c.tone} />
-            ))}
+          : cards
+              .slice(0, 4)
+              .map((c) => (
+                <StatCard
+                  key={c.label}
+                  icon={c.icon}
+                  label={c.label}
+                  value={c.value}
+                  tone={c.tone}
+                />
+              ))}
       </div>
 
       {/* Ações rápidas — barra horizontal button-group, não cards grandes */}
@@ -423,10 +438,20 @@ function Dashboard() {
       {/* Métricas secundárias — 4 cards menores, hierarquia secundária */}
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {loadingStats
-          ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} variant="secondary" />)
-          : cards.slice(4).map((c) => (
-              <StatCard key={c.label} icon={c.icon} label={c.label} value={c.value} variant="secondary" />
-            ))}
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <StatCardSkeleton key={i} variant="secondary" />
+            ))
+          : cards
+              .slice(4)
+              .map((c) => (
+                <StatCard
+                  key={c.label}
+                  icon={c.icon}
+                  label={c.label}
+                  value={c.value}
+                  variant="secondary"
+                />
+              ))}
       </div>
 
       <div className="mt-10 grid gap-5 lg:grid-cols-3 lg:gap-6 lg:mt-12">
@@ -458,7 +483,9 @@ function Dashboard() {
                 <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
                   Atenção
                 </p>
-                <h3 className="mt-1.5 text-base font-semibold tracking-tight">Alertas & estoque baixo</h3>
+                <h3 className="mt-1.5 text-base font-semibold tracking-tight">
+                  Alertas & estoque baixo
+                </h3>
               </div>
               <span className="grid h-11 w-11 place-items-center rounded-2xl bg-warning/15">
                 <AlertTriangle className="h-5 w-5 text-warning-foreground" aria-hidden="true" />
@@ -509,7 +536,10 @@ function Dashboard() {
                     return itens;
                   })
                   .map((a) => (
-                    <li key={a.key} className="-mx-2 flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-accent/40">
+                    <li
+                      key={a.key}
+                      className="-mx-2 flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-accent/40"
+                    >
                       <span className="truncate">
                         <strong>
                           {cnhVencendo?.find((c) => c.id === a.key.split("-")[0])?.nome}
@@ -533,7 +563,10 @@ function Dashboard() {
                     (new Date(m.data_vencimento + "T12:00:00").getTime() - Date.now()) / 86400_000,
                   );
                   return (
-                    <li key={m.id} className="-mx-2 flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-accent/40">
+                    <li
+                      key={m.id}
+                      className="-mx-2 flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-accent/40"
+                    >
                       <span className="truncate">
                         <strong>{m.placa}</strong> — multa{" "}
                         {m.auto_infracao ? `auto ${m.auto_infracao}` : ""}{" "}
@@ -553,7 +586,10 @@ function Dashboard() {
                   );
                 })}
                 {stats?.estoqueBaixo?.slice(0, 5).map((p) => (
-                  <li key={p.id} className="-mx-2 flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-accent/40">
+                  <li
+                    key={p.id}
+                    className="-mx-2 flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-accent/40"
+                  >
                     <span className="truncate">
                       <strong>{p.nome}</strong> — estoque {Number(p.estoque_atual)}{" "}
                       {p.unidade ?? ""}
@@ -566,7 +602,9 @@ function Dashboard() {
                 {alertas?.map((a) => (
                   <li key={a.id} className="rounded-xl bg-accent/30 p-3 text-sm shadow-sm">
                     <div className="font-medium">{a.titulo}</div>
-                    <div className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{a.mensagem}</div>
+                    <div className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                      {a.mensagem}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -585,19 +623,26 @@ function Dashboard() {
             {!proximosReceber?.length ? (
               <div className="rounded-xl bg-muted/40 px-4 py-6 text-center">
                 <p className="text-sm font-medium">Sem lançamentos em aberto.</p>
-                <p className="mt-1 text-xs text-muted-foreground">Novos recebimentos aparecem aqui.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Novos recebimentos aparecem aqui.
+                </p>
               </div>
             ) : (
               <ul className="divide-y divide-border/60">
                 {proximosReceber.map((l) => (
-                  <li key={l.id} className="-mx-2 flex items-center justify-between gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/40">
+                  <li
+                    key={l.id}
+                    className="-mx-2 flex items-center justify-between gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/40"
+                  >
                     <div className="min-w-0">
                       <div className="truncate text-sm font-medium">{l.descricao}</div>
                       <div className="mt-0.5 text-xs text-muted-foreground">
                         {l.contato?.nome ?? "—"} · vence {dateBR(l.data_vencimento)}
                       </div>
                     </div>
-                    <div className="shrink-0 text-tabular text-sm font-semibold">{brl(l.valor)}</div>
+                    <div className="shrink-0 text-tabular text-sm font-semibold">
+                      {brl(l.valor)}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -753,7 +798,7 @@ function FirstEmpresa({ onCreated }: { onCreated: () => Promise<void> }) {
                   value={form.cnpj}
                   onChange={(e) => setForm({ ...form, cnpj: maskDoc(e.target.value) })}
                   onKeyDown={handleCnpjKeyDown}
-                 
+
                   className="h-10 rounded-xl"
                 />
                 <Button
@@ -775,11 +820,15 @@ function FirstEmpresa({ onCreated }: { onCreated: () => Promise<void> }) {
                 required
                 value={form.nome_fantasia}
                 onChange={(e) => setForm({ ...form, nome_fantasia: e.target.value })}
-               
+
                 className="h-10 rounded-xl"
               />
             </div>
-            <Button type="submit" className="h-11 w-full rounded-xl text-base shadow-md transition-all hover:-translate-y-px hover:shadow-lg" disabled={criarMut.isPending}>
+            <Button
+              type="submit"
+              className="h-11 w-full rounded-xl text-base shadow-md transition-all hover:-translate-y-px hover:shadow-lg"
+              disabled={criarMut.isPending}
+            >
               {criarMut.isPending ? "Criando…" : "Criar empresa"}
             </Button>
           </form>

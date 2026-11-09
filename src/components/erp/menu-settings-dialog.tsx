@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, Eye, EyeOff, SlidersHorizontal } from "lucide-react";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { NAV } from "@/components/erp/nav-config";
@@ -63,7 +69,8 @@ export function MenuSettingsDialog({ prefs, onSave, onReset, collapsed }: Props)
         <DialogHeader className="gap-1.5 pb-2">
           <DialogTitle className="tracking-tight">Personalizar menu</DialogTitle>
           <DialogDescription className="leading-relaxed">
-            Defina a ordem e quais categorias aparecem na barra lateral. A preferência é salva para o seu usuário.
+            Defina a ordem e quais categorias aparecem na barra lateral. A preferência é salva para
+            o seu usuário.
           </DialogDescription>
         </DialogHeader>
 
@@ -84,21 +91,32 @@ export function MenuSettingsDialog({ prefs, onSave, onReset, collapsed }: Props)
                 <Icon className="h-4 w-4 shrink-0" />
                 <span className="flex-1 truncate text-sm font-medium">{label}</span>
                 <Button
-                  type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-lg"
-                  aria-label={`Mover ${label} para cima`} disabled={i === 0}
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-lg"
+                  aria-label={`Mover ${label} para cima`}
+                  disabled={i === 0}
                   onClick={() => move(i, -1)}
                 >
                   <ArrowUp className="h-4 w-4" />
                 </Button>
                 <Button
-                  type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-lg"
-                  aria-label={`Mover ${label} para baixo`} disabled={i === order.length - 1}
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-lg"
+                  aria-label={`Mover ${label} para baixo`}
+                  disabled={i === order.length - 1}
                   onClick={() => move(i, 1)}
                 >
                   <ArrowDown className="h-4 w-4" />
                 </Button>
                 <Button
-                  type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-lg"
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-lg"
                   aria-label={isHidden ? `Mostrar ${label}` : `Ocultar ${label}`}
                   onClick={() => toggle(label)}
                 >
@@ -111,14 +129,21 @@ export function MenuSettingsDialog({ prefs, onSave, onReset, collapsed }: Props)
 
         <DialogFooter className="gap-2 sm:justify-between">
           <Button
-            type="button" variant="ghost"
-            onClick={() => { onReset(); setOpen(false); }}
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              onReset();
+              setOpen(false);
+            }}
           >
             Restaurar padrão
           </Button>
           <Button
             type="button"
-            onClick={() => { onSave({ order, hidden }); setOpen(false); }}
+            onClick={() => {
+              onSave({ order, hidden });
+              setOpen(false);
+            }}
           >
             Salvar
           </Button>

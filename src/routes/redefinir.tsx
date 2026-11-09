@@ -96,7 +96,11 @@ function RedefinirSenha() {
               className="h-10 rounded-xl"
             />
           </div>
-          <Button type="submit" className="h-10 w-full rounded-xl shadow-sm transition-all hover:-translate-y-px hover:shadow-md" disabled={loading}>
+          <Button
+            type="submit"
+            className="h-10 w-full rounded-xl shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+            disabled={loading}
+          >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Salvar nova senha
           </Button>

@@ -128,7 +128,10 @@ function fmtCnpj(v: string): string {
 }
 
 function fmtNum(v: number | string): string {
-  return (Number(v) || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return (Number(v) || 0).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 // Como o modelo impresso: preserva as casas do XML (6,0000 / 243,0000 / 2,400);
@@ -150,14 +153,20 @@ function fmtQtd(v: string | number): string {
   const m = s.match(/^(-?\d+)([.,](\d+))?$/);
   if (!m) return s;
   const dec = (m[3] || "").slice(0, 4);
-  const thou = m[1].replace(/\D/g, "").replace(/^0+(?=\d)/, "").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const thou = m[1]
+    .replace(/\D/g, "")
+    .replace(/^0+(?=\d)/, "")
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   const dd = (dec + "00").slice(0, Math.max(2, dec.length));
   return (s.charAt(0) === "-" ? "-" : "") + thou + "," + dd;
 }
 
 // Nº da NF-e no padrão impresso: 9 dígitos com zeros (000.015.545)
 function fmtNFe(v: string | number): string {
-  const d = String(v || "").replace(/\D/g, "").slice(-9).padStart(9, "0");
+  const d = String(v || "")
+    .replace(/\D/g, "")
+    .slice(-9)
+    .padStart(9, "0");
   return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
 }
 
@@ -167,7 +176,10 @@ function fmtSerie(v: string | number | undefined): string {
 }
 
 function fmtChave(chave: string): string {
-  return (chave || "").replace(/\D/g, "").replace(/(\d{4})/g, "$1 ").trim();
+  return (chave || "")
+    .replace(/\D/g, "")
+    .replace(/(\d{4})/g, "$1 ")
+    .trim();
 }
 
 function fmtData(v: string): string {
@@ -183,7 +195,9 @@ function fmtDH(v: string): string {
     if (isNaN(d.getTime())) return fmtData(v);
     const p = (n: number) => String(n).padStart(2, "0");
     return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
-  } catch { return v || ""; }
+  } catch {
+    return v || "";
+  }
 }
 
 // CODE-128C real da chave. Volta null fora do browser ou sem chave válida.
@@ -193,9 +207,19 @@ function barcodePng(chave: string): string | null {
     if (digits.length !== 44 || typeof document === "undefined") return null;
     const JB: any = (JsBarcode as any)?.default || JsBarcode;
     const c = document.createElement("canvas");
-    JB(c, digits, { format: "CODE128C", displayValue: false, margin: 0, height: 48, width: 2, background: "#ffffff", lineColor: "#000000" });
+    JB(c, digits, {
+      format: "CODE128C",
+      displayValue: false,
+      margin: 0,
+      height: 48,
+      width: 2,
+      background: "#ffffff",
+      lineColor: "#000000",
+    });
     return c.toDataURL("image/png");
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 interface Col {
@@ -210,26 +234,64 @@ interface Col {
 
 export function gerarDanfePdf(data: DanfeData): Blob {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const W = 210, M = 5, CW = W - 2 * M;
+  const W = 210,
+    M = 5,
+    CW = W - 2 * M;
   const LIM = 292;
   let y = M;
 
   const F = "times";
-  const setFont = (w: "bold" | "normal" | "italic", s: number) => { doc.setFont(F, w); doc.setFontSize(s); };
+  const setFont = (w: "bold" | "normal" | "italic", s: number) => {
+    doc.setFont(F, w);
+    doc.setFontSize(s);
+  };
   const black = () => doc.setTextColor(0, 0, 0);
-  const border = () => { doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.2); };
-  const box = (x: number, yy: number, w: number, h: number) => { border(); doc.rect(x, yy, w, h, "S"); };
-  const vline = (x: number, yy: number, h: number) => { border(); doc.line(x, yy, x, yy + h); };
-  const lab = (t: string, x: number, yy: number, s = 5) => { black(); setFont("normal", s); doc.text(String(t || "").toUpperCase(), x, yy); };
-  const need = (h: number) => { if (y + h > LIM) { doc.addPage(); y = M; } };
+  const border = () => {
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.2);
+  };
+  const box = (x: number, yy: number, w: number, h: number) => {
+    border();
+    doc.rect(x, yy, w, h, "S");
+  };
+  const vline = (x: number, yy: number, h: number) => {
+    border();
+    doc.line(x, yy, x, yy + h);
+  };
+  const lab = (t: string, x: number, yy: number, s = 5) => {
+    black();
+    setFont("normal", s);
+    doc.text(String(t || "").toUpperCase(), x, yy);
+  };
+  const need = (h: number) => {
+    if (y + h > LIM) {
+      doc.addPage();
+      y = M;
+    }
+  };
   const cut = (t: string, n: number) => String(t || "").slice(0, n);
   const D = (v: any) => (v === undefined || v === null || v === "" ? "" : String(v));
   const ctr = (t: string, xx: number, yy: number, s: number, bold = false) => {
-    black(); setFont(bold ? "bold" : "normal", s);
-    try { (doc as any).text(t, xx, yy, { align: "center" }); } catch { doc.text(t, xx, yy); }
+    black();
+    setFont(bold ? "bold" : "normal", s);
+    try {
+      (doc as any).text(t, xx, yy, { align: "center" });
+    } catch {
+      doc.text(t, xx, yy);
+    }
   };
-  const drawVal = (t: string, x: number, w: number, yy: number, align: "l" | "c" | "r", s: number, bold = false, fit = false) => {
-    black(); let fs = s;
+  const drawVal = (
+    t: string,
+    x: number,
+    w: number,
+    yy: number,
+    align: "l" | "c" | "r",
+    s: number,
+    bold = false,
+    fit = false,
+  ) => {
+    black();
+    let fs = s;
     setFont(bold ? "bold" : "normal", fs);
     if (fit && t) {
       try {
@@ -239,16 +301,27 @@ export function gerarDanfePdf(data: DanfeData): Blob {
         }
       } catch {}
     }
-    if (align === "r") { try { (doc as any).text(t, x + w - 1, yy, { align: "right" }); } catch { doc.text(t, x + 1, yy); } }
-    else if (align === "c") { try { (doc as any).text(t, x + w / 2, yy, { align: "center" }); } catch { doc.text(t, x + 1, yy); } }
-    else doc.text(t, x + 1, yy);
+    if (align === "r") {
+      try {
+        (doc as any).text(t, x + w - 1, yy, { align: "right" });
+      } catch {
+        doc.text(t, x + 1, yy);
+      }
+    } else if (align === "c") {
+      try {
+        (doc as any).text(t, x + w / 2, yy, { align: "center" });
+      } catch {
+        doc.text(t, x + 1, yy);
+      }
+    } else doc.text(t, x + 1, yy);
   };
 
   // Título de seção no padrão do modelo: texto pequeno acima da caixa, sem faixa.
   const titulo = (t: string) => {
     need(5.5);
     y += 1.2;
-    black(); setFont("normal", 5.2);
+    black();
+    setFont("normal", 5.2);
     doc.text(String(t || "").toUpperCase(), M + 0.5, y + 2.4);
     y += 3.2;
   };
@@ -261,7 +334,17 @@ export function gerarDanfePdf(data: DanfeData): Blob {
     cols.forEach((c, i) => {
       if (i > 0) vline(x, y, h);
       lab(c.label, x + 1, y + 2.6, c.lsize ?? 5);
-      if (c.value) drawVal(c.value, x, c.w, y + (valY ?? h - 1.2), c.align || "l", c.vsize ?? 7, true, !!c.fit);
+      if (c.value)
+        drawVal(
+          c.value,
+          x,
+          c.w,
+          y + (valY ?? h - 1.2),
+          c.align || "l",
+          c.vsize ?? 7,
+          true,
+          !!c.fit,
+        );
       x += c.w;
     });
     y += h;
@@ -293,9 +376,14 @@ export function gerarDanfePdf(data: DanfeData): Blob {
   y += dataH;
   // linha de corte tracejada
   doc.saveGraphicsState();
-  try { (doc as any).setLineDashPattern([2, 2], 0); } catch {}
-  border(); doc.line(M, y + 1, M + CW, y + 1);
-  try { (doc as any).restoreGraphicsState(); } catch {}
+  try {
+    (doc as any).setLineDashPattern([2, 2], 0);
+  } catch {}
+  border();
+  doc.line(M, y + 1, M + CW, y + 1);
+  try {
+    (doc as any).restoreGraphicsState();
+  } catch {}
   border();
   y += 2.5;
   y += 1.2;
@@ -303,14 +391,17 @@ export function gerarDanfePdf(data: DanfeData): Blob {
   // ================= CABEÇALHO: emitente | DANFE | barras+chave =================
   const headH = 36;
   need(headH);
-  const wE = 72, wD = 42, wB = CW - wE - wD;
+  const wE = 72,
+    wD = 42,
+    wB = CW - wE - wD;
   box(M, y, wE, headH);
   box(M + wE, y, wD, headH);
   box(M + wE + wD, y, wB, headH);
   // Emitente (centralizado, como no modelo; nome quebra em até 3 linhas, nunca corta)
   ctr("IDENTIFICAÇÃO DO EMITENTE", M + wE / 2, y + 3, 4.6);
   const nomeEmit = D(data.emitNome).toUpperCase();
-  setFont("bold", 9); black();
+  setFont("bold", 9);
+  black();
   let nomeLines = doc.splitTextToSize(nomeEmit, wE - 4) as string[];
   let nomeSize = 9;
   while (nomeLines.length > 3 && nomeSize > 6) {
@@ -325,7 +416,8 @@ export function gerarDanfePdf(data: DanfeData): Blob {
     ctr(ln, M + wE / 2, ey + li * nomeLH, nomeSize, true);
   });
   ey += nomeLines.length * nomeLH + 1.5;
-  setFont("normal", 6); black();
+  setFont("normal", 6);
+  black();
   const endLines = [
     cut(D(data.emitEndereco).toUpperCase(), 44),
     `${cut(D(data.emitBairro).toUpperCase(), 20)} - ${D(data.emitCEP)}`,
@@ -342,13 +434,19 @@ export function gerarDanfePdf(data: DanfeData): Blob {
   ctr("Fiscal Eletrônica", dx + wD / 2, y + 12.6, 5);
   const tp = D(data.tpEntradaSaida) || "1";
   // "0 - ENTRADA  1 - SAÍDA  [dígito]" centralizado, quadrinho com o tipo ativo
-  black(); setFont("normal", 5.2);
-  const s0 = "0 - ENTRADA", s1 = "1 - SAÍDA";
-  const w0 = doc.getTextWidth(s0), w1 = doc.getTextWidth(s1);
+  black();
+  setFont("normal", 5.2);
+  const s0 = "0 - ENTRADA",
+    s1 = "1 - SAÍDA";
+  const w0 = doc.getTextWidth(s0),
+    w1 = doc.getTextWidth(s1);
   let ex = dx + Math.max(1, (wD - (w0 + 3 + w1 + 2 + 5)) / 2);
-  doc.text(s0, ex, y + 17); ex += w0 + 3;
-  doc.text(s1, ex, y + 17); ex += w1 + 2;
-  border(); doc.rect(ex, y + 14.2, 5, 4.6, "S");
+  doc.text(s0, ex, y + 17);
+  ex += w0 + 3;
+  doc.text(s1, ex, y + 17);
+  ex += w1 + 2;
+  border();
+  doc.rect(ex, y + 14.2, 5, 4.6, "S");
   ctr(tp === "0" ? "0" : "1", ex + 2.5, y + 17.6, 6, true);
   ctr(`Nº. ${fmtNFe(data.numero)}`, dx + wD / 2, y + 23.4, 8, true);
   ctr(`Série ${fmtSerie(data.serie)}`, dx + wD / 2, y + 27.4, 7, true);
@@ -360,9 +458,13 @@ export function gerarDanfePdf(data: DanfeData): Blob {
     try {
       const props = (doc as any).getImageProperties(barsImg);
       const ratio = props.width / props.height;
-      let iw = 11 * ratio, ih = 11;
+      let iw = 11 * ratio,
+        ih = 11;
       const maxW = wB - 8;
-      if (iw > maxW) { iw = maxW; ih = iw / ratio; }
+      if (iw > maxW) {
+        iw = maxW;
+        ih = iw / ratio;
+      }
       doc.addImage(barsImg, "PNG", bx + (wB - iw) / 2, y + 1.5, iw, ih);
     } catch {}
   }
@@ -375,8 +477,19 @@ export function gerarDanfePdf(data: DanfeData): Blob {
 
   // ================= NATUREZA / PROTOCOLO =================
   linha(9, [
-    { label: "Natureza da Operação", value: cut(D(data.naturezaOperacao).toUpperCase(), 60), w: 120, vsize: 7.5, fit: true },
-    { label: "Protocolo de Autorização de Uso", value: `${D(data.protocolo)}${D(data.protocoloData) ? ` - ${fmtDH(D(data.protocoloData))}` : ""}`, w: CW - 120, vsize: 6.5 },
+    {
+      label: "Natureza da Operação",
+      value: cut(D(data.naturezaOperacao).toUpperCase(), 60),
+      w: 120,
+      vsize: 7.5,
+      fit: true,
+    },
+    {
+      label: "Protocolo de Autorização de Uso",
+      value: `${D(data.protocolo)}${D(data.protocoloData) ? ` - ${fmtDH(D(data.protocoloData))}` : ""}`,
+      w: CW - 120,
+      vsize: 6.5,
+    },
   ]);
   linha(8, [
     { label: "Inscrição Estadual", value: D(data.emitIE), w: 50 },
@@ -388,15 +501,36 @@ export function gerarDanfePdf(data: DanfeData): Blob {
   // ================= DESTINATÁRIO / REMETENTE =================
   titulo("Destinatário / Remetente");
   linha(8, [
-    { label: "Nome / Razão Social", value: cut(D(data.destNome).toUpperCase(), 64), w: 112, vsize: 7.5, fit: true },
+    {
+      label: "Nome / Razão Social",
+      value: cut(D(data.destNome).toUpperCase(), 64),
+      w: 112,
+      vsize: 7.5,
+      fit: true,
+    },
     { label: "CNPJ / CPF", value: fmtCnpj(D(data.destCnpj)), w: 52 },
-    { label: "Data da Emissão", value: fmtData(D(data.dhEmi || data.dataEmissao)), w: CW - 164, align: "c" },
+    {
+      label: "Data da Emissão",
+      value: fmtData(D(data.dhEmi || data.dataEmissao)),
+      w: CW - 164,
+      align: "c",
+    },
   ]);
   linha(8, [
     { label: "Endereço", value: cut(D(data.destEndereco).toUpperCase(), 58), w: 96, vsize: 7 },
-    { label: "Bairro / Distrito", value: cut(D(data.destBairro).toUpperCase(), 30), w: 52, vsize: 7 },
+    {
+      label: "Bairro / Distrito",
+      value: cut(D(data.destBairro).toUpperCase(), 30),
+      w: 52,
+      vsize: 7,
+    },
     { label: "CEP", value: D(data.destCEP), w: 26 },
-    { label: "Data da Saída/Entrada", value: fmtData(D(data.dataSaidaEnt)), w: CW - 174, align: "c" },
+    {
+      label: "Data da Saída/Entrada",
+      value: fmtData(D(data.dataSaidaEnt)),
+      w: CW - 174,
+      align: "c",
+    },
   ]);
   linha(8, [
     { label: "Município", value: cut(D(data.destCidade).toUpperCase(), 48), w: 84, vsize: 7.5 },
@@ -439,10 +573,12 @@ export function gerarDanfePdf(data: DanfeData): Blob {
     parcelas.forEach((pc, c) => {
       const cx = M + c * bw;
       if (c > 0) vline(cx, y, 9);
-      black(); setFont("normal", 5.4);
+      black();
+      setFont("normal", 5.4);
       doc.text(`Num.   ${cut(D(pc.numero), 12)}`, cx + 1.5, y + 3);
       doc.text(`Venc.  ${fmtData(D(pc.dataVencimento))}`, cx + 1.5, y + 5.6);
-      black(); setFont("bold", 5.6);
+      black();
+      setFont("bold", 5.6);
       doc.text(`Valor  R$ ${fmtNum(pc.valor)}`, cx + 1.5, y + 8);
     });
     y += 9;
@@ -450,8 +586,12 @@ export function gerarDanfePdf(data: DanfeData): Blob {
 
   // ================= CÁLCULO DO IMPOSTO =================
   titulo("Cálculo do Imposto");
-  const vp = data.valorProdutos !== undefined ? data.valorProdutos : (data.produtos || []).reduce((a, p) => a + (Number(p.valorTotal) || 0), 0);
-  const iw = 21, iwLast = CW - iw * 8;
+  const vp =
+    data.valorProdutos !== undefined
+      ? data.valorProdutos
+      : (data.produtos || []).reduce((a, p) => a + (Number(p.valorTotal) || 0), 0);
+  const iw = 21,
+    iwLast = CW - iw * 8;
   const impRow = (cells: Array<[string, string]>): number => {
     need(8);
     box(M, y, CW, 8);
@@ -492,7 +632,12 @@ export function gerarDanfePdf(data: DanfeData): Blob {
   // ================= TRANSPORTADOR / VOLUMES =================
   titulo("Transportador / Volumes Transportados");
   linha(8, [
-    { label: "Nome / Razão Social", value: cut(D(data.transportadora).toUpperCase(), 44), w: 84, vsize: 6.5 },
+    {
+      label: "Nome / Razão Social",
+      value: cut(D(data.transportadora).toUpperCase(), 44),
+      w: 84,
+      vsize: 6.5,
+    },
     { label: "Frete", value: cut(D(data.fretePorConta) || "9-Sem Frete", 22), w: 34, vsize: 6.5 },
     { label: "Código ANTT", value: D(data.antt), w: 20 },
     { label: "Placa do Veículo", value: D(data.placa), w: 20, align: "c" },
@@ -511,7 +656,13 @@ export function gerarDanfePdf(data: DanfeData): Blob {
     { label: "Marca", value: D(data.marca), w: 30 },
     { label: "Numeração", value: D(data.numeracao), w: 30 },
     { label: "Peso Bruto", value: fmtVal(D(data.pesoBruto)), w: 43, align: "r", vsize: 7 },
-    { label: "Peso Líquido", value: fmtVal(D(data.pesoLiquido)), w: CW - 157, align: "r", vsize: 7 },
+    {
+      label: "Peso Líquido",
+      value: fmtVal(D(data.pesoLiquido)),
+      w: CW - 157,
+      align: "r",
+      vsize: 7,
+    },
   ]);
 
   // ================= DADOS DOS PRODUTOS / SERVIÇOS =================
@@ -540,11 +691,16 @@ export function gerarDanfePdf(data: DanfeData): Blob {
     let x = M;
     pcols.forEach((c, i) => {
       if (i > 0) vline(x, y, 6);
-      black(); setFont("bold", 3.4);
+      black();
+      setFont("bold", 3.4);
       const hs = doc.splitTextToSize(c.h, c.w - 1) as string[];
       const hy = y + (hs.length > 1 ? 2.4 : 4);
       hs.slice(0, 2).forEach((hl, li) => {
-        try { (doc as any).text(hl, x + c.w / 2, hy + li * 2, { align: "center" }); } catch { doc.text(hl, x + 0.5, hy + li * 2); }
+        try {
+          (doc as any).text(hl, x + c.w / 2, hy + li * 2, { align: "center" });
+        } catch {
+          doc.text(hl, x + 0.5, hy + li * 2);
+        }
       });
       x += c.w;
     });
@@ -558,10 +714,18 @@ export function gerarDanfePdf(data: DanfeData): Blob {
     y += 8;
   } else {
     produtos.forEach((p) => {
-      const descLines = doc.splitTextToSize(cut(D(p.nome).toUpperCase(), 400), 54 - 1.5) as string[];
+      const descLines = doc.splitTextToSize(
+        cut(D(p.nome).toUpperCase(), 400),
+        54 - 1.5,
+      ) as string[];
       const nLines = Math.min(6, Math.max(1, descLines.length));
       const rowH = 2.6 + nLines * 2.5;
-      if (y + rowH > LIM) { doc.addPage(); y = M; titulo("Dados dos Produtos / Serviços"); drawProdHead(); }
+      if (y + rowH > LIM) {
+        doc.addPage();
+        y = M;
+        titulo("Dados dos Produtos / Serviços");
+        drawProdHead();
+      }
       box(M, y, CW, rowH);
       let x = M;
       const cells: Array<[string, number, "l" | "c" | "r", number]> = [
@@ -584,7 +748,8 @@ export function gerarDanfePdf(data: DanfeData): Blob {
       cells.forEach(([txt, w, align, s], i) => {
         if (i > 0) vline(x, y, rowH);
         if (i === 1) {
-          black(); setFont("normal", 4.6);
+          black();
+          setFont("normal", 4.6);
           doc.text(descLines.slice(0, nLines), x + 0.8, y + 2.8);
         } else if (txt) {
           drawVal(txt, x, w, y + 2.8, align, s);
@@ -599,7 +764,12 @@ export function gerarDanfePdf(data: DanfeData): Blob {
   titulo("Cálculo do ISSQN");
   linha(8, [
     { label: "Inscrição Municipal", value: D(data.issqnInscMun), w: 50 },
-    { label: "Valor Total dos Serviços", value: fmtNum(data.issqnTotalServicos ?? 0), w: 50, align: "r" },
+    {
+      label: "Valor Total dos Serviços",
+      value: fmtNum(data.issqnTotalServicos ?? 0),
+      w: 50,
+      align: "r",
+    },
     { label: "Base de Cálculo do ISSQN", value: fmtNum(data.issqnBase ?? 0), w: 50, align: "r" },
     { label: "Valor do ISSQN", value: fmtNum(data.issqnValor ?? 0), w: CW - 150, align: "r" },
   ]);
@@ -613,7 +783,8 @@ export function gerarDanfePdf(data: DanfeData): Blob {
   lab("Informações Complementares", M + 1, y + 2.6);
   lab("Reservado ao Fisco", M + 131, y + 2.6);
   if (D(data.infoComplementares)) {
-    setFont("normal", 4.8); black();
+    setFont("normal", 4.8);
+    black();
     const lines = doc.splitTextToSize(String(data.infoComplementares), 130 - 3) as string[];
     doc.text(lines.slice(0, 7), M + 1, y + 6);
   }
@@ -626,11 +797,16 @@ export function gerarDanfePdf(data: DanfeData): Blob {
   y += iaH;
 
   // Rodapé: impressão (esq.) + sistema (dir.)
-  black(); setFont("italic", 5);
+  black();
+  setFont("italic", 5);
   try {
     const now = new Date();
     const p2 = (n: number) => String(n).padStart(2, "0");
-    doc.text(`Impresso em ${p2(now.getDate())}/${p2(now.getMonth() + 1)}/${now.getFullYear()} as ${p2(now.getHours())}:${p2(now.getMinutes())}:${p2(now.getSeconds())}`, M, 293);
+    doc.text(
+      `Impresso em ${p2(now.getDate())}/${p2(now.getMonth() + 1)}/${now.getFullYear()} as ${p2(now.getHours())}:${p2(now.getMinutes())}:${p2(now.getSeconds())}`,
+      M,
+      293,
+    );
     (doc as any).text("Norvo Gestão", M + CW, 293, { align: "right" });
   } catch {}
 

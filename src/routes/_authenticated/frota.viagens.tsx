@@ -271,7 +271,14 @@ function Viagens() {
       if ((STATUS_LABEL[v.status] || v.status || "").toLowerCase().includes(q)) return true;
       if ((v.observacoes || "").toLowerCase().includes(q)) return true;
       // Pesquisa por frete: "25,00" acha 25.00 (a partir de 2 dígitos)
-      if (qDig.length >= 2 && Number((v as any).valor_frete || 0).toFixed(2).replace(/\D/g, "").includes(qDig)) return true;
+      if (
+        qDig.length >= 2 &&
+        Number((v as any).valor_frete || 0)
+          .toFixed(2)
+          .replace(/\D/g, "")
+          .includes(qDig)
+      )
+        return true;
       return false;
     });
   }, [viagens, busca]);
@@ -279,10 +286,7 @@ function Viagens() {
   const pageSize = 25;
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / pageSize));
   const paginaAtual = Math.min(pagina, totalPaginas);
-  const viagensVisiveis = filtrados.slice(
-    (paginaAtual - 1) * pageSize,
-    paginaAtual * pageSize,
-  );
+  const viagensVisiveis = filtrados.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
 
   const despPorViagem = useMemo(() => {
     const m = new Map<string, number>();
@@ -318,7 +322,7 @@ function Viagens() {
           .from("clientes")
           .select("id,nome")
           .eq("empresa_id", empresa!.id)
-          
+
           .order("nome")
           .range(ini, ini + 999)
           .abortSignal(signal);
@@ -510,7 +514,13 @@ function Viagens() {
         description="Fretes com motorista, veículo e resultado por viagem."
       />
       <div className="mb-3 flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
-        <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} />
+        <SearchField
+          value={busca}
+          onChange={(v) => {
+            setBusca(v);
+            setPagina(1);
+          }}
+        />
         <div className="flex items-center gap-2">
           <Dialog
             open={open}
@@ -537,8 +547,7 @@ function Viagens() {
                       value={form.cliente_id}
                       onChange={(v) => set("cliente_id", v)}
                       options={clientes.map((c) => ({ value: c.id, label: c.nome }))}
-                     
-                     
+
                       emptyText="Nenhum item encontrado."
                       footer={{ label: "Novo cliente", onClick: () => setNovoClienteOpen(true) }}
                     />
@@ -555,8 +564,7 @@ function Viagens() {
                           label: avisos.length > 0 ? `${m.nome} ⚠ ${avisos.join(" · ")}` : m.nome,
                         };
                       })}
-                     
-                     
+
                       emptyText="Nenhum item encontrado."
                     />
                   </div>
@@ -569,8 +577,7 @@ function Viagens() {
                         value: v.id,
                         label: `${v.placa}${v.marca_modelo ? ` · ${v.marca_modelo}` : ""}`,
                       }))}
-                     
-                     
+
                       emptyText="Nenhum item encontrado."
                     />
                   </div>
@@ -581,14 +588,14 @@ function Viagens() {
                     <div className="flex gap-2">
                       <Input
                         className="flex-1"
-                       
+
                         value={form.origem_cidade}
                         onChange={(e) => set("origem_cidade", e.target.value)}
                       />
                       <Input
                         className="w-20 uppercase"
                         maxLength={2}
-                       
+
                         value={form.origem_uf}
                         onChange={(e) => set("origem_uf", e.target.value.toUpperCase())}
                       />
@@ -599,14 +606,14 @@ function Viagens() {
                     <div className="flex gap-2">
                       <Input
                         className="flex-1"
-                       
+
                         value={form.destino_cidade}
                         onChange={(e) => set("destino_cidade", e.target.value)}
                       />
                       <Input
                         className="w-20 uppercase"
                         maxLength={2}
-                       
+
                         value={form.destino_uf}
                         onChange={(e) => set("destino_uf", e.target.value.toUpperCase())}
                       />
@@ -700,133 +707,142 @@ function Viagens() {
           <EmptyState
             icon={ArrowLeftRight}
             title="Nenhuma viagem registrada"
-            description={busca ? "Nada encontrado para a busca." : "Cadastre a viagem, lance diesel e pedágios, e conclua para gerar a receita automaticamente."}
+            description={
+              busca
+                ? "Nada encontrado para a busca."
+                : "Cadastre a viagem, lance diesel e pedágios, e conclua para gerar a receita automaticamente."
+            }
           />
         </div>
       ) : (
         <Card className="flex min-h-0 flex-1 flex-col overflow-hidden shadow-panel">
           {/* Rolagem só dentro da lista: a página não cria barra externa. */}
           <div className="min-h-0 flex-1 overflow-y-auto [&_.erp-table-wrap]:max-h-none">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Rota</TableHead>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Motorista / Veículo</TableHead>
-                <TableHead>Saída</TableHead>
-                <TableHead className="text-right">Frete</TableHead>
-                <TableHead className="text-right">Despesas</TableHead>
-                <TableHead className="text-right">Resultado</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {viagensVisiveis.map((v) => {
-                const desp = despPorViagem.get(v.id) ?? 0;
-                const resultado = Number(v.valor_frete ?? 0) - desp;
-                return (
-                  <TableRow key={v.id}>
-                    <TableCell className="font-medium">{rota(v)}</TableCell>
-                    <TableCell>{v.cliente?.nome ?? "—"}</TableCell>
-                    <TableCell>
-                      {v.motorista?.nome ?? "—"}
-                      {v.veiculo ? ` · ${v.veiculo.placa}` : ""}
-                    </TableCell>
-                    <TableCell>{v.data_saida ? dateBR(v.data_saida) : "—"}</TableCell>
-                    <TableCell className="text-right text-tabular">{brl(v.valor_frete)}</TableCell>
-                    <TableCell className="text-right text-tabular">
-                      <button
-                        type="button"
-                        className="underline decoration-dotted underline-offset-4 hover:text-primary"
-                        onClick={() => setDespViagem(v)}
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Rota</TableHead>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Motorista / Veículo</TableHead>
+                  <TableHead>Saída</TableHead>
+                  <TableHead className="text-right">Frete</TableHead>
+                  <TableHead className="text-right">Despesas</TableHead>
+                  <TableHead className="text-right">Resultado</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {viagensVisiveis.map((v) => {
+                  const desp = despPorViagem.get(v.id) ?? 0;
+                  const resultado = Number(v.valor_frete ?? 0) - desp;
+                  return (
+                    <TableRow key={v.id}>
+                      <TableCell className="font-medium">{rota(v)}</TableCell>
+                      <TableCell>{v.cliente?.nome ?? "—"}</TableCell>
+                      <TableCell>
+                        {v.motorista?.nome ?? "—"}
+                        {v.veiculo ? ` · ${v.veiculo.placa}` : ""}
+                      </TableCell>
+                      <TableCell>{v.data_saida ? dateBR(v.data_saida) : "—"}</TableCell>
+                      <TableCell className="text-right text-tabular">
+                        {brl(v.valor_frete)}
+                      </TableCell>
+                      <TableCell className="text-right text-tabular">
+                        <button
+                          type="button"
+                          className="underline decoration-dotted underline-offset-4 hover:text-primary"
+                          onClick={() => setDespViagem(v)}
+                        >
+                          {brl(desp)}
+                        </button>
+                      </TableCell>
+                      <TableCell
+                        className={`text-right text-tabular ${resultado < 0 ? "font-medium text-destructive" : ""}`}
                       >
-                        {brl(desp)}
-                      </button>
-                    </TableCell>
-                    <TableCell
-                      className={`text-right text-tabular ${resultado < 0 ? "font-medium text-destructive" : ""}`}
-                    >
-                      {brl(resultado)}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={v.status} label={STATUS_LABEL[v.status] ?? v.status} />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        {v.status === "planejada" && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              title="Iniciar viagem"
-                              onClick={() =>
-                                mudarStatus.mutate({ id: v.id, status: "em_transito" })
-                              }
-                            >
-                              <PlayCircle className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              title="Cancelar"
-                              onClick={() => mudarStatus.mutate({ id: v.id, status: "cancelada" })}
-                            >
-                              <XCircle className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                        {v.status === "em_transito" && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
+                        {brl(resultado)}
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={v.status} label={STATUS_LABEL[v.status] ?? v.status} />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          {v.status === "planejada" && (
+                            <>
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8"
-                                title="Concluir viagem"
+                                title="Iniciar viagem"
+                                onClick={() =>
+                                  mudarStatus.mutate({ id: v.id, status: "em_transito" })
+                                }
                               >
-                                <CheckCircle2 className="h-4 w-4" />
+                                <PlayCircle className="h-4 w-4" />
                               </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Concluir viagem {rota(v)}?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  O frete de {brl(v.valor_frete)} será lançado no contas a receber.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() =>
-                                    mudarStatus.mutate({ id: v.id, status: "concluida" })
-                                  }
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                title="Cancelar"
+                                onClick={() =>
+                                  mudarStatus.mutate({ id: v.id, status: "cancelada" })
+                                }
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                          {v.status === "em_transito" && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  title="Concluir viagem"
                                 >
-                                  Concluir
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                        {v.status !== "concluida" && v.status !== "cancelada" && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => openEdit(v)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                                  <CheckCircle2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Concluir viagem {rota(v)}?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    O frete de {brl(v.valor_frete)} será lançado no contas a
+                                    receber.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() =>
+                                      mudarStatus.mutate({ id: v.id, status: "concluida" })
+                                    }
+                                  >
+                                    Concluir
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                          {v.status !== "concluida" && v.status !== "cancelada" && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => openEdit(v)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
           <div className="shrink-0">
             <Pagination
@@ -875,7 +891,6 @@ function Viagens() {
             <div>
               <Label>Descrição</Label>
               <Input
-               
                 value={despForm.descricao}
                 onChange={(e) => setDespForm((f) => ({ ...f, descricao: e.target.value }))}
               />

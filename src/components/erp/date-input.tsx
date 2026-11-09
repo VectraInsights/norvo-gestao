@@ -19,7 +19,15 @@ type DateInputProps = {
 };
 
 // Campo de data nativo + ícone de calendário (popover) com dropdown mês/ano e bloqueio de datas futuras
-export function DateInput({ value, onChange, required, disabled, className, id, maxToday }: DateInputProps) {
+export function DateInput({
+  value,
+  onChange,
+  required,
+  disabled,
+  className,
+  id,
+  maxToday,
+}: DateInputProps) {
   const [open, setOpen] = useState(false);
   const selected = value ? new Date(value + "T00:00:00") : undefined;
   const today = new Date();
@@ -51,7 +59,10 @@ export function DateInput({ value, onChange, required, disabled, className, id, 
             <CalendarIcon className="h-4 w-4" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto overflow-hidden rounded-2xl border p-0 shadow-xl" align="end">
+        <PopoverContent
+          className="w-auto overflow-hidden rounded-2xl border p-0 shadow-xl"
+          align="end"
+        >
           <Calendar
             mode="single"
             locale={ptBR}
@@ -67,7 +78,9 @@ export function DateInput({ value, onChange, required, disabled, className, id, 
             }}
           />
           <div className="flex items-center border-t bg-muted/40 px-4 py-2.5">
-            <span className="text-xs text-muted-foreground">Hoje: {format(today, "dd/MM/yyyy")}</span>
+            <span className="text-xs text-muted-foreground">
+              Hoje: {format(today, "dd/MM/yyyy")}
+            </span>
           </div>
         </PopoverContent>
       </Popover>

@@ -13,7 +13,10 @@ if (!FILE || !process.env.DATABASE_URL) {
 
 (async () => {
   const sql = fs.readFileSync(path.resolve(FILE), "utf8");
-  const c = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+  const c = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+  });
   await c.connect();
   try {
     await c.query("BEGIN");

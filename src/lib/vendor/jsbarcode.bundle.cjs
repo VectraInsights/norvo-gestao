@@ -1,19 +1,23 @@
 "use strict";
 var __getOwnPropNames = Object.getOwnPropertyNames;
-var __commonJS = (cb, mod) => function __require() {
-  try {
-    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
-  } catch (e) {
-    throw mod = 0, e;
-  }
-};
+var __commonJS = (cb, mod) =>
+  function __require() {
+    try {
+      return (
+        mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod),
+        mod.exports
+      );
+    } catch (e) {
+      throw ((mod = 0), e);
+    }
+  };
 
 // node_modules/jsbarcode/bin/barcodes/Barcode.js
 var require_Barcode = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/Barcode.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     function _classCallCheck(instance, Constructor) {
       if (!(instance instanceof Constructor)) {
@@ -27,7 +31,7 @@ var require_Barcode = __commonJS({
       this.options = options;
     };
     exports2.default = Barcode;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/CODE39/index.js
@@ -35,10 +39,10 @@ var require_CODE39 = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/CODE39/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     exports2.CODE39 = void 0;
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -48,7 +52,7 @@ var require_CODE39 = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -72,12 +76,19 @@ var require_CODE39 = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var CODE39 = (function(_Barcode) {
+    var CODE39 = (function (_Barcode) {
       _inherits(CODE392, _Barcode);
       function CODE392(data, options) {
         _classCallCheck(this, CODE392);
@@ -85,31 +96,87 @@ var require_CODE39 = __commonJS({
         if (options.mod43) {
           data += getCharacter(mod43checksum(data));
         }
-        return _possibleConstructorReturn(this, (CODE392.__proto__ || Object.getPrototypeOf(CODE392)).call(this, data, options));
+        return _possibleConstructorReturn(
+          this,
+          (CODE392.__proto__ || Object.getPrototypeOf(CODE392)).call(this, data, options),
+        );
       }
-      _createClass(CODE392, [{
-        key: "encode",
-        value: function encode2() {
-          var result = getEncoding("*");
-          for (var i = 0; i < this.data.length; i++) {
-            result += getEncoding(this.data[i]) + "0";
-          }
-          result += getEncoding("*");
-          return {
-            data: result,
-            text: this.text
-          };
-        }
-      }, {
-        key: "valid",
-        value: function valid() {
-          return this.data.search(/^[0-9A-Z\-\.\ \$\/\+\%]+$/) !== -1;
-        }
-      }]);
+      _createClass(CODE392, [
+        {
+          key: "encode",
+          value: function encode2() {
+            var result = getEncoding("*");
+            for (var i = 0; i < this.data.length; i++) {
+              result += getEncoding(this.data[i]) + "0";
+            }
+            result += getEncoding("*");
+            return {
+              data: result,
+              text: this.text,
+            };
+          },
+        },
+        {
+          key: "valid",
+          value: function valid() {
+            return this.data.search(/^[0-9A-Z\-\.\ \$\/\+\%]+$/) !== -1;
+          },
+        },
+      ]);
       return CODE392;
     })(_Barcode3.default);
-    var characters = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "-", ".", " ", "$", "/", "+", "%", "*"];
-    var encodings = [20957, 29783, 23639, 30485, 20951, 29813, 23669, 20855, 29789, 23645, 29975, 23831, 30533, 22295, 30149, 24005, 21623, 29981, 23837, 22301, 30023, 23879, 30545, 22343, 30161, 24017, 21959, 30065, 23921, 22385, 29015, 18263, 29141, 17879, 29045, 18293, 17783, 29021, 18269, 17477, 17489, 17681, 20753, 35770];
+    var characters = [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K",
+      "L",
+      "M",
+      "N",
+      "O",
+      "P",
+      "Q",
+      "R",
+      "S",
+      "T",
+      "U",
+      "V",
+      "W",
+      "X",
+      "Y",
+      "Z",
+      "-",
+      ".",
+      " ",
+      "$",
+      "/",
+      "+",
+      "%",
+      "*",
+    ];
+    var encodings = [
+      20957, 29783, 23639, 30485, 20951, 29813, 23669, 20855, 29789, 23645, 29975, 23831, 30533,
+      22295, 30149, 24005, 21623, 29981, 23837, 22301, 30023, 23879, 30545, 22343, 30161, 24017,
+      21959, 30065, 23921, 22385, 29015, 18263, 29141, 17879, 29045, 18293, 17783, 29021, 18269,
+      17477, 17489, 17681, 20753, 35770,
+    ];
     function getEncoding(character) {
       return getBinary(characterValue(character));
     }
@@ -131,7 +198,7 @@ var require_CODE39 = __commonJS({
       return checksum;
     }
     exports2.CODE39 = CODE39;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/CODE128/constants.js
@@ -139,41 +206,68 @@ var require_constants = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/CODE128/constants.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     var _SET_BY_CODE;
     function _defineProperty(obj, key, value) {
       if (key in obj) {
-        Object.defineProperty(obj, key, { value, enumerable: true, configurable: true, writable: true });
+        Object.defineProperty(obj, key, {
+          value,
+          enumerable: true,
+          configurable: true,
+          writable: true,
+        });
       } else {
         obj[key] = value;
       }
       return obj;
     }
-    var SET_A = exports2.SET_A = 0;
-    var SET_B = exports2.SET_B = 1;
-    var SET_C = exports2.SET_C = 2;
-    var SHIFT = exports2.SHIFT = 98;
-    var START_A = exports2.START_A = 103;
-    var START_B = exports2.START_B = 104;
-    var START_C = exports2.START_C = 105;
-    var MODULO = exports2.MODULO = 103;
-    var STOP = exports2.STOP = 106;
-    var FNC1 = exports2.FNC1 = 207;
-    var SET_BY_CODE = exports2.SET_BY_CODE = (_SET_BY_CODE = {}, _defineProperty(_SET_BY_CODE, START_A, SET_A), _defineProperty(_SET_BY_CODE, START_B, SET_B), _defineProperty(_SET_BY_CODE, START_C, SET_C), _SET_BY_CODE);
-    var SWAP = exports2.SWAP = {
+    var SET_A = (exports2.SET_A = 0);
+    var SET_B = (exports2.SET_B = 1);
+    var SET_C = (exports2.SET_C = 2);
+    var SHIFT = (exports2.SHIFT = 98);
+    var START_A = (exports2.START_A = 103);
+    var START_B = (exports2.START_B = 104);
+    var START_C = (exports2.START_C = 105);
+    var MODULO = (exports2.MODULO = 103);
+    var STOP = (exports2.STOP = 106);
+    var FNC1 = (exports2.FNC1 = 207);
+    var SET_BY_CODE = (exports2.SET_BY_CODE =
+      ((_SET_BY_CODE = {}),
+      _defineProperty(_SET_BY_CODE, START_A, SET_A),
+      _defineProperty(_SET_BY_CODE, START_B, SET_B),
+      _defineProperty(_SET_BY_CODE, START_C, SET_C),
+      _SET_BY_CODE));
+    var SWAP = (exports2.SWAP = {
       101: SET_A,
       100: SET_B,
-      99: SET_C
-    };
-    var A_START_CHAR = exports2.A_START_CHAR = String.fromCharCode(208);
-    var B_START_CHAR = exports2.B_START_CHAR = String.fromCharCode(209);
-    var C_START_CHAR = exports2.C_START_CHAR = String.fromCharCode(210);
-    var A_CHARS = exports2.A_CHARS = "[\0-_\xC8-\xCF]";
-    var B_CHARS = exports2.B_CHARS = "[ -\x7F\xC8-\xCF]";
-    var C_CHARS = exports2.C_CHARS = "(\xCF*[0-9]{2}\xCF*)";
-    var BARS = exports2.BARS = [11011001100, 11001101100, 11001100110, 10010011e3, 10010001100, 10001001100, 10011001e3, 10011000100, 10001100100, 11001001e3, 11001000100, 11000100100, 10110011100, 10011011100, 10011001110, 10111001100, 10011101100, 10011100110, 11001110010, 11001011100, 11001001110, 11011100100, 11001110100, 11101101110, 11101001100, 11100101100, 11100100110, 11101100100, 11100110100, 11100110010, 11011011e3, 11011000110, 11000110110, 10100011e3, 10001011e3, 10001000110, 10110001e3, 10001101e3, 10001100010, 11010001e3, 11000101e3, 11000100010, 10110111e3, 10110001110, 10001101110, 10111011e3, 10111000110, 10001110110, 11101110110, 11010001110, 11000101110, 11011101e3, 11011100010, 11011101110, 11101011e3, 11101000110, 11100010110, 11101101e3, 11101100010, 11100011010, 11101111010, 11001000010, 11110001010, 1010011e4, 10100001100, 1001011e4, 10010000110, 10000101100, 10000100110, 1011001e4, 10110000100, 1001101e4, 10011000010, 10000110100, 10000110010, 11000010010, 1100101e4, 11110111010, 11000010100, 10001111010, 10100111100, 10010111100, 10010011110, 10111100100, 10011110100, 10011110010, 11110100100, 11110010100, 11110010010, 11011011110, 11011110110, 11110110110, 10101111e3, 10100011110, 10001011110, 10111101e3, 10111100010, 11110101e3, 11110100010, 10111011110, 10111101110, 11101011110, 11110101110, 11010000100, 1101001e4, 11010011100, 1100011101011];
-  }
+      99: SET_C,
+    });
+    var A_START_CHAR = (exports2.A_START_CHAR = String.fromCharCode(208));
+    var B_START_CHAR = (exports2.B_START_CHAR = String.fromCharCode(209));
+    var C_START_CHAR = (exports2.C_START_CHAR = String.fromCharCode(210));
+    var A_CHARS = (exports2.A_CHARS = "[\0-_\xC8-\xCF]");
+    var B_CHARS = (exports2.B_CHARS = "[ -\x7F\xC8-\xCF]");
+    var C_CHARS = (exports2.C_CHARS = "(\xCF*[0-9]{2}\xCF*)");
+    var BARS = (exports2.BARS = [
+      11011001100, 11001101100, 11001100110, 10010011e3, 10010001100, 10001001100, 10011001e3,
+      10011000100, 10001100100, 11001001e3, 11001000100, 11000100100, 10110011100, 10011011100,
+      10011001110, 10111001100, 10011101100, 10011100110, 11001110010, 11001011100, 11001001110,
+      11011100100, 11001110100, 11101101110, 11101001100, 11100101100, 11100100110, 11101100100,
+      11100110100, 11100110010, 11011011e3, 11011000110, 11000110110, 10100011e3, 10001011e3,
+      10001000110, 10110001e3, 10001101e3, 10001100010, 11010001e3, 11000101e3, 11000100010,
+      10110111e3, 10110001110, 10001101110, 10111011e3, 10111000110, 10001110110, 11101110110,
+      11010001110, 11000101110, 11011101e3, 11011100010, 11011101110, 11101011e3, 11101000110,
+      11100010110, 11101101e3, 11101100010, 11100011010, 11101111010, 11001000010, 11110001010,
+      1010011e4, 10100001100, 1001011e4, 10010000110, 10000101100, 10000100110, 1011001e4,
+      10110000100, 1001101e4, 10011000010, 10000110100, 10000110010, 11000010010, 1100101e4,
+      11110111010, 11000010100, 10001111010, 10100111100, 10010111100, 10010011110, 10111100100,
+      10011110100, 10011110010, 11110100100, 11110010100, 11110010010, 11011011110, 11011110110,
+      11110110110, 10101111e3, 10100011110, 10001011110, 10111101e3, 10111100010, 11110101e3,
+      11110100010, 10111011110, 10111101110, 11101011110, 11110101110, 11010000100, 1101001e4,
+      11010011100, 1100011101011,
+    ]);
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/CODE128/CODE128.js
@@ -181,9 +275,9 @@ var require_CODE128 = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/CODE128/CODE128.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -193,7 +287,7 @@ var require_CODE128 = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -218,114 +312,150 @@ var require_CODE128 = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var CODE128 = (function(_Barcode) {
+    var CODE128 = (function (_Barcode) {
       _inherits(CODE1282, _Barcode);
       function CODE1282(data, options) {
         _classCallCheck(this, CODE1282);
-        var _this = _possibleConstructorReturn(this, (CODE1282.__proto__ || Object.getPrototypeOf(CODE1282)).call(this, data.substring(1), options));
-        _this.bytes = data.split("").map(function(char) {
+        var _this = _possibleConstructorReturn(
+          this,
+          (CODE1282.__proto__ || Object.getPrototypeOf(CODE1282)).call(
+            this,
+            data.substring(1),
+            options,
+          ),
+        );
+        _this.bytes = data.split("").map(function (char) {
           return char.charCodeAt(0);
         });
         return _this;
       }
-      _createClass(CODE1282, [{
-        key: "valid",
-        value: function valid() {
-          return /^[\x00-\x7F\xC8-\xD3]+$/.test(this.data);
-        }
-        // The public encoding function
-      }, {
-        key: "encode",
-        value: function encode2() {
-          var bytes = this.bytes;
-          var startIndex = bytes.shift() - 105;
-          var startSet = _constants.SET_BY_CODE[startIndex];
-          if (startSet === void 0) {
-            throw new RangeError("The encoding does not start with a start character.");
-          }
-          if (this.shouldEncodeAsEan128() === true) {
-            bytes.unshift(_constants.FNC1);
-          }
-          var encodingResult = CODE1282.next(bytes, 1, startSet);
-          return {
-            text: this.text === this.data ? this.text.replace(/[^\x20-\x7E]/g, "") : this.text,
-            data: (
-              // Add the start bits
-              CODE1282.getBar(startIndex) + // Add the encoded bits
-              encodingResult.result + // Add the checksum
-              CODE1282.getBar((encodingResult.checksum + startIndex) % _constants.MODULO) + // Add the end bits
-              CODE1282.getBar(_constants.STOP)
-            )
-          };
-        }
-        // GS1-128/EAN-128
-      }, {
-        key: "shouldEncodeAsEan128",
-        value: function shouldEncodeAsEan128() {
-          var isEAN128 = this.options.ean128 || false;
-          if (typeof isEAN128 === "string") {
-            isEAN128 = isEAN128.toLowerCase() === "true";
-          }
-          return isEAN128;
-        }
-        // Get a bar symbol by index
-      }], [{
-        key: "getBar",
-        value: function getBar(index) {
-          return _constants.BARS[index] ? _constants.BARS[index].toString() : "";
-        }
-        // Correct an index by a set and shift it from the bytes array
-      }, {
-        key: "correctIndex",
-        value: function correctIndex(bytes, set) {
-          if (set === _constants.SET_A) {
-            var charCode = bytes.shift();
-            return charCode < 32 ? charCode + 64 : charCode - 32;
-          } else if (set === _constants.SET_B) {
-            return bytes.shift() - 32;
-          } else {
-            return (bytes.shift() - 48) * 10 + bytes.shift() - 48;
-          }
-        }
-      }, {
-        key: "next",
-        value: function next(bytes, pos, set) {
-          if (!bytes.length) {
-            return { result: "", checksum: 0 };
-          }
-          var nextCode = void 0, index = void 0;
-          if (bytes[0] >= 200) {
-            index = bytes.shift() - 105;
-            var nextSet = _constants.SWAP[index];
-            if (nextSet !== void 0) {
-              nextCode = CODE1282.next(bytes, pos + 1, nextSet);
-            } else {
-              if ((set === _constants.SET_A || set === _constants.SET_B) && index === _constants.SHIFT) {
-                bytes[0] = set === _constants.SET_A ? bytes[0] > 95 ? bytes[0] - 96 : bytes[0] : bytes[0] < 32 ? bytes[0] + 96 : bytes[0];
+      _createClass(
+        CODE1282,
+        [
+          {
+            key: "valid",
+            value: function valid() {
+              return /^[\x00-\x7F\xC8-\xD3]+$/.test(this.data);
+            },
+            // The public encoding function
+          },
+          {
+            key: "encode",
+            value: function encode2() {
+              var bytes = this.bytes;
+              var startIndex = bytes.shift() - 105;
+              var startSet = _constants.SET_BY_CODE[startIndex];
+              if (startSet === void 0) {
+                throw new RangeError("The encoding does not start with a start character.");
               }
-              nextCode = CODE1282.next(bytes, pos + 1, set);
-            }
-          } else {
-            index = CODE1282.correctIndex(bytes, set);
-            nextCode = CODE1282.next(bytes, pos + 1, set);
-          }
-          var enc = CODE1282.getBar(index);
-          var weight = index * pos;
-          return {
-            result: enc + nextCode.result,
-            checksum: weight + nextCode.checksum
-          };
-        }
-      }]);
+              if (this.shouldEncodeAsEan128() === true) {
+                bytes.unshift(_constants.FNC1);
+              }
+              var encodingResult = CODE1282.next(bytes, 1, startSet);
+              return {
+                text: this.text === this.data ? this.text.replace(/[^\x20-\x7E]/g, "") : this.text,
+                data:
+                  // Add the start bits
+                  CODE1282.getBar(startIndex) + // Add the encoded bits
+                  encodingResult.result + // Add the checksum
+                  CODE1282.getBar((encodingResult.checksum + startIndex) % _constants.MODULO) + // Add the end bits
+                  CODE1282.getBar(_constants.STOP),
+              };
+            },
+            // GS1-128/EAN-128
+          },
+          {
+            key: "shouldEncodeAsEan128",
+            value: function shouldEncodeAsEan128() {
+              var isEAN128 = this.options.ean128 || false;
+              if (typeof isEAN128 === "string") {
+                isEAN128 = isEAN128.toLowerCase() === "true";
+              }
+              return isEAN128;
+            },
+            // Get a bar symbol by index
+          },
+        ],
+        [
+          {
+            key: "getBar",
+            value: function getBar(index) {
+              return _constants.BARS[index] ? _constants.BARS[index].toString() : "";
+            },
+            // Correct an index by a set and shift it from the bytes array
+          },
+          {
+            key: "correctIndex",
+            value: function correctIndex(bytes, set) {
+              if (set === _constants.SET_A) {
+                var charCode = bytes.shift();
+                return charCode < 32 ? charCode + 64 : charCode - 32;
+              } else if (set === _constants.SET_B) {
+                return bytes.shift() - 32;
+              } else {
+                return (bytes.shift() - 48) * 10 + bytes.shift() - 48;
+              }
+            },
+          },
+          {
+            key: "next",
+            value: function next(bytes, pos, set) {
+              if (!bytes.length) {
+                return { result: "", checksum: 0 };
+              }
+              var nextCode = void 0,
+                index = void 0;
+              if (bytes[0] >= 200) {
+                index = bytes.shift() - 105;
+                var nextSet = _constants.SWAP[index];
+                if (nextSet !== void 0) {
+                  nextCode = CODE1282.next(bytes, pos + 1, nextSet);
+                } else {
+                  if (
+                    (set === _constants.SET_A || set === _constants.SET_B) &&
+                    index === _constants.SHIFT
+                  ) {
+                    bytes[0] =
+                      set === _constants.SET_A
+                        ? bytes[0] > 95
+                          ? bytes[0] - 96
+                          : bytes[0]
+                        : bytes[0] < 32
+                          ? bytes[0] + 96
+                          : bytes[0];
+                  }
+                  nextCode = CODE1282.next(bytes, pos + 1, set);
+                }
+              } else {
+                index = CODE1282.correctIndex(bytes, set);
+                nextCode = CODE1282.next(bytes, pos + 1, set);
+              }
+              var enc = CODE1282.getBar(index);
+              var weight = index * pos;
+              return {
+                result: enc + nextCode.result,
+                checksum: weight + nextCode.checksum,
+              };
+            },
+          },
+        ],
+      );
       return CODE1282;
     })(_Barcode3.default);
     exports2.default = CODE128;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/CODE128/auto.js
@@ -333,7 +463,7 @@ var require_auto = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/CODE128/auto.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     var _constants = require_constants();
     var matchSetALength = function matchSetALength2(string) {
@@ -349,13 +479,19 @@ var require_auto = __commonJS({
       var ranges = isA ? _constants.A_CHARS : _constants.B_CHARS;
       var untilC = string.match(new RegExp("^(" + ranges + "+?)(([0-9]{2}){2,})([^0-9]|$)"));
       if (untilC) {
-        return untilC[1] + String.fromCharCode(204) + autoSelectFromC(string.substring(untilC[1].length));
+        return (
+          untilC[1] + String.fromCharCode(204) + autoSelectFromC(string.substring(untilC[1].length))
+        );
       }
       var chars = string.match(new RegExp("^" + ranges + "+"))[0];
       if (chars.length === string.length) {
         return string;
       }
-      return chars + String.fromCharCode(isA ? 205 : 206) + autoSelectFromAB(string.substring(chars.length), !isA);
+      return (
+        chars +
+        String.fromCharCode(isA ? 205 : 206) +
+        autoSelectFromAB(string.substring(chars.length), !isA)
+      );
     }
     function autoSelectFromC(string) {
       var cMatch = matchSetC(string);
@@ -367,24 +503,25 @@ var require_auto = __commonJS({
       var isA = matchSetALength(string) >= matchSetBLength(string);
       return cMatch + String.fromCharCode(isA ? 206 : 205) + autoSelectFromAB(string, isA);
     }
-    exports2.default = function(string) {
+    exports2.default = function (string) {
       var newString = void 0;
       var cLength = matchSetC(string).length;
       if (cLength >= 2) {
         newString = _constants.C_START_CHAR + autoSelectFromC(string);
       } else {
         var isA = matchSetALength(string) > matchSetBLength(string);
-        newString = (isA ? _constants.A_START_CHAR : _constants.B_START_CHAR) + autoSelectFromAB(string, isA);
+        newString =
+          (isA ? _constants.A_START_CHAR : _constants.B_START_CHAR) + autoSelectFromAB(string, isA);
       }
       return newString.replace(
         /[\xCD\xCE]([^])[\xCD\xCE]/,
         // Any sequence between 205 and 206 characters
-        function(match, char) {
+        function (match, char) {
           return String.fromCharCode(203) + char;
-        }
+        },
       );
     };
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/CODE128/CODE128_AUTO.js
@@ -392,7 +529,7 @@ var require_CODE128_AUTO = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/CODE128/CODE128_AUTO.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     var _CODE2 = require_CODE128();
     var _CODE3 = _interopRequireDefault2(_CODE2);
@@ -414,26 +551,47 @@ var require_CODE128_AUTO = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var CODE128AUTO = (function(_CODE) {
+    var CODE128AUTO = (function (_CODE) {
       _inherits(CODE128AUTO2, _CODE);
       function CODE128AUTO2(data, options) {
         _classCallCheck(this, CODE128AUTO2);
         if (/^[\x00-\x7F\xC8-\xD3]+$/.test(data)) {
-          var _this = _possibleConstructorReturn(this, (CODE128AUTO2.__proto__ || Object.getPrototypeOf(CODE128AUTO2)).call(this, (0, _auto2.default)(data), options));
+          var _this = _possibleConstructorReturn(
+            this,
+            (CODE128AUTO2.__proto__ || Object.getPrototypeOf(CODE128AUTO2)).call(
+              this,
+              (0, _auto2.default)(data),
+              options,
+            ),
+          );
         } else {
-          var _this = _possibleConstructorReturn(this, (CODE128AUTO2.__proto__ || Object.getPrototypeOf(CODE128AUTO2)).call(this, data, options));
+          var _this = _possibleConstructorReturn(
+            this,
+            (CODE128AUTO2.__proto__ || Object.getPrototypeOf(CODE128AUTO2)).call(
+              this,
+              data,
+              options,
+            ),
+          );
         }
         return _possibleConstructorReturn(_this);
       }
       return CODE128AUTO2;
     })(_CODE3.default);
     exports2.default = CODE128AUTO;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/CODE128/CODE128A.js
@@ -441,9 +599,9 @@ var require_CODE128A = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/CODE128/CODE128A.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -453,7 +611,7 @@ var require_CODE128A = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -478,27 +636,43 @@ var require_CODE128A = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var CODE128A = (function(_CODE) {
+    var CODE128A = (function (_CODE) {
       _inherits(CODE128A2, _CODE);
       function CODE128A2(string, options) {
         _classCallCheck(this, CODE128A2);
-        return _possibleConstructorReturn(this, (CODE128A2.__proto__ || Object.getPrototypeOf(CODE128A2)).call(this, _constants.A_START_CHAR + string, options));
+        return _possibleConstructorReturn(
+          this,
+          (CODE128A2.__proto__ || Object.getPrototypeOf(CODE128A2)).call(
+            this,
+            _constants.A_START_CHAR + string,
+            options,
+          ),
+        );
       }
-      _createClass(CODE128A2, [{
-        key: "valid",
-        value: function valid() {
-          return new RegExp("^" + _constants.A_CHARS + "+$").test(this.data);
-        }
-      }]);
+      _createClass(CODE128A2, [
+        {
+          key: "valid",
+          value: function valid() {
+            return new RegExp("^" + _constants.A_CHARS + "+$").test(this.data);
+          },
+        },
+      ]);
       return CODE128A2;
     })(_CODE3.default);
     exports2.default = CODE128A;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/CODE128/CODE128B.js
@@ -506,9 +680,9 @@ var require_CODE128B = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/CODE128/CODE128B.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -518,7 +692,7 @@ var require_CODE128B = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -543,27 +717,43 @@ var require_CODE128B = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var CODE128B = (function(_CODE) {
+    var CODE128B = (function (_CODE) {
       _inherits(CODE128B2, _CODE);
       function CODE128B2(string, options) {
         _classCallCheck(this, CODE128B2);
-        return _possibleConstructorReturn(this, (CODE128B2.__proto__ || Object.getPrototypeOf(CODE128B2)).call(this, _constants.B_START_CHAR + string, options));
+        return _possibleConstructorReturn(
+          this,
+          (CODE128B2.__proto__ || Object.getPrototypeOf(CODE128B2)).call(
+            this,
+            _constants.B_START_CHAR + string,
+            options,
+          ),
+        );
       }
-      _createClass(CODE128B2, [{
-        key: "valid",
-        value: function valid() {
-          return new RegExp("^" + _constants.B_CHARS + "+$").test(this.data);
-        }
-      }]);
+      _createClass(CODE128B2, [
+        {
+          key: "valid",
+          value: function valid() {
+            return new RegExp("^" + _constants.B_CHARS + "+$").test(this.data);
+          },
+        },
+      ]);
       return CODE128B2;
     })(_CODE3.default);
     exports2.default = CODE128B;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/CODE128/CODE128C.js
@@ -571,9 +761,9 @@ var require_CODE128C = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/CODE128/CODE128C.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -583,7 +773,7 @@ var require_CODE128C = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -608,27 +798,43 @@ var require_CODE128C = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var CODE128C = (function(_CODE) {
+    var CODE128C = (function (_CODE) {
       _inherits(CODE128C2, _CODE);
       function CODE128C2(string, options) {
         _classCallCheck(this, CODE128C2);
-        return _possibleConstructorReturn(this, (CODE128C2.__proto__ || Object.getPrototypeOf(CODE128C2)).call(this, _constants.C_START_CHAR + string, options));
+        return _possibleConstructorReturn(
+          this,
+          (CODE128C2.__proto__ || Object.getPrototypeOf(CODE128C2)).call(
+            this,
+            _constants.C_START_CHAR + string,
+            options,
+          ),
+        );
       }
-      _createClass(CODE128C2, [{
-        key: "valid",
-        value: function valid() {
-          return new RegExp("^" + _constants.C_CHARS + "+$").test(this.data);
-        }
-      }]);
+      _createClass(CODE128C2, [
+        {
+          key: "valid",
+          value: function valid() {
+            return new RegExp("^" + _constants.C_CHARS + "+$").test(this.data);
+          },
+        },
+      ]);
       return CODE128C2;
     })(_CODE3.default);
     exports2.default = CODE128C;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/CODE128/index.js
@@ -636,7 +842,7 @@ var require_CODE1282 = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/CODE128/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     exports2.CODE128C = exports2.CODE128B = exports2.CODE128A = exports2.CODE128 = void 0;
     var _CODE128_AUTO = require_CODE128_AUTO();
@@ -654,7 +860,7 @@ var require_CODE1282 = __commonJS({
     exports2.CODE128A = _CODE128A2.default;
     exports2.CODE128B = _CODE128B2.default;
     exports2.CODE128C = _CODE128C2.default;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/EAN_UPC/constants.js
@@ -662,12 +868,12 @@ var require_constants2 = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/EAN_UPC/constants.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var SIDE_BIN = exports2.SIDE_BIN = "101";
-    var MIDDLE_BIN = exports2.MIDDLE_BIN = "01010";
-    var BINARIES = exports2.BINARIES = {
-      "L": [
+    var SIDE_BIN = (exports2.SIDE_BIN = "101");
+    var MIDDLE_BIN = (exports2.MIDDLE_BIN = "01010");
+    var BINARIES = (exports2.BINARIES = {
+      L: [
         // The L (left) type of encoding
         "0001101",
         "0011001",
@@ -678,9 +884,9 @@ var require_constants2 = __commonJS({
         "0101111",
         "0111011",
         "0110111",
-        "0001011"
+        "0001011",
       ],
-      "G": [
+      G: [
         // The G type of encoding
         "0100111",
         "0110011",
@@ -691,9 +897,9 @@ var require_constants2 = __commonJS({
         "0000101",
         "0010001",
         "0001001",
-        "0010111"
+        "0010111",
       ],
-      "R": [
+      R: [
         // The R (right) type of encoding
         "1110010",
         "1100110",
@@ -704,9 +910,9 @@ var require_constants2 = __commonJS({
         "1010000",
         "1000100",
         "1001000",
-        "1110100"
+        "1110100",
       ],
-      "O": [
+      O: [
         // The O (odd) encoding for UPC-E
         "0001101",
         "0011001",
@@ -717,9 +923,9 @@ var require_constants2 = __commonJS({
         "0101111",
         "0111011",
         "0110111",
-        "0001011"
+        "0001011",
       ],
-      "E": [
+      E: [
         // The E (even) encoding for UPC-E
         "0100111",
         "0110011",
@@ -730,13 +936,35 @@ var require_constants2 = __commonJS({
         "0000101",
         "0010001",
         "0001001",
-        "0010111"
-      ]
-    };
-    var EAN2_STRUCTURE = exports2.EAN2_STRUCTURE = ["LL", "LG", "GL", "GG"];
-    var EAN5_STRUCTURE = exports2.EAN5_STRUCTURE = ["GGLLL", "GLGLL", "GLLGL", "GLLLG", "LGGLL", "LLGGL", "LLLGG", "LGLGL", "LGLLG", "LLGLG"];
-    var EAN13_STRUCTURE = exports2.EAN13_STRUCTURE = ["LLLLLL", "LLGLGG", "LLGGLG", "LLGGGL", "LGLLGG", "LGGLLG", "LGGGLL", "LGLGLG", "LGLGGL", "LGGLGL"];
-  }
+        "0010111",
+      ],
+    });
+    var EAN2_STRUCTURE = (exports2.EAN2_STRUCTURE = ["LL", "LG", "GL", "GG"]);
+    var EAN5_STRUCTURE = (exports2.EAN5_STRUCTURE = [
+      "GGLLL",
+      "GLGLL",
+      "GLLGL",
+      "GLLLG",
+      "LGGLL",
+      "LLGGL",
+      "LLLGG",
+      "LGLGL",
+      "LGLLG",
+      "LLGLG",
+    ]);
+    var EAN13_STRUCTURE = (exports2.EAN13_STRUCTURE = [
+      "LLLLLL",
+      "LLGLGG",
+      "LLGGLG",
+      "LLGGGL",
+      "LGLLGG",
+      "LGGLLG",
+      "LGGGLL",
+      "LGLGLG",
+      "LGLGGL",
+      "LGGLGL",
+    ]);
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/EAN_UPC/encoder.js
@@ -744,25 +972,28 @@ var require_encoder = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/EAN_UPC/encoder.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     var _constants = require_constants2();
     var encode2 = function encode3(data, structure, separator) {
-      var encoded = data.split("").map(function(val, idx) {
-        return _constants.BINARIES[structure[idx]];
-      }).map(function(val, idx) {
-        return val ? val[data[idx]] : "";
-      });
+      var encoded = data
+        .split("")
+        .map(function (val, idx) {
+          return _constants.BINARIES[structure[idx]];
+        })
+        .map(function (val, idx) {
+          return val ? val[data[idx]] : "";
+        });
       if (separator) {
         var last = data.length - 1;
-        encoded = encoded.map(function(val, idx) {
+        encoded = encoded.map(function (val, idx) {
           return idx < last ? val + separator : val;
         });
       }
       return encoded.join("");
     };
     exports2.default = encode2;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/EAN_UPC/EAN.js
@@ -770,9 +1001,9 @@ var require_EAN = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/EAN_UPC/EAN.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -782,7 +1013,7 @@ var require_EAN = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -809,66 +1040,99 @@ var require_EAN = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var EAN = (function(_Barcode) {
+    var EAN = (function (_Barcode) {
       _inherits(EAN2, _Barcode);
       function EAN2(data, options) {
         _classCallCheck(this, EAN2);
-        var _this = _possibleConstructorReturn(this, (EAN2.__proto__ || Object.getPrototypeOf(EAN2)).call(this, data, options));
-        _this.fontSize = !options.flat && options.fontSize > options.width * 10 ? options.width * 10 : options.fontSize;
+        var _this = _possibleConstructorReturn(
+          this,
+          (EAN2.__proto__ || Object.getPrototypeOf(EAN2)).call(this, data, options),
+        );
+        _this.fontSize =
+          !options.flat && options.fontSize > options.width * 10
+            ? options.width * 10
+            : options.fontSize;
         _this.guardHeight = options.height + _this.fontSize / 2 + options.textMargin;
         return _this;
       }
-      _createClass(EAN2, [{
-        key: "encode",
-        value: function encode2() {
-          return this.options.flat ? this.encodeFlat() : this.encodeGuarded();
-        }
-      }, {
-        key: "leftText",
-        value: function leftText(from, to) {
-          return this.text.substr(from, to);
-        }
-      }, {
-        key: "leftEncode",
-        value: function leftEncode(data, structure) {
-          return (0, _encoder2.default)(data, structure);
-        }
-      }, {
-        key: "rightText",
-        value: function rightText(from, to) {
-          return this.text.substr(from, to);
-        }
-      }, {
-        key: "rightEncode",
-        value: function rightEncode(data, structure) {
-          return (0, _encoder2.default)(data, structure);
-        }
-      }, {
-        key: "encodeGuarded",
-        value: function encodeGuarded() {
-          var textOptions = { fontSize: this.fontSize };
-          var guardOptions = { height: this.guardHeight };
-          return [{ data: _constants.SIDE_BIN, options: guardOptions }, { data: this.leftEncode(), text: this.leftText(), options: textOptions }, { data: _constants.MIDDLE_BIN, options: guardOptions }, { data: this.rightEncode(), text: this.rightText(), options: textOptions }, { data: _constants.SIDE_BIN, options: guardOptions }];
-        }
-      }, {
-        key: "encodeFlat",
-        value: function encodeFlat() {
-          var data = [_constants.SIDE_BIN, this.leftEncode(), _constants.MIDDLE_BIN, this.rightEncode(), _constants.SIDE_BIN];
-          return {
-            data: data.join(""),
-            text: this.text
-          };
-        }
-      }]);
+      _createClass(EAN2, [
+        {
+          key: "encode",
+          value: function encode2() {
+            return this.options.flat ? this.encodeFlat() : this.encodeGuarded();
+          },
+        },
+        {
+          key: "leftText",
+          value: function leftText(from, to) {
+            return this.text.substr(from, to);
+          },
+        },
+        {
+          key: "leftEncode",
+          value: function leftEncode(data, structure) {
+            return (0, _encoder2.default)(data, structure);
+          },
+        },
+        {
+          key: "rightText",
+          value: function rightText(from, to) {
+            return this.text.substr(from, to);
+          },
+        },
+        {
+          key: "rightEncode",
+          value: function rightEncode(data, structure) {
+            return (0, _encoder2.default)(data, structure);
+          },
+        },
+        {
+          key: "encodeGuarded",
+          value: function encodeGuarded() {
+            var textOptions = { fontSize: this.fontSize };
+            var guardOptions = { height: this.guardHeight };
+            return [
+              { data: _constants.SIDE_BIN, options: guardOptions },
+              { data: this.leftEncode(), text: this.leftText(), options: textOptions },
+              { data: _constants.MIDDLE_BIN, options: guardOptions },
+              { data: this.rightEncode(), text: this.rightText(), options: textOptions },
+              { data: _constants.SIDE_BIN, options: guardOptions },
+            ];
+          },
+        },
+        {
+          key: "encodeFlat",
+          value: function encodeFlat() {
+            var data = [
+              _constants.SIDE_BIN,
+              this.leftEncode(),
+              _constants.MIDDLE_BIN,
+              this.rightEncode(),
+              _constants.SIDE_BIN,
+            ];
+            return {
+              data: data.join(""),
+              text: this.text,
+            };
+          },
+        },
+      ]);
       return EAN2;
     })(_Barcode3.default);
     exports2.default = EAN;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/EAN_UPC/EAN13.js
@@ -876,9 +1140,9 @@ var require_EAN13 = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/EAN_UPC/EAN13.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -888,7 +1152,7 @@ var require_EAN13 = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -933,87 +1197,128 @@ var require_EAN13 = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
     var checksum = function checksum2(number) {
-      var res = number.substr(0, 12).split("").map(function(n) {
-        return +n;
-      }).reduce(function(sum, a, idx) {
-        return idx % 2 ? sum + a * 3 : sum + a;
-      }, 0);
-      return (10 - res % 10) % 10;
+      var res = number
+        .substr(0, 12)
+        .split("")
+        .map(function (n) {
+          return +n;
+        })
+        .reduce(function (sum, a, idx) {
+          return idx % 2 ? sum + a * 3 : sum + a;
+        }, 0);
+      return (10 - (res % 10)) % 10;
     };
-    var EAN13 = (function(_EAN) {
+    var EAN13 = (function (_EAN) {
       _inherits(EAN132, _EAN);
       function EAN132(data, options) {
         _classCallCheck(this, EAN132);
         if (data.search(/^[0-9]{12}$/) !== -1) {
           data += checksum(data);
         }
-        var _this = _possibleConstructorReturn(this, (EAN132.__proto__ || Object.getPrototypeOf(EAN132)).call(this, data, options));
+        var _this = _possibleConstructorReturn(
+          this,
+          (EAN132.__proto__ || Object.getPrototypeOf(EAN132)).call(this, data, options),
+        );
         _this.lastChar = options.lastChar;
         return _this;
       }
-      _createClass(EAN132, [{
-        key: "valid",
-        value: function valid() {
-          return this.data.search(/^[0-9]{13}$/) !== -1 && +this.data[12] === checksum(this.data);
-        }
-      }, {
-        key: "leftText",
-        value: function leftText() {
-          return _get(EAN132.prototype.__proto__ || Object.getPrototypeOf(EAN132.prototype), "leftText", this).call(this, 1, 6);
-        }
-      }, {
-        key: "leftEncode",
-        value: function leftEncode() {
-          var data = this.data.substr(1, 6);
-          var structure = _constants.EAN13_STRUCTURE[this.data[0]];
-          return _get(EAN132.prototype.__proto__ || Object.getPrototypeOf(EAN132.prototype), "leftEncode", this).call(this, data, structure);
-        }
-      }, {
-        key: "rightText",
-        value: function rightText() {
-          return _get(EAN132.prototype.__proto__ || Object.getPrototypeOf(EAN132.prototype), "rightText", this).call(this, 7, 6);
-        }
-      }, {
-        key: "rightEncode",
-        value: function rightEncode() {
-          var data = this.data.substr(7, 6);
-          return _get(EAN132.prototype.__proto__ || Object.getPrototypeOf(EAN132.prototype), "rightEncode", this).call(this, data, "RRRRRR");
-        }
-        // The "standard" way of printing EAN13 barcodes with guard bars
-      }, {
-        key: "encodeGuarded",
-        value: function encodeGuarded() {
-          var data = _get(EAN132.prototype.__proto__ || Object.getPrototypeOf(EAN132.prototype), "encodeGuarded", this).call(this);
-          if (this.options.displayValue) {
-            data.unshift({
-              data: "000000000000",
-              text: this.text.substr(0, 1),
-              options: { textAlign: "left", fontSize: this.fontSize }
-            });
-            if (this.options.lastChar) {
-              data.push({
-                data: "00"
+      _createClass(EAN132, [
+        {
+          key: "valid",
+          value: function valid() {
+            return this.data.search(/^[0-9]{13}$/) !== -1 && +this.data[12] === checksum(this.data);
+          },
+        },
+        {
+          key: "leftText",
+          value: function leftText() {
+            return _get(
+              EAN132.prototype.__proto__ || Object.getPrototypeOf(EAN132.prototype),
+              "leftText",
+              this,
+            ).call(this, 1, 6);
+          },
+        },
+        {
+          key: "leftEncode",
+          value: function leftEncode() {
+            var data = this.data.substr(1, 6);
+            var structure = _constants.EAN13_STRUCTURE[this.data[0]];
+            return _get(
+              EAN132.prototype.__proto__ || Object.getPrototypeOf(EAN132.prototype),
+              "leftEncode",
+              this,
+            ).call(this, data, structure);
+          },
+        },
+        {
+          key: "rightText",
+          value: function rightText() {
+            return _get(
+              EAN132.prototype.__proto__ || Object.getPrototypeOf(EAN132.prototype),
+              "rightText",
+              this,
+            ).call(this, 7, 6);
+          },
+        },
+        {
+          key: "rightEncode",
+          value: function rightEncode() {
+            var data = this.data.substr(7, 6);
+            return _get(
+              EAN132.prototype.__proto__ || Object.getPrototypeOf(EAN132.prototype),
+              "rightEncode",
+              this,
+            ).call(this, data, "RRRRRR");
+          },
+          // The "standard" way of printing EAN13 barcodes with guard bars
+        },
+        {
+          key: "encodeGuarded",
+          value: function encodeGuarded() {
+            var data = _get(
+              EAN132.prototype.__proto__ || Object.getPrototypeOf(EAN132.prototype),
+              "encodeGuarded",
+              this,
+            ).call(this);
+            if (this.options.displayValue) {
+              data.unshift({
+                data: "000000000000",
+                text: this.text.substr(0, 1),
+                options: { textAlign: "left", fontSize: this.fontSize },
               });
-              data.push({
-                data: "00000",
-                text: this.options.lastChar,
-                options: { fontSize: this.fontSize }
-              });
+              if (this.options.lastChar) {
+                data.push({
+                  data: "00",
+                });
+                data.push({
+                  data: "00000",
+                  text: this.options.lastChar,
+                  options: { fontSize: this.fontSize },
+                });
+              }
             }
-          }
-          return data;
-        }
-      }]);
+            return data;
+          },
+        },
+      ]);
       return EAN132;
     })(_EAN3.default);
     exports2.default = EAN13;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/EAN_UPC/EAN8.js
@@ -1021,9 +1326,9 @@ var require_EAN8 = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/EAN_UPC/EAN8.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -1033,7 +1338,7 @@ var require_EAN8 = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -1077,60 +1382,96 @@ var require_EAN8 = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
     var checksum = function checksum2(number) {
-      var res = number.substr(0, 7).split("").map(function(n) {
-        return +n;
-      }).reduce(function(sum, a, idx) {
-        return idx % 2 ? sum + a : sum + a * 3;
-      }, 0);
-      return (10 - res % 10) % 10;
+      var res = number
+        .substr(0, 7)
+        .split("")
+        .map(function (n) {
+          return +n;
+        })
+        .reduce(function (sum, a, idx) {
+          return idx % 2 ? sum + a : sum + a * 3;
+        }, 0);
+      return (10 - (res % 10)) % 10;
     };
-    var EAN8 = (function(_EAN) {
+    var EAN8 = (function (_EAN) {
       _inherits(EAN82, _EAN);
       function EAN82(data, options) {
         _classCallCheck(this, EAN82);
         if (data.search(/^[0-9]{7}$/) !== -1) {
           data += checksum(data);
         }
-        return _possibleConstructorReturn(this, (EAN82.__proto__ || Object.getPrototypeOf(EAN82)).call(this, data, options));
+        return _possibleConstructorReturn(
+          this,
+          (EAN82.__proto__ || Object.getPrototypeOf(EAN82)).call(this, data, options),
+        );
       }
-      _createClass(EAN82, [{
-        key: "valid",
-        value: function valid() {
-          return this.data.search(/^[0-9]{8}$/) !== -1 && +this.data[7] === checksum(this.data);
-        }
-      }, {
-        key: "leftText",
-        value: function leftText() {
-          return _get(EAN82.prototype.__proto__ || Object.getPrototypeOf(EAN82.prototype), "leftText", this).call(this, 0, 4);
-        }
-      }, {
-        key: "leftEncode",
-        value: function leftEncode() {
-          var data = this.data.substr(0, 4);
-          return _get(EAN82.prototype.__proto__ || Object.getPrototypeOf(EAN82.prototype), "leftEncode", this).call(this, data, "LLLL");
-        }
-      }, {
-        key: "rightText",
-        value: function rightText() {
-          return _get(EAN82.prototype.__proto__ || Object.getPrototypeOf(EAN82.prototype), "rightText", this).call(this, 4, 4);
-        }
-      }, {
-        key: "rightEncode",
-        value: function rightEncode() {
-          var data = this.data.substr(4, 4);
-          return _get(EAN82.prototype.__proto__ || Object.getPrototypeOf(EAN82.prototype), "rightEncode", this).call(this, data, "RRRR");
-        }
-      }]);
+      _createClass(EAN82, [
+        {
+          key: "valid",
+          value: function valid() {
+            return this.data.search(/^[0-9]{8}$/) !== -1 && +this.data[7] === checksum(this.data);
+          },
+        },
+        {
+          key: "leftText",
+          value: function leftText() {
+            return _get(
+              EAN82.prototype.__proto__ || Object.getPrototypeOf(EAN82.prototype),
+              "leftText",
+              this,
+            ).call(this, 0, 4);
+          },
+        },
+        {
+          key: "leftEncode",
+          value: function leftEncode() {
+            var data = this.data.substr(0, 4);
+            return _get(
+              EAN82.prototype.__proto__ || Object.getPrototypeOf(EAN82.prototype),
+              "leftEncode",
+              this,
+            ).call(this, data, "LLLL");
+          },
+        },
+        {
+          key: "rightText",
+          value: function rightText() {
+            return _get(
+              EAN82.prototype.__proto__ || Object.getPrototypeOf(EAN82.prototype),
+              "rightText",
+              this,
+            ).call(this, 4, 4);
+          },
+        },
+        {
+          key: "rightEncode",
+          value: function rightEncode() {
+            var data = this.data.substr(4, 4);
+            return _get(
+              EAN82.prototype.__proto__ || Object.getPrototypeOf(EAN82.prototype),
+              "rightEncode",
+              this,
+            ).call(this, data, "RRRR");
+          },
+        },
+      ]);
       return EAN82;
     })(_EAN3.default);
     exports2.default = EAN8;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/EAN_UPC/EAN5.js
@@ -1138,9 +1479,9 @@ var require_EAN5 = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/EAN_UPC/EAN5.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -1150,7 +1491,7 @@ var require_EAN5 = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -1177,44 +1518,60 @@ var require_EAN5 = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
     var checksum = function checksum2(data) {
-      var result = data.split("").map(function(n) {
-        return +n;
-      }).reduce(function(sum, a, idx) {
-        return idx % 2 ? sum + a * 9 : sum + a * 3;
-      }, 0);
+      var result = data
+        .split("")
+        .map(function (n) {
+          return +n;
+        })
+        .reduce(function (sum, a, idx) {
+          return idx % 2 ? sum + a * 9 : sum + a * 3;
+        }, 0);
       return result % 10;
     };
-    var EAN5 = (function(_Barcode) {
+    var EAN5 = (function (_Barcode) {
       _inherits(EAN52, _Barcode);
       function EAN52(data, options) {
         _classCallCheck(this, EAN52);
-        return _possibleConstructorReturn(this, (EAN52.__proto__ || Object.getPrototypeOf(EAN52)).call(this, data, options));
+        return _possibleConstructorReturn(
+          this,
+          (EAN52.__proto__ || Object.getPrototypeOf(EAN52)).call(this, data, options),
+        );
       }
-      _createClass(EAN52, [{
-        key: "valid",
-        value: function valid() {
-          return this.data.search(/^[0-9]{5}$/) !== -1;
-        }
-      }, {
-        key: "encode",
-        value: function encode2() {
-          var structure = _constants.EAN5_STRUCTURE[checksum(this.data)];
-          return {
-            data: "1011" + (0, _encoder2.default)(this.data, structure, "01"),
-            text: this.text
-          };
-        }
-      }]);
+      _createClass(EAN52, [
+        {
+          key: "valid",
+          value: function valid() {
+            return this.data.search(/^[0-9]{5}$/) !== -1;
+          },
+        },
+        {
+          key: "encode",
+          value: function encode2() {
+            var structure = _constants.EAN5_STRUCTURE[checksum(this.data)];
+            return {
+              data: "1011" + (0, _encoder2.default)(this.data, structure, "01"),
+              text: this.text,
+            };
+          },
+        },
+      ]);
       return EAN52;
     })(_Barcode3.default);
     exports2.default = EAN5;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/EAN_UPC/EAN2.js
@@ -1222,9 +1579,9 @@ var require_EAN2 = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/EAN_UPC/EAN2.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -1234,7 +1591,7 @@ var require_EAN2 = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -1261,37 +1618,50 @@ var require_EAN2 = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var EAN2 = (function(_Barcode) {
+    var EAN2 = (function (_Barcode) {
       _inherits(EAN22, _Barcode);
       function EAN22(data, options) {
         _classCallCheck(this, EAN22);
-        return _possibleConstructorReturn(this, (EAN22.__proto__ || Object.getPrototypeOf(EAN22)).call(this, data, options));
+        return _possibleConstructorReturn(
+          this,
+          (EAN22.__proto__ || Object.getPrototypeOf(EAN22)).call(this, data, options),
+        );
       }
-      _createClass(EAN22, [{
-        key: "valid",
-        value: function valid() {
-          return this.data.search(/^[0-9]{2}$/) !== -1;
-        }
-      }, {
-        key: "encode",
-        value: function encode2() {
-          var structure = _constants.EAN2_STRUCTURE[parseInt(this.data) % 4];
-          return {
-            // Start bits + Encode the two digits with 01 in between
-            data: "1011" + (0, _encoder2.default)(this.data, structure, "01"),
-            text: this.text
-          };
-        }
-      }]);
+      _createClass(EAN22, [
+        {
+          key: "valid",
+          value: function valid() {
+            return this.data.search(/^[0-9]{2}$/) !== -1;
+          },
+        },
+        {
+          key: "encode",
+          value: function encode2() {
+            var structure = _constants.EAN2_STRUCTURE[parseInt(this.data) % 4];
+            return {
+              // Start bits + Encode the two digits with 01 in between
+              data: "1011" + (0, _encoder2.default)(this.data, structure, "01"),
+              text: this.text,
+            };
+          },
+        },
+      ]);
       return EAN22;
     })(_Barcode3.default);
     exports2.default = EAN2;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/EAN_UPC/UPC.js
@@ -1299,9 +1669,9 @@ var require_UPC = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/EAN_UPC/UPC.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -1311,7 +1681,7 @@ var require_UPC = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -1338,19 +1708,29 @@ var require_UPC = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var UPC = (function(_Barcode) {
+    var UPC = (function (_Barcode) {
       _inherits(UPC2, _Barcode);
       function UPC2(data, options) {
         _classCallCheck(this, UPC2);
         if (data.search(/^[0-9]{11}$/) !== -1) {
           data += checksum(data);
         }
-        var _this = _possibleConstructorReturn(this, (UPC2.__proto__ || Object.getPrototypeOf(UPC2)).call(this, data, options));
+        var _this = _possibleConstructorReturn(
+          this,
+          (UPC2.__proto__ || Object.getPrototypeOf(UPC2)).call(this, data, options),
+        );
         _this.displayValue = options.displayValue;
         if (options.fontSize > options.width * 10) {
           _this.fontSize = options.width * 10;
@@ -1360,77 +1740,82 @@ var require_UPC = __commonJS({
         _this.guardHeight = options.height + _this.fontSize / 2 + options.textMargin;
         return _this;
       }
-      _createClass(UPC2, [{
-        key: "valid",
-        value: function valid() {
-          return this.data.search(/^[0-9]{12}$/) !== -1 && this.data[11] == checksum(this.data);
-        }
-      }, {
-        key: "encode",
-        value: function encode2() {
-          if (this.options.flat) {
-            return this.flatEncoding();
-          } else {
-            return this.guardedEncoding();
-          }
-        }
-      }, {
-        key: "flatEncoding",
-        value: function flatEncoding() {
-          var result = "";
-          result += "101";
-          result += (0, _encoder2.default)(this.data.substr(0, 6), "LLLLLL");
-          result += "01010";
-          result += (0, _encoder2.default)(this.data.substr(6, 6), "RRRRRR");
-          result += "101";
-          return {
-            data: result,
-            text: this.text
-          };
-        }
-      }, {
-        key: "guardedEncoding",
-        value: function guardedEncoding() {
-          var result = [];
-          if (this.displayValue) {
+      _createClass(UPC2, [
+        {
+          key: "valid",
+          value: function valid() {
+            return this.data.search(/^[0-9]{12}$/) !== -1 && this.data[11] == checksum(this.data);
+          },
+        },
+        {
+          key: "encode",
+          value: function encode2() {
+            if (this.options.flat) {
+              return this.flatEncoding();
+            } else {
+              return this.guardedEncoding();
+            }
+          },
+        },
+        {
+          key: "flatEncoding",
+          value: function flatEncoding() {
+            var result = "";
+            result += "101";
+            result += (0, _encoder2.default)(this.data.substr(0, 6), "LLLLLL");
+            result += "01010";
+            result += (0, _encoder2.default)(this.data.substr(6, 6), "RRRRRR");
+            result += "101";
+            return {
+              data: result,
+              text: this.text,
+            };
+          },
+        },
+        {
+          key: "guardedEncoding",
+          value: function guardedEncoding() {
+            var result = [];
+            if (this.displayValue) {
+              result.push({
+                data: "00000000",
+                text: this.text.substr(0, 1),
+                options: { textAlign: "left", fontSize: this.fontSize },
+              });
+            }
             result.push({
-              data: "00000000",
-              text: this.text.substr(0, 1),
-              options: { textAlign: "left", fontSize: this.fontSize }
+              data: "101" + (0, _encoder2.default)(this.data[0], "L"),
+              options: { height: this.guardHeight },
             });
-          }
-          result.push({
-            data: "101" + (0, _encoder2.default)(this.data[0], "L"),
-            options: { height: this.guardHeight }
-          });
-          result.push({
-            data: (0, _encoder2.default)(this.data.substr(1, 5), "LLLLL"),
-            text: this.text.substr(1, 5),
-            options: { fontSize: this.fontSize }
-          });
-          result.push({
-            data: "01010",
-            options: { height: this.guardHeight }
-          });
-          result.push({
-            data: (0, _encoder2.default)(this.data.substr(6, 5), "RRRRR"),
-            text: this.text.substr(6, 5),
-            options: { fontSize: this.fontSize }
-          });
-          result.push({
-            data: (0, _encoder2.default)(this.data[11], "R") + "101",
-            options: { height: this.guardHeight }
-          });
-          if (this.displayValue) {
             result.push({
-              data: "00000000",
-              text: this.text.substr(11, 1),
-              options: { textAlign: "right", fontSize: this.fontSize }
+              data: (0, _encoder2.default)(this.data.substr(1, 5), "LLLLL"),
+              text: this.text.substr(1, 5),
+              options: { fontSize: this.fontSize },
             });
-          }
-          return result;
-        }
-      }]);
+            result.push({
+              data: "01010",
+              options: { height: this.guardHeight },
+            });
+            result.push({
+              data: (0, _encoder2.default)(this.data.substr(6, 5), "RRRRR"),
+              text: this.text.substr(6, 5),
+              options: { fontSize: this.fontSize },
+            });
+            result.push({
+              data: (0, _encoder2.default)(this.data[11], "R") + "101",
+              options: { height: this.guardHeight },
+            });
+            if (this.displayValue) {
+              result.push({
+                data: "00000000",
+                text: this.text.substr(11, 1),
+                options: { textAlign: "right", fontSize: this.fontSize },
+              });
+            }
+            return result;
+          },
+        },
+      ]);
       return UPC2;
     })(_Barcode3.default);
     function checksum(number) {
@@ -1442,10 +1827,10 @@ var require_UPC = __commonJS({
       for (i = 0; i < 11; i += 2) {
         result += parseInt(number[i]) * 3;
       }
-      return (10 - result % 10) % 10;
+      return (10 - (result % 10)) % 10;
     }
     exports2.default = UPC;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/EAN_UPC/UPCE.js
@@ -1453,9 +1838,9 @@ var require_UPCE = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/EAN_UPC/UPCE.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -1465,7 +1850,7 @@ var require_UPCE = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -1492,23 +1877,56 @@ var require_UPCE = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var EXPANSIONS = ["XX00000XXX", "XX10000XXX", "XX20000XXX", "XXX00000XX", "XXXX00000X", "XXXXX00005", "XXXXX00006", "XXXXX00007", "XXXXX00008", "XXXXX00009"];
-    var PARITIES = [["EEEOOO", "OOOEEE"], ["EEOEOO", "OOEOEE"], ["EEOOEO", "OOEEOE"], ["EEOOOE", "OOEEEO"], ["EOEEOO", "OEOOEE"], ["EOOEEO", "OEEOOE"], ["EOOOEE", "OEEEOO"], ["EOEOEO", "OEOEOE"], ["EOEOOE", "OEOEEO"], ["EOOEOE", "OEEOEO"]];
-    var UPCE = (function(_Barcode) {
+    var EXPANSIONS = [
+      "XX00000XXX",
+      "XX10000XXX",
+      "XX20000XXX",
+      "XXX00000XX",
+      "XXXX00000X",
+      "XXXXX00005",
+      "XXXXX00006",
+      "XXXXX00007",
+      "XXXXX00008",
+      "XXXXX00009",
+    ];
+    var PARITIES = [
+      ["EEEOOO", "OOOEEE"],
+      ["EEOEOO", "OOEOEE"],
+      ["EEOOEO", "OOEEOE"],
+      ["EEOOOE", "OOEEEO"],
+      ["EOEEOO", "OEOOEE"],
+      ["EOOEEO", "OEEOOE"],
+      ["EOOOEE", "OEEEOO"],
+      ["EOEOEO", "OEOEOE"],
+      ["EOEOOE", "OEOEEO"],
+      ["EOOEOE", "OEEOEO"],
+    ];
+    var UPCE = (function (_Barcode) {
       _inherits(UPCE2, _Barcode);
       function UPCE2(data, options) {
         _classCallCheck(this, UPCE2);
-        var _this = _possibleConstructorReturn(this, (UPCE2.__proto__ || Object.getPrototypeOf(UPCE2)).call(this, data, options));
+        var _this = _possibleConstructorReturn(
+          this,
+          (UPCE2.__proto__ || Object.getPrototypeOf(UPCE2)).call(this, data, options),
+        );
         _this.isValid = false;
         if (data.search(/^[0-9]{6}$/) !== -1) {
           _this.middleDigits = data;
           _this.upcA = expandToUPCA(data, "0");
-          _this.text = options.text || "" + _this.upcA[0] + data + _this.upcA[_this.upcA.length - 1];
+          _this.text =
+            options.text || "" + _this.upcA[0] + data + _this.upcA[_this.upcA.length - 1];
           _this.isValid = true;
         } else if (data.search(/^[01][0-9]{7}$/) !== -1) {
           _this.middleDigits = data.substring(1, data.length - 1);
@@ -1530,74 +1948,80 @@ var require_UPCE = __commonJS({
         _this.guardHeight = options.height + _this.fontSize / 2 + options.textMargin;
         return _this;
       }
-      _createClass(UPCE2, [{
-        key: "valid",
-        value: function valid() {
-          return this.isValid;
-        }
-      }, {
-        key: "encode",
-        value: function encode2() {
-          if (this.options.flat) {
-            return this.flatEncoding();
-          } else {
-            return this.guardedEncoding();
-          }
-        }
-      }, {
-        key: "flatEncoding",
-        value: function flatEncoding() {
-          var result = "";
-          result += "101";
-          result += this.encodeMiddleDigits();
-          result += "010101";
-          return {
-            data: result,
-            text: this.text
-          };
-        }
-      }, {
-        key: "guardedEncoding",
-        value: function guardedEncoding() {
-          var result = [];
-          if (this.displayValue) {
+      _createClass(UPCE2, [
+        {
+          key: "valid",
+          value: function valid() {
+            return this.isValid;
+          },
+        },
+        {
+          key: "encode",
+          value: function encode2() {
+            if (this.options.flat) {
+              return this.flatEncoding();
+            } else {
+              return this.guardedEncoding();
+            }
+          },
+        },
+        {
+          key: "flatEncoding",
+          value: function flatEncoding() {
+            var result = "";
+            result += "101";
+            result += this.encodeMiddleDigits();
+            result += "010101";
+            return {
+              data: result,
+              text: this.text,
+            };
+          },
+        },
+        {
+          key: "guardedEncoding",
+          value: function guardedEncoding() {
+            var result = [];
+            if (this.displayValue) {
+              result.push({
+                data: "00000000",
+                text: this.text[0],
+                options: { textAlign: "left", fontSize: this.fontSize },
+              });
+            }
             result.push({
-              data: "00000000",
-              text: this.text[0],
-              options: { textAlign: "left", fontSize: this.fontSize }
+              data: "101",
+              options: { height: this.guardHeight },
             });
-          }
-          result.push({
-            data: "101",
-            options: { height: this.guardHeight }
-          });
-          result.push({
-            data: this.encodeMiddleDigits(),
-            text: this.text.substring(1, 7),
-            options: { fontSize: this.fontSize }
-          });
-          result.push({
-            data: "010101",
-            options: { height: this.guardHeight }
-          });
-          if (this.displayValue) {
             result.push({
-              data: "00000000",
-              text: this.text[7],
-              options: { textAlign: "right", fontSize: this.fontSize }
+              data: this.encodeMiddleDigits(),
+              text: this.text.substring(1, 7),
+              options: { fontSize: this.fontSize },
             });
-          }
-          return result;
-        }
-      }, {
-        key: "encodeMiddleDigits",
-        value: function encodeMiddleDigits() {
-          var numberSystem = this.upcA[0];
-          var checkDigit = this.upcA[this.upcA.length - 1];
-          var parity = PARITIES[parseInt(checkDigit)][parseInt(numberSystem)];
-          return (0, _encoder2.default)(this.middleDigits, parity);
-        }
-      }]);
+            result.push({
+              data: "010101",
+              options: { height: this.guardHeight },
+            });
+            if (this.displayValue) {
+              result.push({
+                data: "00000000",
+                text: this.text[7],
+                options: { textAlign: "right", fontSize: this.fontSize },
+              });
+            }
+            return result;
+          },
+        },
+        {
+          key: "encodeMiddleDigits",
+          value: function encodeMiddleDigits() {
+            var numberSystem = this.upcA[0];
+            var checkDigit = this.upcA[this.upcA.length - 1];
+            var parity = PARITIES[parseInt(checkDigit)][parseInt(numberSystem)];
+            return (0, _encoder2.default)(this.middleDigits, parity);
+          },
+        },
+      ]);
       return UPCE2;
     })(_Barcode3.default);
     function expandToUPCA(middleDigits, numberSystem) {
@@ -1617,7 +2041,7 @@ var require_UPCE = __commonJS({
       return "" + result + (0, _UPC.checksum)(result);
     }
     exports2.default = UPCE;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/EAN_UPC/index.js
@@ -1625,9 +2049,15 @@ var require_EAN_UPC = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/EAN_UPC/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    exports2.UPCE = exports2.UPC = exports2.EAN2 = exports2.EAN5 = exports2.EAN8 = exports2.EAN13 = void 0;
+    exports2.UPCE =
+      exports2.UPC =
+      exports2.EAN2 =
+      exports2.EAN5 =
+      exports2.EAN8 =
+      exports2.EAN13 =
+        void 0;
     var _EAN = require_EAN13();
     var _EAN2 = _interopRequireDefault2(_EAN);
     var _EAN3 = require_EAN8();
@@ -1649,7 +2079,7 @@ var require_EAN_UPC = __commonJS({
     exports2.EAN2 = _EAN8.default;
     exports2.UPC = _UPC2.default;
     exports2.UPCE = _UPCE2.default;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/ITF/constants.js
@@ -1657,12 +2087,23 @@ var require_constants3 = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/ITF/constants.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var START_BIN = exports2.START_BIN = "1010";
-    var END_BIN = exports2.END_BIN = "11101";
-    var BINARIES = exports2.BINARIES = ["00110", "10001", "01001", "11000", "00101", "10100", "01100", "00011", "10010", "01010"];
-  }
+    var START_BIN = (exports2.START_BIN = "1010");
+    var END_BIN = (exports2.END_BIN = "11101");
+    var BINARIES = (exports2.BINARIES = [
+      "00110",
+      "10001",
+      "01001",
+      "11000",
+      "00101",
+      "10100",
+      "01100",
+      "00011",
+      "10010",
+      "01010",
+    ]);
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/ITF/ITF.js
@@ -1670,9 +2111,9 @@ var require_ITF = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/ITF/ITF.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -1682,7 +2123,7 @@ var require_ITF = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -1707,48 +2148,68 @@ var require_ITF = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var ITF = (function(_Barcode) {
+    var ITF = (function (_Barcode) {
       _inherits(ITF2, _Barcode);
       function ITF2() {
         _classCallCheck(this, ITF2);
-        return _possibleConstructorReturn(this, (ITF2.__proto__ || Object.getPrototypeOf(ITF2)).apply(this, arguments));
+        return _possibleConstructorReturn(
+          this,
+          (ITF2.__proto__ || Object.getPrototypeOf(ITF2)).apply(this, arguments),
+        );
       }
-      _createClass(ITF2, [{
-        key: "valid",
-        value: function valid() {
-          return this.data.search(/^([0-9]{2})+$/) !== -1;
-        }
-      }, {
-        key: "encode",
-        value: function encode2() {
-          var _this2 = this;
-          var encoded = this.data.match(/.{2}/g).map(function(pair) {
-            return _this2.encodePair(pair);
-          }).join("");
-          return {
-            data: _constants.START_BIN + encoded + _constants.END_BIN,
-            text: this.text
-          };
-        }
-        // Calculate the data of a number pair
-      }, {
-        key: "encodePair",
-        value: function encodePair(pair) {
-          var second = _constants.BINARIES[pair[1]];
-          return _constants.BINARIES[pair[0]].split("").map(function(first, idx) {
-            return (first === "1" ? "111" : "1") + (second[idx] === "1" ? "000" : "0");
-          }).join("");
-        }
-      }]);
+      _createClass(ITF2, [
+        {
+          key: "valid",
+          value: function valid() {
+            return this.data.search(/^([0-9]{2})+$/) !== -1;
+          },
+        },
+        {
+          key: "encode",
+          value: function encode2() {
+            var _this2 = this;
+            var encoded = this.data
+              .match(/.{2}/g)
+              .map(function (pair) {
+                return _this2.encodePair(pair);
+              })
+              .join("");
+            return {
+              data: _constants.START_BIN + encoded + _constants.END_BIN,
+              text: this.text,
+            };
+          },
+          // Calculate the data of a number pair
+        },
+        {
+          key: "encodePair",
+          value: function encodePair(pair) {
+            var second = _constants.BINARIES[pair[1]];
+            return _constants.BINARIES[pair[0]]
+              .split("")
+              .map(function (first, idx) {
+                return (first === "1" ? "111" : "1") + (second[idx] === "1" ? "000" : "0");
+              })
+              .join("");
+          },
+        },
+      ]);
       return ITF2;
     })(_Barcode3.default);
     exports2.default = ITF;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/ITF/ITF14.js
@@ -1756,9 +2217,9 @@ var require_ITF14 = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/ITF/ITF14.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -1768,7 +2229,7 @@ var require_ITF14 = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -1792,38 +2253,54 @@ var require_ITF14 = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
     var checksum = function checksum2(data) {
-      var res = data.substr(0, 13).split("").map(function(num) {
-        return parseInt(num, 10);
-      }).reduce(function(sum, n, idx) {
-        return sum + n * (3 - idx % 2 * 2);
-      }, 0);
+      var res = data
+        .substr(0, 13)
+        .split("")
+        .map(function (num) {
+          return parseInt(num, 10);
+        })
+        .reduce(function (sum, n, idx) {
+          return sum + n * (3 - (idx % 2) * 2);
+        }, 0);
       return Math.ceil(res / 10) * 10 - res;
     };
-    var ITF14 = (function(_ITF) {
+    var ITF14 = (function (_ITF) {
       _inherits(ITF142, _ITF);
       function ITF142(data, options) {
         _classCallCheck(this, ITF142);
         if (data.search(/^[0-9]{13}$/) !== -1) {
           data += checksum(data);
         }
-        return _possibleConstructorReturn(this, (ITF142.__proto__ || Object.getPrototypeOf(ITF142)).call(this, data, options));
+        return _possibleConstructorReturn(
+          this,
+          (ITF142.__proto__ || Object.getPrototypeOf(ITF142)).call(this, data, options),
+        );
       }
-      _createClass(ITF142, [{
-        key: "valid",
-        value: function valid() {
-          return this.data.search(/^[0-9]{14}$/) !== -1 && +this.data[13] === checksum(this.data);
-        }
-      }]);
+      _createClass(ITF142, [
+        {
+          key: "valid",
+          value: function valid() {
+            return this.data.search(/^[0-9]{14}$/) !== -1 && +this.data[13] === checksum(this.data);
+          },
+        },
+      ]);
       return ITF142;
     })(_ITF3.default);
     exports2.default = ITF14;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/ITF/index.js
@@ -1831,7 +2308,7 @@ var require_ITF2 = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/ITF/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     exports2.ITF14 = exports2.ITF = void 0;
     var _ITF = require_ITF();
@@ -1843,7 +2320,7 @@ var require_ITF2 = __commonJS({
     }
     exports2.ITF = _ITF2.default;
     exports2.ITF14 = _ITF4.default;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/MSI/MSI.js
@@ -1851,9 +2328,9 @@ var require_MSI = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/MSI/MSI.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -1863,7 +2340,7 @@ var require_MSI = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -1887,41 +2364,54 @@ var require_MSI = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var MSI = (function(_Barcode) {
+    var MSI = (function (_Barcode) {
       _inherits(MSI2, _Barcode);
       function MSI2(data, options) {
         _classCallCheck(this, MSI2);
-        return _possibleConstructorReturn(this, (MSI2.__proto__ || Object.getPrototypeOf(MSI2)).call(this, data, options));
+        return _possibleConstructorReturn(
+          this,
+          (MSI2.__proto__ || Object.getPrototypeOf(MSI2)).call(this, data, options),
+        );
       }
-      _createClass(MSI2, [{
-        key: "encode",
-        value: function encode2() {
-          var ret = "110";
-          for (var i = 0; i < this.data.length; i++) {
-            var digit = parseInt(this.data[i]);
-            var bin = digit.toString(2);
-            bin = addZeroes(bin, 4 - bin.length);
-            for (var b = 0; b < bin.length; b++) {
-              ret += bin[b] == "0" ? "100" : "110";
+      _createClass(MSI2, [
+        {
+          key: "encode",
+          value: function encode2() {
+            var ret = "110";
+            for (var i = 0; i < this.data.length; i++) {
+              var digit = parseInt(this.data[i]);
+              var bin = digit.toString(2);
+              bin = addZeroes(bin, 4 - bin.length);
+              for (var b = 0; b < bin.length; b++) {
+                ret += bin[b] == "0" ? "100" : "110";
+              }
             }
-          }
-          ret += "1001";
-          return {
-            data: ret,
-            text: this.text
-          };
-        }
-      }, {
-        key: "valid",
-        value: function valid() {
-          return this.data.search(/^[0-9]+$/) !== -1;
-        }
-      }]);
+            ret += "1001";
+            return {
+              data: ret,
+              text: this.text,
+            };
+          },
+        },
+        {
+          key: "valid",
+          value: function valid() {
+            return this.data.search(/^[0-9]+$/) !== -1;
+          },
+        },
+      ]);
       return MSI2;
     })(_Barcode3.default);
     function addZeroes(number, n) {
@@ -1931,7 +2421,7 @@ var require_MSI = __commonJS({
       return number;
     }
     exports2.default = MSI;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/MSI/checksums.js
@@ -1939,7 +2429,7 @@ var require_checksums = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/MSI/checksums.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     exports2.mod10 = mod10;
     exports2.mod11 = mod11;
@@ -1950,10 +2440,10 @@ var require_checksums = __commonJS({
         if ((i + number.length) % 2 === 0) {
           sum += n;
         } else {
-          sum += n * 2 % 10 + Math.floor(n * 2 / 10);
+          sum += ((n * 2) % 10) + Math.floor((n * 2) / 10);
         }
       }
-      return (10 - sum % 10) % 10;
+      return (10 - (sum % 10)) % 10;
     }
     function mod11(number) {
       var sum = 0;
@@ -1962,9 +2452,9 @@ var require_checksums = __commonJS({
         var n = parseInt(number[number.length - 1 - i]);
         sum += weights[i % weights.length] * n;
       }
-      return (11 - sum % 11) % 11;
+      return (11 - (sum % 11)) % 11;
     }
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/MSI/MSI10.js
@@ -1972,7 +2462,7 @@ var require_MSI10 = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/MSI/MSI10.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     var _MSI2 = require_MSI();
     var _MSI3 = _interopRequireDefault2(_MSI2);
@@ -1993,21 +2483,35 @@ var require_MSI10 = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var MSI10 = (function(_MSI) {
+    var MSI10 = (function (_MSI) {
       _inherits(MSI102, _MSI);
       function MSI102(data, options) {
         _classCallCheck(this, MSI102);
-        return _possibleConstructorReturn(this, (MSI102.__proto__ || Object.getPrototypeOf(MSI102)).call(this, data + (0, _checksums.mod10)(data), options));
+        return _possibleConstructorReturn(
+          this,
+          (MSI102.__proto__ || Object.getPrototypeOf(MSI102)).call(
+            this,
+            data + (0, _checksums.mod10)(data),
+            options,
+          ),
+        );
       }
       return MSI102;
     })(_MSI3.default);
     exports2.default = MSI10;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/MSI/MSI11.js
@@ -2015,7 +2519,7 @@ var require_MSI11 = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/MSI/MSI11.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     var _MSI2 = require_MSI();
     var _MSI3 = _interopRequireDefault2(_MSI2);
@@ -2036,21 +2540,35 @@ var require_MSI11 = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var MSI11 = (function(_MSI) {
+    var MSI11 = (function (_MSI) {
       _inherits(MSI112, _MSI);
       function MSI112(data, options) {
         _classCallCheck(this, MSI112);
-        return _possibleConstructorReturn(this, (MSI112.__proto__ || Object.getPrototypeOf(MSI112)).call(this, data + (0, _checksums.mod11)(data), options));
+        return _possibleConstructorReturn(
+          this,
+          (MSI112.__proto__ || Object.getPrototypeOf(MSI112)).call(
+            this,
+            data + (0, _checksums.mod11)(data),
+            options,
+          ),
+        );
       }
       return MSI112;
     })(_MSI3.default);
     exports2.default = MSI11;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/MSI/MSI1010.js
@@ -2058,7 +2576,7 @@ var require_MSI1010 = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/MSI/MSI1010.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     var _MSI2 = require_MSI();
     var _MSI3 = _interopRequireDefault2(_MSI2);
@@ -2079,23 +2597,33 @@ var require_MSI1010 = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var MSI1010 = (function(_MSI) {
+    var MSI1010 = (function (_MSI) {
       _inherits(MSI10102, _MSI);
       function MSI10102(data, options) {
         _classCallCheck(this, MSI10102);
         data += (0, _checksums.mod10)(data);
         data += (0, _checksums.mod10)(data);
-        return _possibleConstructorReturn(this, (MSI10102.__proto__ || Object.getPrototypeOf(MSI10102)).call(this, data, options));
+        return _possibleConstructorReturn(
+          this,
+          (MSI10102.__proto__ || Object.getPrototypeOf(MSI10102)).call(this, data, options),
+        );
       }
       return MSI10102;
     })(_MSI3.default);
     exports2.default = MSI1010;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/MSI/MSI1110.js
@@ -2103,7 +2631,7 @@ var require_MSI1110 = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/MSI/MSI1110.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     var _MSI2 = require_MSI();
     var _MSI3 = _interopRequireDefault2(_MSI2);
@@ -2124,23 +2652,33 @@ var require_MSI1110 = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var MSI1110 = (function(_MSI) {
+    var MSI1110 = (function (_MSI) {
       _inherits(MSI11102, _MSI);
       function MSI11102(data, options) {
         _classCallCheck(this, MSI11102);
         data += (0, _checksums.mod11)(data);
         data += (0, _checksums.mod10)(data);
-        return _possibleConstructorReturn(this, (MSI11102.__proto__ || Object.getPrototypeOf(MSI11102)).call(this, data, options));
+        return _possibleConstructorReturn(
+          this,
+          (MSI11102.__proto__ || Object.getPrototypeOf(MSI11102)).call(this, data, options),
+        );
       }
       return MSI11102;
     })(_MSI3.default);
     exports2.default = MSI1110;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/MSI/index.js
@@ -2148,7 +2686,7 @@ var require_MSI2 = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/MSI/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     exports2.MSI1110 = exports2.MSI1010 = exports2.MSI11 = exports2.MSI10 = exports2.MSI = void 0;
     var _MSI = require_MSI();
@@ -2169,7 +2707,7 @@ var require_MSI2 = __commonJS({
     exports2.MSI11 = _MSI6.default;
     exports2.MSI1010 = _MSI8.default;
     exports2.MSI1110 = _MSI10.default;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/pharmacode/index.js
@@ -2177,10 +2715,10 @@ var require_pharmacode = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/pharmacode/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     exports2.pharmacode = void 0;
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -2190,7 +2728,7 @@ var require_pharmacode = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -2214,49 +2752,62 @@ var require_pharmacode = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var pharmacode = (function(_Barcode) {
+    var pharmacode = (function (_Barcode) {
       _inherits(pharmacode2, _Barcode);
       function pharmacode2(data, options) {
         _classCallCheck(this, pharmacode2);
-        var _this = _possibleConstructorReturn(this, (pharmacode2.__proto__ || Object.getPrototypeOf(pharmacode2)).call(this, data, options));
+        var _this = _possibleConstructorReturn(
+          this,
+          (pharmacode2.__proto__ || Object.getPrototypeOf(pharmacode2)).call(this, data, options),
+        );
         _this.number = parseInt(data, 10);
         return _this;
       }
-      _createClass(pharmacode2, [{
-        key: "encode",
-        value: function encode2() {
-          var z = this.number;
-          var result = "";
-          while (!isNaN(z) && z != 0) {
-            if (z % 2 === 0) {
-              result = "11100" + result;
-              z = (z - 2) / 2;
-            } else {
-              result = "100" + result;
-              z = (z - 1) / 2;
+      _createClass(pharmacode2, [
+        {
+          key: "encode",
+          value: function encode2() {
+            var z = this.number;
+            var result = "";
+            while (!isNaN(z) && z != 0) {
+              if (z % 2 === 0) {
+                result = "11100" + result;
+                z = (z - 2) / 2;
+              } else {
+                result = "100" + result;
+                z = (z - 1) / 2;
+              }
             }
-          }
-          result = result.slice(0, -2);
-          return {
-            data: result,
-            text: this.text
-          };
-        }
-      }, {
-        key: "valid",
-        value: function valid() {
-          return this.number >= 3 && this.number <= 131070;
-        }
-      }]);
+            result = result.slice(0, -2);
+            return {
+              data: result,
+              text: this.text,
+            };
+          },
+        },
+        {
+          key: "valid",
+          value: function valid() {
+            return this.number >= 3 && this.number <= 131070;
+          },
+        },
+      ]);
       return pharmacode2;
     })(_Barcode3.default);
     exports2.pharmacode = pharmacode;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/codabar/index.js
@@ -2264,10 +2815,10 @@ var require_codabar = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/codabar/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     exports2.codabar = void 0;
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -2277,7 +2828,7 @@ var require_codabar = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -2301,74 +2852,92 @@ var require_codabar = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var codabar = (function(_Barcode) {
+    var codabar = (function (_Barcode) {
       _inherits(codabar2, _Barcode);
       function codabar2(data, options) {
         _classCallCheck(this, codabar2);
         if (data.search(/^[0-9\-\$\:\.\+\/]+$/) === 0) {
           data = "A" + data + "A";
         }
-        var _this = _possibleConstructorReturn(this, (codabar2.__proto__ || Object.getPrototypeOf(codabar2)).call(this, data.toUpperCase(), options));
+        var _this = _possibleConstructorReturn(
+          this,
+          (codabar2.__proto__ || Object.getPrototypeOf(codabar2)).call(
+            this,
+            data.toUpperCase(),
+            options,
+          ),
+        );
         _this.text = _this.options.text || _this.text.replace(/[A-D]/g, "");
         return _this;
       }
-      _createClass(codabar2, [{
-        key: "valid",
-        value: function valid() {
-          return this.data.search(/^[A-D][0-9\-\$\:\.\+\/]+[A-D]$/) !== -1;
-        }
-      }, {
-        key: "encode",
-        value: function encode2() {
-          var result = [];
-          var encodings = this.getEncodings();
-          for (var i = 0; i < this.data.length; i++) {
-            result.push(encodings[this.data.charAt(i)]);
-            if (i !== this.data.length - 1) {
-              result.push("0");
+      _createClass(codabar2, [
+        {
+          key: "valid",
+          value: function valid() {
+            return this.data.search(/^[A-D][0-9\-\$\:\.\+\/]+[A-D]$/) !== -1;
+          },
+        },
+        {
+          key: "encode",
+          value: function encode2() {
+            var result = [];
+            var encodings = this.getEncodings();
+            for (var i = 0; i < this.data.length; i++) {
+              result.push(encodings[this.data.charAt(i)]);
+              if (i !== this.data.length - 1) {
+                result.push("0");
+              }
             }
-          }
-          return {
-            text: this.text,
-            data: result.join("")
-          };
-        }
-      }, {
-        key: "getEncodings",
-        value: function getEncodings() {
-          return {
-            "0": "101010011",
-            "1": "101011001",
-            "2": "101001011",
-            "3": "110010101",
-            "4": "101101001",
-            "5": "110101001",
-            "6": "100101011",
-            "7": "100101101",
-            "8": "100110101",
-            "9": "110100101",
-            "-": "101001101",
-            "$": "101100101",
-            ":": "1101011011",
-            "/": "1101101011",
-            ".": "1101101101",
-            "+": "1011011011",
-            "A": "1011001001",
-            "B": "1001001011",
-            "C": "1010010011",
-            "D": "1010011001"
-          };
-        }
-      }]);
+            return {
+              text: this.text,
+              data: result.join(""),
+            };
+          },
+        },
+        {
+          key: "getEncodings",
+          value: function getEncodings() {
+            return {
+              0: "101010011",
+              1: "101011001",
+              2: "101001011",
+              3: "110010101",
+              4: "101101001",
+              5: "110101001",
+              6: "100101011",
+              7: "100101101",
+              8: "100110101",
+              9: "110100101",
+              "-": "101001101",
+              $: "101100101",
+              ":": "1101011011",
+              "/": "1101101011",
+              ".": "1101101101",
+              "+": "1011011011",
+              A: "1011001001",
+              B: "1001001011",
+              C: "1010010011",
+              D: "1010011001",
+            };
+          },
+        },
+      ]);
       return codabar2;
     })(_Barcode3.default);
     exports2.codabar = codabar;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/CODE93/constants.js
@@ -2376,9 +2945,9 @@ var require_constants4 = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/CODE93/constants.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var SYMBOLS = exports2.SYMBOLS = [
+    var SYMBOLS = (exports2.SYMBOLS = [
       "0",
       "1",
       "2",
@@ -2428,10 +2997,59 @@ var require_constants4 = __commonJS({
       "(/)",
       "(+)",
       // Start/Stop
-      "\xFF"
-    ];
-    var BINARIES = exports2.BINARIES = ["100010100", "101001000", "101000100", "101000010", "100101000", "100100100", "100100010", "101010000", "100010010", "100001010", "110101000", "110100100", "110100010", "110010100", "110010010", "110001010", "101101000", "101100100", "101100010", "100110100", "100011010", "101011000", "101001100", "101000110", "100101100", "100010110", "110110100", "110110010", "110101100", "110100110", "110010110", "110011010", "101101100", "101100110", "100110110", "100111010", "100101110", "111010100", "111010010", "111001010", "101101110", "101110110", "110101110", "100100110", "111011010", "111010110", "100110010", "101011110"];
-    var MULTI_SYMBOLS = exports2.MULTI_SYMBOLS = {
+      "\xFF",
+    ]);
+    var BINARIES = (exports2.BINARIES = [
+      "100010100",
+      "101001000",
+      "101000100",
+      "101000010",
+      "100101000",
+      "100100100",
+      "100100010",
+      "101010000",
+      "100010010",
+      "100001010",
+      "110101000",
+      "110100100",
+      "110100010",
+      "110010100",
+      "110010010",
+      "110001010",
+      "101101000",
+      "101100100",
+      "101100010",
+      "100110100",
+      "100011010",
+      "101011000",
+      "101001100",
+      "101000110",
+      "100101100",
+      "100010110",
+      "110110100",
+      "110110010",
+      "110101100",
+      "110100110",
+      "110010110",
+      "110011010",
+      "101101100",
+      "101100110",
+      "100110110",
+      "100111010",
+      "100101110",
+      "111010100",
+      "111010010",
+      "111001010",
+      "101101110",
+      "101110110",
+      "110101110",
+      "100100110",
+      "111011010",
+      "111010110",
+      "100110010",
+      "101011110",
+    ]);
+    var MULTI_SYMBOLS = (exports2.MULTI_SYMBOLS = {
       "\0": ["(%)", "U"],
       "": ["($)", "A"],
       "": ["($)", "B"],
@@ -2484,41 +3102,41 @@ var require_constants4 = __commonJS({
       "\\": ["(%)", "L"],
       "]": ["(%)", "M"],
       "^": ["(%)", "N"],
-      "_": ["(%)", "O"],
+      _: ["(%)", "O"],
       "`": ["(%)", "W"],
-      "a": ["(+)", "A"],
-      "b": ["(+)", "B"],
-      "c": ["(+)", "C"],
-      "d": ["(+)", "D"],
-      "e": ["(+)", "E"],
-      "f": ["(+)", "F"],
-      "g": ["(+)", "G"],
-      "h": ["(+)", "H"],
-      "i": ["(+)", "I"],
-      "j": ["(+)", "J"],
-      "k": ["(+)", "K"],
-      "l": ["(+)", "L"],
-      "m": ["(+)", "M"],
-      "n": ["(+)", "N"],
-      "o": ["(+)", "O"],
-      "p": ["(+)", "P"],
-      "q": ["(+)", "Q"],
-      "r": ["(+)", "R"],
-      "s": ["(+)", "S"],
-      "t": ["(+)", "T"],
-      "u": ["(+)", "U"],
-      "v": ["(+)", "V"],
-      "w": ["(+)", "W"],
-      "x": ["(+)", "X"],
-      "y": ["(+)", "Y"],
-      "z": ["(+)", "Z"],
+      a: ["(+)", "A"],
+      b: ["(+)", "B"],
+      c: ["(+)", "C"],
+      d: ["(+)", "D"],
+      e: ["(+)", "E"],
+      f: ["(+)", "F"],
+      g: ["(+)", "G"],
+      h: ["(+)", "H"],
+      i: ["(+)", "I"],
+      j: ["(+)", "J"],
+      k: ["(+)", "K"],
+      l: ["(+)", "L"],
+      m: ["(+)", "M"],
+      n: ["(+)", "N"],
+      o: ["(+)", "O"],
+      p: ["(+)", "P"],
+      q: ["(+)", "Q"],
+      r: ["(+)", "R"],
+      s: ["(+)", "S"],
+      t: ["(+)", "T"],
+      u: ["(+)", "U"],
+      v: ["(+)", "V"],
+      w: ["(+)", "W"],
+      x: ["(+)", "X"],
+      y: ["(+)", "Y"],
+      z: ["(+)", "Z"],
       "{": ["(%)", "P"],
       "|": ["(%)", "Q"],
       "}": ["(%)", "R"],
       "~": ["(%)", "S"],
-      "\x7F": ["(%)", "T"]
-    };
-  }
+      "\x7F": ["(%)", "T"],
+    });
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/CODE93/CODE93.js
@@ -2526,9 +3144,9 @@ var require_CODE93 = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/CODE93/CODE93.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -2538,7 +3156,7 @@ var require_CODE93 = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -2563,78 +3181,105 @@ var require_CODE93 = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var CODE93 = (function(_Barcode) {
+    var CODE93 = (function (_Barcode) {
       _inherits(CODE932, _Barcode);
       function CODE932(data, options) {
         _classCallCheck(this, CODE932);
-        return _possibleConstructorReturn(this, (CODE932.__proto__ || Object.getPrototypeOf(CODE932)).call(this, data, options));
+        return _possibleConstructorReturn(
+          this,
+          (CODE932.__proto__ || Object.getPrototypeOf(CODE932)).call(this, data, options),
+        );
       }
-      _createClass(CODE932, [{
-        key: "valid",
-        value: function valid() {
-          return /^[0-9A-Z\-. $/+%]+$/.test(this.data);
-        }
-      }, {
-        key: "encode",
-        value: function encode2() {
-          var symbols = this.data.split("").flatMap(function(c) {
-            return _constants.MULTI_SYMBOLS[c] || c;
-          });
-          var encoded = symbols.map(function(s) {
-            return CODE932.getEncoding(s);
-          }).join("");
-          var csumC = CODE932.checksum(symbols, 20);
-          var csumK = CODE932.checksum(symbols.concat(csumC), 15);
-          return {
-            text: this.text,
-            data: (
-              // Add the start bits
-              CODE932.getEncoding("\xFF") + // Add the encoded bits
-              encoded + // Add the checksum
-              CODE932.getEncoding(csumC) + CODE932.getEncoding(csumK) + // Add the stop bits
-              CODE932.getEncoding("\xFF") + // Add the termination bit
-              "1"
-            )
-          };
-        }
-        // Get the binary encoding of a symbol
-      }], [{
-        key: "getEncoding",
-        value: function getEncoding(symbol) {
-          return _constants.BINARIES[CODE932.symbolValue(symbol)];
-        }
-        // Get the symbol for a symbol value
-      }, {
-        key: "getSymbol",
-        value: function getSymbol(symbolValue) {
-          return _constants.SYMBOLS[symbolValue];
-        }
-        // Get the symbol value of a symbol
-      }, {
-        key: "symbolValue",
-        value: function symbolValue(symbol) {
-          return _constants.SYMBOLS.indexOf(symbol);
-        }
-        // Calculate a checksum symbol
-      }, {
-        key: "checksum",
-        value: function checksum(symbols, maxWeight) {
-          var csum = symbols.slice().reverse().reduce(function(sum, symbol, idx) {
-            var weight = idx % maxWeight + 1;
-            return sum + CODE932.symbolValue(symbol) * weight;
-          }, 0);
-          return CODE932.getSymbol(csum % 47);
-        }
-      }]);
+      _createClass(
+        CODE932,
+        [
+          {
+            key: "valid",
+            value: function valid() {
+              return /^[0-9A-Z\-. $/+%]+$/.test(this.data);
+            },
+          },
+          {
+            key: "encode",
+            value: function encode2() {
+              var symbols = this.data.split("").flatMap(function (c) {
+                return _constants.MULTI_SYMBOLS[c] || c;
+              });
+              var encoded = symbols
+                .map(function (s) {
+                  return CODE932.getEncoding(s);
+                })
+                .join("");
+              var csumC = CODE932.checksum(symbols, 20);
+              var csumK = CODE932.checksum(symbols.concat(csumC), 15);
+              return {
+                text: this.text,
+                data:
+                  // Add the start bits
+                  CODE932.getEncoding("\xFF") + // Add the encoded bits
+                  encoded + // Add the checksum
+                  CODE932.getEncoding(csumC) +
+                  CODE932.getEncoding(csumK) + // Add the stop bits
+                  CODE932.getEncoding("\xFF") + // Add the termination bit
+                  "1",
+              };
+            },
+            // Get the binary encoding of a symbol
+          },
+        ],
+        [
+          {
+            key: "getEncoding",
+            value: function getEncoding(symbol) {
+              return _constants.BINARIES[CODE932.symbolValue(symbol)];
+            },
+            // Get the symbol for a symbol value
+          },
+          {
+            key: "getSymbol",
+            value: function getSymbol(symbolValue) {
+              return _constants.SYMBOLS[symbolValue];
+            },
+            // Get the symbol value of a symbol
+          },
+          {
+            key: "symbolValue",
+            value: function symbolValue(symbol) {
+              return _constants.SYMBOLS.indexOf(symbol);
+            },
+            // Calculate a checksum symbol
+          },
+          {
+            key: "checksum",
+            value: function checksum(symbols, maxWeight) {
+              var csum = symbols
+                .slice()
+                .reverse()
+                .reduce(function (sum, symbol, idx) {
+                  var weight = (idx % maxWeight) + 1;
+                  return sum + CODE932.symbolValue(symbol) * weight;
+                }, 0);
+              return CODE932.getSymbol(csum % 47);
+            },
+          },
+        ],
+      );
       return CODE932;
     })(_Barcode3.default);
     exports2.default = CODE93;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/CODE93/CODE93FullASCII.js
@@ -2642,9 +3287,9 @@ var require_CODE93FullASCII = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/CODE93/CODE93FullASCII.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -2654,7 +3299,7 @@ var require_CODE93FullASCII = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -2678,27 +3323,43 @@ var require_CODE93FullASCII = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var CODE93FullASCII = (function(_CODE) {
+    var CODE93FullASCII = (function (_CODE) {
       _inherits(CODE93FullASCII2, _CODE);
       function CODE93FullASCII2(data, options) {
         _classCallCheck(this, CODE93FullASCII2);
-        return _possibleConstructorReturn(this, (CODE93FullASCII2.__proto__ || Object.getPrototypeOf(CODE93FullASCII2)).call(this, data, options));
+        return _possibleConstructorReturn(
+          this,
+          (CODE93FullASCII2.__proto__ || Object.getPrototypeOf(CODE93FullASCII2)).call(
+            this,
+            data,
+            options,
+          ),
+        );
       }
-      _createClass(CODE93FullASCII2, [{
-        key: "valid",
-        value: function valid() {
-          return /^[\x00-\x7f]+$/.test(this.data);
-        }
-      }]);
+      _createClass(CODE93FullASCII2, [
+        {
+          key: "valid",
+          value: function valid() {
+            return /^[\x00-\x7f]+$/.test(this.data);
+          },
+        },
+      ]);
       return CODE93FullASCII2;
     })(_CODE3.default);
     exports2.default = CODE93FullASCII;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/CODE93/index.js
@@ -2706,7 +3367,7 @@ var require_CODE932 = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/CODE93/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     exports2.CODE93FullASCII = exports2.CODE93 = void 0;
     var _CODE = require_CODE93();
@@ -2718,7 +3379,7 @@ var require_CODE932 = __commonJS({
     }
     exports2.CODE93 = _CODE2.default;
     exports2.CODE93FullASCII = _CODE93FullASCII2.default;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/GenericBarcode/index.js
@@ -2726,10 +3387,10 @@ var require_GenericBarcode = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/GenericBarcode/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     exports2.GenericBarcode = void 0;
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -2739,7 +3400,7 @@ var require_GenericBarcode = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -2763,36 +3424,53 @@ var require_GenericBarcode = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var GenericBarcode = (function(_Barcode) {
+    var GenericBarcode = (function (_Barcode) {
       _inherits(GenericBarcode2, _Barcode);
       function GenericBarcode2(data, options) {
         _classCallCheck(this, GenericBarcode2);
-        return _possibleConstructorReturn(this, (GenericBarcode2.__proto__ || Object.getPrototypeOf(GenericBarcode2)).call(this, data, options));
+        return _possibleConstructorReturn(
+          this,
+          (GenericBarcode2.__proto__ || Object.getPrototypeOf(GenericBarcode2)).call(
+            this,
+            data,
+            options,
+          ),
+        );
       }
-      _createClass(GenericBarcode2, [{
-        key: "encode",
-        value: function encode2() {
-          return {
-            data: "10101010101010101010101010101010101010101",
-            text: this.text
-          };
-        }
-        // Resturn true/false if the string provided is valid for this encoder
-      }, {
-        key: "valid",
-        value: function valid() {
-          return true;
-        }
-      }]);
+      _createClass(GenericBarcode2, [
+        {
+          key: "encode",
+          value: function encode2() {
+            return {
+              data: "10101010101010101010101010101010101010101",
+              text: this.text,
+            };
+          },
+          // Resturn true/false if the string provided is valid for this encoder
+        },
+        {
+          key: "valid",
+          value: function valid() {
+            return true;
+          },
+        },
+      ]);
       return GenericBarcode2;
     })(_Barcode3.default);
     exports2.GenericBarcode = GenericBarcode;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/barcodes/index.js
@@ -2800,7 +3478,7 @@ var require_barcodes = __commonJS({
   "node_modules/jsbarcode/bin/barcodes/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     var _CODE = require_CODE39();
     var _CODE2 = require_CODE1282();
@@ -2834,9 +3512,9 @@ var require_barcodes = __commonJS({
       codabar: _codabar.codabar,
       CODE93: _CODE3.CODE93,
       CODE93FullASCII: _CODE3.CODE93FullASCII,
-      GenericBarcode: _GenericBarcode.GenericBarcode
+      GenericBarcode: _GenericBarcode.GenericBarcode,
     };
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/help/merge.js
@@ -2844,23 +3522,25 @@ var require_merge = __commonJS({
   "node_modules/jsbarcode/bin/help/merge.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _extends = Object.assign || function(target) {
-      for (var i = 1; i < arguments.length; i++) {
-        var source = arguments[i];
-        for (var key in source) {
-          if (Object.prototype.hasOwnProperty.call(source, key)) {
-            target[key] = source[key];
+    var _extends =
+      Object.assign ||
+      function (target) {
+        for (var i = 1; i < arguments.length; i++) {
+          var source = arguments[i];
+          for (var key in source) {
+            if (Object.prototype.hasOwnProperty.call(source, key)) {
+              target[key] = source[key];
+            }
           }
         }
-      }
-      return target;
-    };
-    exports2.default = function(old, replaceObj) {
+        return target;
+      };
+    exports2.default = function (old, replaceObj) {
       return _extends({}, old, replaceObj);
     };
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/help/linearizeEncodings.js
@@ -2868,7 +3548,7 @@ var require_linearizeEncodings = __commonJS({
   "node_modules/jsbarcode/bin/help/linearizeEncodings.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     exports2.default = linearizeEncodings;
     function linearizeEncodings(encodings) {
@@ -2887,7 +3567,7 @@ var require_linearizeEncodings = __commonJS({
       nextLevel(encodings);
       return linearEncodings;
     }
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/help/fixOptions.js
@@ -2895,7 +3575,7 @@ var require_fixOptions = __commonJS({
   "node_modules/jsbarcode/bin/help/fixOptions.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     exports2.default = fixOptions;
     function fixOptions(options) {
@@ -2905,7 +3585,7 @@ var require_fixOptions = __commonJS({
       options.marginLeft = options.marginLeft || options.margin;
       return options;
     }
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/help/optionsFromStrings.js
@@ -2913,11 +3593,21 @@ var require_optionsFromStrings = __commonJS({
   "node_modules/jsbarcode/bin/help/optionsFromStrings.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     exports2.default = optionsFromStrings;
     function optionsFromStrings(options) {
-      var intOptions = ["width", "height", "textMargin", "fontSize", "margin", "marginTop", "marginBottom", "marginLeft", "marginRight"];
+      var intOptions = [
+        "width",
+        "height",
+        "textMargin",
+        "fontSize",
+        "margin",
+        "marginTop",
+        "marginBottom",
+        "marginLeft",
+        "marginRight",
+      ];
       for (var intOption in intOptions) {
         if (intOptions.hasOwnProperty(intOption)) {
           intOption = intOptions[intOption];
@@ -2931,7 +3621,7 @@ var require_optionsFromStrings = __commonJS({
       }
       return options;
     }
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/options/defaults.js
@@ -2939,7 +3629,7 @@ var require_defaults = __commonJS({
   "node_modules/jsbarcode/bin/options/defaults.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     var defaults = {
       width: 2,
@@ -2960,11 +3650,10 @@ var require_defaults = __commonJS({
       marginBottom: void 0,
       marginLeft: void 0,
       marginRight: void 0,
-      valid: function valid() {
-      }
+      valid: function valid() {},
     };
     exports2.default = defaults;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/help/getOptionsFromElement.js
@@ -2972,7 +3661,7 @@ var require_getOptionsFromElement = __commonJS({
   "node_modules/jsbarcode/bin/help/getOptionsFromElement.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     var _optionsFromStrings3 = require_optionsFromStrings();
     var _optionsFromStrings22 = _interopRequireDefault2(_optionsFromStrings3);
@@ -2993,12 +3682,13 @@ var require_getOptionsFromElement = __commonJS({
           }
         }
       }
-      options["value"] = element.getAttribute("jsbarcode-value") || element.getAttribute("data-value");
+      options["value"] =
+        element.getAttribute("jsbarcode-value") || element.getAttribute("data-value");
       options = (0, _optionsFromStrings22.default)(options);
       return options;
     }
     exports2.default = getOptionsFromElement;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/renderers/shared.js
@@ -3006,16 +3696,28 @@ var require_shared = __commonJS({
   "node_modules/jsbarcode/bin/renderers/shared.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    exports2.getTotalWidthOfEncodings = exports2.calculateEncodingAttributes = exports2.getBarcodePadding = exports2.getEncodingHeight = exports2.getMaximumHeightOfEncodings = void 0;
+    exports2.getTotalWidthOfEncodings =
+      exports2.calculateEncodingAttributes =
+      exports2.getBarcodePadding =
+      exports2.getEncodingHeight =
+      exports2.getMaximumHeightOfEncodings =
+        void 0;
     var _merge3 = require_merge();
     var _merge22 = _interopRequireDefault2(_merge3);
     function _interopRequireDefault2(obj) {
       return obj && obj.__esModule ? obj : { default: obj };
     }
     function getEncodingHeight(encoding, options) {
-      return options.height + (options.displayValue && encoding.text.length > 0 ? options.fontSize + options.textMargin : 0) + options.marginTop + options.marginBottom;
+      return (
+        options.height +
+        (options.displayValue && encoding.text.length > 0
+          ? options.fontSize + options.textMargin
+          : 0) +
+        options.marginTop +
+        options.marginBottom
+      );
     }
     function getBarcodePadding(textWidth, barcodeWidth, options) {
       if (options.displayValue && barcodeWidth < textWidth) {
@@ -3083,7 +3785,7 @@ var require_shared = __commonJS({
     exports2.getBarcodePadding = getBarcodePadding;
     exports2.calculateEncodingAttributes = calculateEncodingAttributes;
     exports2.getTotalWidthOfEncodings = getTotalWidthOfEncodings;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/renderers/canvas.js
@@ -3091,9 +3793,9 @@ var require_canvas = __commonJS({
   "node_modules/jsbarcode/bin/renderers/canvas.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -3103,7 +3805,7 @@ var require_canvas = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -3120,109 +3822,116 @@ var require_canvas = __commonJS({
         throw new TypeError("Cannot call a class as a function");
       }
     }
-    var CanvasRenderer = (function() {
+    var CanvasRenderer = (function () {
       function CanvasRenderer2(canvas, encodings, options) {
         _classCallCheck(this, CanvasRenderer2);
         this.canvas = canvas;
         this.encodings = encodings;
         this.options = options;
       }
-      _createClass(CanvasRenderer2, [{
-        key: "render",
-        value: function render2() {
-          if (!this.canvas.getContext) {
-            throw new Error("The browser does not support canvas.");
-          }
-          this.prepareCanvas();
-          for (var i = 0; i < this.encodings.length; i++) {
-            var encodingOptions = (0, _merge22.default)(this.options, this.encodings[i].options);
-            this.drawCanvasBarcode(encodingOptions, this.encodings[i]);
-            this.drawCanvasText(encodingOptions, this.encodings[i]);
-            this.moveCanvasDrawing(this.encodings[i]);
-          }
-          this.restoreCanvas();
-        }
-      }, {
-        key: "prepareCanvas",
-        value: function prepareCanvas() {
-          var ctx = this.canvas.getContext("2d");
-          ctx.save();
-          (0, _shared.calculateEncodingAttributes)(this.encodings, this.options, ctx);
-          var totalWidth = (0, _shared.getTotalWidthOfEncodings)(this.encodings);
-          var maxHeight = (0, _shared.getMaximumHeightOfEncodings)(this.encodings);
-          this.canvas.width = totalWidth + this.options.marginLeft + this.options.marginRight;
-          this.canvas.height = maxHeight;
-          ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-          if (this.options.background) {
-            ctx.fillStyle = this.options.background;
-            ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-          }
-          ctx.translate(this.options.marginLeft, 0);
-        }
-      }, {
-        key: "drawCanvasBarcode",
-        value: function drawCanvasBarcode(options, encoding) {
-          var ctx = this.canvas.getContext("2d");
-          var binary = encoding.data;
-          var yFrom;
-          if (options.textPosition == "top") {
-            yFrom = options.marginTop + options.fontSize + options.textMargin;
-          } else {
-            yFrom = options.marginTop;
-          }
-          ctx.fillStyle = options.lineColor;
-          for (var b = 0; b < binary.length; b++) {
-            var x = b * options.width + encoding.barcodePadding;
-            if (binary[b] === "1") {
-              ctx.fillRect(x, yFrom, options.width, options.height);
-            } else if (binary[b]) {
-              ctx.fillRect(x, yFrom, options.width, options.height * binary[b]);
+      _createClass(CanvasRenderer2, [
+        {
+          key: "render",
+          value: function render2() {
+            if (!this.canvas.getContext) {
+              throw new Error("The browser does not support canvas.");
             }
-          }
-        }
-      }, {
-        key: "drawCanvasText",
-        value: function drawCanvasText(options, encoding) {
-          var ctx = this.canvas.getContext("2d");
-          var font = options.fontOptions + " " + options.fontSize + "px " + options.font;
-          if (options.displayValue) {
-            var x, y;
+            this.prepareCanvas();
+            for (var i = 0; i < this.encodings.length; i++) {
+              var encodingOptions = (0, _merge22.default)(this.options, this.encodings[i].options);
+              this.drawCanvasBarcode(encodingOptions, this.encodings[i]);
+              this.drawCanvasText(encodingOptions, this.encodings[i]);
+              this.moveCanvasDrawing(this.encodings[i]);
+            }
+            this.restoreCanvas();
+          },
+        },
+        {
+          key: "prepareCanvas",
+          value: function prepareCanvas() {
+            var ctx = this.canvas.getContext("2d");
+            ctx.save();
+            (0, _shared.calculateEncodingAttributes)(this.encodings, this.options, ctx);
+            var totalWidth = (0, _shared.getTotalWidthOfEncodings)(this.encodings);
+            var maxHeight = (0, _shared.getMaximumHeightOfEncodings)(this.encodings);
+            this.canvas.width = totalWidth + this.options.marginLeft + this.options.marginRight;
+            this.canvas.height = maxHeight;
+            ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            if (this.options.background) {
+              ctx.fillStyle = this.options.background;
+              ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+            ctx.translate(this.options.marginLeft, 0);
+          },
+        },
+        {
+          key: "drawCanvasBarcode",
+          value: function drawCanvasBarcode(options, encoding) {
+            var ctx = this.canvas.getContext("2d");
+            var binary = encoding.data;
+            var yFrom;
             if (options.textPosition == "top") {
-              y = options.marginTop + options.fontSize - options.textMargin;
+              yFrom = options.marginTop + options.fontSize + options.textMargin;
             } else {
-              y = options.height + options.textMargin + options.marginTop + options.fontSize;
+              yFrom = options.marginTop;
             }
-            ctx.font = font;
-            if (options.textAlign == "left" || encoding.barcodePadding > 0) {
-              x = 0;
-              ctx.textAlign = "left";
-            } else if (options.textAlign == "right") {
-              x = encoding.width - 1;
-              ctx.textAlign = "right";
-            } else {
-              x = encoding.width / 2;
-              ctx.textAlign = "center";
+            ctx.fillStyle = options.lineColor;
+            for (var b = 0; b < binary.length; b++) {
+              var x = b * options.width + encoding.barcodePadding;
+              if (binary[b] === "1") {
+                ctx.fillRect(x, yFrom, options.width, options.height);
+              } else if (binary[b]) {
+                ctx.fillRect(x, yFrom, options.width, options.height * binary[b]);
+              }
             }
-            ctx.fillText(encoding.text, x, y);
-          }
-        }
-      }, {
-        key: "moveCanvasDrawing",
-        value: function moveCanvasDrawing(encoding) {
-          var ctx = this.canvas.getContext("2d");
-          ctx.translate(encoding.width, 0);
-        }
-      }, {
-        key: "restoreCanvas",
-        value: function restoreCanvas() {
-          var ctx = this.canvas.getContext("2d");
-          ctx.restore();
-        }
-      }]);
+          },
+        },
+        {
+          key: "drawCanvasText",
+          value: function drawCanvasText(options, encoding) {
+            var ctx = this.canvas.getContext("2d");
+            var font = options.fontOptions + " " + options.fontSize + "px " + options.font;
+            if (options.displayValue) {
+              var x, y;
+              if (options.textPosition == "top") {
+                y = options.marginTop + options.fontSize - options.textMargin;
+              } else {
+                y = options.height + options.textMargin + options.marginTop + options.fontSize;
+              }
+              ctx.font = font;
+              if (options.textAlign == "left" || encoding.barcodePadding > 0) {
+                x = 0;
+                ctx.textAlign = "left";
+              } else if (options.textAlign == "right") {
+                x = encoding.width - 1;
+                ctx.textAlign = "right";
+              } else {
+                x = encoding.width / 2;
+                ctx.textAlign = "center";
+              }
+              ctx.fillText(encoding.text, x, y);
+            }
+          },
+        },
+        {
+          key: "moveCanvasDrawing",
+          value: function moveCanvasDrawing(encoding) {
+            var ctx = this.canvas.getContext("2d");
+            ctx.translate(encoding.width, 0);
+          },
+        },
+        {
+          key: "restoreCanvas",
+          value: function restoreCanvas() {
+            var ctx = this.canvas.getContext("2d");
+            ctx.restore();
+          },
+        },
+      ]);
       return CanvasRenderer2;
     })();
     exports2.default = CanvasRenderer;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/renderers/svg.js
@@ -3230,9 +3939,9 @@ var require_svg = __commonJS({
   "node_modules/jsbarcode/bin/renderers/svg.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -3242,7 +3951,7 @@ var require_svg = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -3260,7 +3969,7 @@ var require_svg = __commonJS({
       }
     }
     var svgns = "http://www.w3.org/2000/svg";
-    var SVGRenderer = (function() {
+    var SVGRenderer = (function () {
       function SVGRenderer2(svg, encodings, options) {
         _classCallCheck(this, SVGRenderer2);
         this.svg = svg;
@@ -3268,137 +3977,161 @@ var require_svg = __commonJS({
         this.options = options;
         this.document = options.xmlDocument || document;
       }
-      _createClass(SVGRenderer2, [{
-        key: "render",
-        value: function render2() {
-          var currentX = this.options.marginLeft;
-          this.prepareSVG();
-          for (var i = 0; i < this.encodings.length; i++) {
-            var encoding = this.encodings[i];
-            var encodingOptions = (0, _merge22.default)(this.options, encoding.options);
-            var group = this.createGroup(currentX, encodingOptions.marginTop, this.svg);
-            this.setGroupOptions(group, encodingOptions);
-            this.drawSvgBarcode(group, encodingOptions, encoding);
-            this.drawSVGText(group, encodingOptions, encoding);
-            currentX += encoding.width;
-          }
-        }
-      }, {
-        key: "prepareSVG",
-        value: function prepareSVG() {
-          while (this.svg.firstChild) {
-            this.svg.removeChild(this.svg.firstChild);
-          }
-          (0, _shared.calculateEncodingAttributes)(this.encodings, this.options);
-          var totalWidth = (0, _shared.getTotalWidthOfEncodings)(this.encodings);
-          var maxHeight = (0, _shared.getMaximumHeightOfEncodings)(this.encodings);
-          var width = totalWidth + this.options.marginLeft + this.options.marginRight;
-          this.setSvgAttributes(width, maxHeight);
-          if (this.options.background) {
-            this.drawRect(0, 0, width, maxHeight, this.svg).setAttribute("fill", this.options.background);
-          }
-        }
-      }, {
-        key: "drawSvgBarcode",
-        value: function drawSvgBarcode(parent, options, encoding) {
-          var binary = encoding.data;
-          var yFrom;
-          if (options.textPosition == "top") {
-            yFrom = options.fontSize + options.textMargin;
-          } else {
-            yFrom = 0;
-          }
-          var barWidth = 0;
-          var x = 0;
-          for (var b = 0; b < binary.length; b++) {
-            x = b * options.width + encoding.barcodePadding;
-            if (binary[b] === "1") {
-              barWidth++;
-            } else if (barWidth > 0) {
-              this.drawRect(x - options.width * barWidth, yFrom, options.width * barWidth, options.height, parent);
-              barWidth = 0;
+      _createClass(SVGRenderer2, [
+        {
+          key: "render",
+          value: function render2() {
+            var currentX = this.options.marginLeft;
+            this.prepareSVG();
+            for (var i = 0; i < this.encodings.length; i++) {
+              var encoding = this.encodings[i];
+              var encodingOptions = (0, _merge22.default)(this.options, encoding.options);
+              var group = this.createGroup(currentX, encodingOptions.marginTop, this.svg);
+              this.setGroupOptions(group, encodingOptions);
+              this.drawSvgBarcode(group, encodingOptions, encoding);
+              this.drawSVGText(group, encodingOptions, encoding);
+              currentX += encoding.width;
             }
-          }
-          if (barWidth > 0) {
-            this.drawRect(x - options.width * (barWidth - 1), yFrom, options.width * barWidth, options.height, parent);
-          }
-        }
-      }, {
-        key: "drawSVGText",
-        value: function drawSVGText(parent, options, encoding) {
-          var textElem = this.document.createElementNS(svgns, "text");
-          if (options.displayValue) {
-            var x, y;
-            textElem.setAttribute("font-family", options.font);
-            textElem.setAttribute("font-size", options.fontSize);
-            if (options.fontOptions.includes("bold")) {
-              textElem.setAttribute("font-weight", "bold");
+          },
+        },
+        {
+          key: "prepareSVG",
+          value: function prepareSVG() {
+            while (this.svg.firstChild) {
+              this.svg.removeChild(this.svg.firstChild);
             }
-            if (options.fontOptions.includes("italic")) {
-              textElem.setAttribute("font-style", "italic");
+            (0, _shared.calculateEncodingAttributes)(this.encodings, this.options);
+            var totalWidth = (0, _shared.getTotalWidthOfEncodings)(this.encodings);
+            var maxHeight = (0, _shared.getMaximumHeightOfEncodings)(this.encodings);
+            var width = totalWidth + this.options.marginLeft + this.options.marginRight;
+            this.setSvgAttributes(width, maxHeight);
+            if (this.options.background) {
+              this.drawRect(0, 0, width, maxHeight, this.svg).setAttribute(
+                "fill",
+                this.options.background,
+              );
             }
+          },
+        },
+        {
+          key: "drawSvgBarcode",
+          value: function drawSvgBarcode(parent, options, encoding) {
+            var binary = encoding.data;
+            var yFrom;
             if (options.textPosition == "top") {
-              y = options.fontSize - options.textMargin;
+              yFrom = options.fontSize + options.textMargin;
             } else {
-              y = options.height + options.textMargin + options.fontSize;
+              yFrom = 0;
             }
-            if (options.textAlign == "left" || encoding.barcodePadding > 0) {
-              x = 0;
-              textElem.setAttribute("text-anchor", "start");
-            } else if (options.textAlign == "right") {
-              x = encoding.width - 1;
-              textElem.setAttribute("text-anchor", "end");
-            } else {
-              x = encoding.width / 2;
-              textElem.setAttribute("text-anchor", "middle");
+            var barWidth = 0;
+            var x = 0;
+            for (var b = 0; b < binary.length; b++) {
+              x = b * options.width + encoding.barcodePadding;
+              if (binary[b] === "1") {
+                barWidth++;
+              } else if (barWidth > 0) {
+                this.drawRect(
+                  x - options.width * barWidth,
+                  yFrom,
+                  options.width * barWidth,
+                  options.height,
+                  parent,
+                );
+                barWidth = 0;
+              }
             }
-            textElem.setAttribute("x", x);
-            textElem.setAttribute("y", y);
-            textElem.appendChild(this.document.createTextNode(encoding.text));
-            parent.appendChild(textElem);
-          }
-        }
-      }, {
-        key: "setSvgAttributes",
-        value: function setSvgAttributes(width, height) {
-          var svg = this.svg;
-          svg.setAttribute("width", width + "px");
-          svg.setAttribute("height", height + "px");
-          svg.setAttribute("x", "0px");
-          svg.setAttribute("y", "0px");
-          svg.setAttribute("viewBox", "0 0 " + width + " " + height);
-          svg.setAttribute("xmlns", svgns);
-          svg.setAttribute("version", "1.1");
-        }
-      }, {
-        key: "createGroup",
-        value: function createGroup(x, y, parent) {
-          var group = this.document.createElementNS(svgns, "g");
-          group.setAttribute("transform", "translate(" + x + ", " + y + ")");
-          parent.appendChild(group);
-          return group;
-        }
-      }, {
-        key: "setGroupOptions",
-        value: function setGroupOptions(group, options) {
-          group.setAttribute("fill", options.lineColor);
-        }
-      }, {
-        key: "drawRect",
-        value: function drawRect(x, y, width, height, parent) {
-          var rect = this.document.createElementNS(svgns, "rect");
-          rect.setAttribute("x", x);
-          rect.setAttribute("y", y);
-          rect.setAttribute("width", width);
-          rect.setAttribute("height", height);
-          parent.appendChild(rect);
-          return rect;
-        }
-      }]);
+            if (barWidth > 0) {
+              this.drawRect(
+                x - options.width * (barWidth - 1),
+                yFrom,
+                options.width * barWidth,
+                options.height,
+                parent,
+              );
+            }
+          },
+        },
+        {
+          key: "drawSVGText",
+          value: function drawSVGText(parent, options, encoding) {
+            var textElem = this.document.createElementNS(svgns, "text");
+            if (options.displayValue) {
+              var x, y;
+              textElem.setAttribute("font-family", options.font);
+              textElem.setAttribute("font-size", options.fontSize);
+              if (options.fontOptions.includes("bold")) {
+                textElem.setAttribute("font-weight", "bold");
+              }
+              if (options.fontOptions.includes("italic")) {
+                textElem.setAttribute("font-style", "italic");
+              }
+              if (options.textPosition == "top") {
+                y = options.fontSize - options.textMargin;
+              } else {
+                y = options.height + options.textMargin + options.fontSize;
+              }
+              if (options.textAlign == "left" || encoding.barcodePadding > 0) {
+                x = 0;
+                textElem.setAttribute("text-anchor", "start");
+              } else if (options.textAlign == "right") {
+                x = encoding.width - 1;
+                textElem.setAttribute("text-anchor", "end");
+              } else {
+                x = encoding.width / 2;
+                textElem.setAttribute("text-anchor", "middle");
+              }
+              textElem.setAttribute("x", x);
+              textElem.setAttribute("y", y);
+              textElem.appendChild(this.document.createTextNode(encoding.text));
+              parent.appendChild(textElem);
+            }
+          },
+        },
+        {
+          key: "setSvgAttributes",
+          value: function setSvgAttributes(width, height) {
+            var svg = this.svg;
+            svg.setAttribute("width", width + "px");
+            svg.setAttribute("height", height + "px");
+            svg.setAttribute("x", "0px");
+            svg.setAttribute("y", "0px");
+            svg.setAttribute("viewBox", "0 0 " + width + " " + height);
+            svg.setAttribute("xmlns", svgns);
+            svg.setAttribute("version", "1.1");
+          },
+        },
+        {
+          key: "createGroup",
+          value: function createGroup(x, y, parent) {
+            var group = this.document.createElementNS(svgns, "g");
+            group.setAttribute("transform", "translate(" + x + ", " + y + ")");
+            parent.appendChild(group);
+            return group;
+          },
+        },
+        {
+          key: "setGroupOptions",
+          value: function setGroupOptions(group, options) {
+            group.setAttribute("fill", options.lineColor);
+          },
+        },
+        {
+          key: "drawRect",
+          value: function drawRect(x, y, width, height, parent) {
+            var rect = this.document.createElementNS(svgns, "rect");
+            rect.setAttribute("x", x);
+            rect.setAttribute("y", y);
+            rect.setAttribute("width", width);
+            rect.setAttribute("height", height);
+            parent.appendChild(rect);
+            return rect;
+          },
+        },
+      ]);
       return SVGRenderer2;
     })();
     exports2.default = SVGRenderer;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/renderers/object.js
@@ -3406,9 +4139,9 @@ var require_object = __commonJS({
   "node_modules/jsbarcode/bin/renderers/object.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -3418,7 +4151,7 @@ var require_object = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -3429,23 +4162,25 @@ var require_object = __commonJS({
         throw new TypeError("Cannot call a class as a function");
       }
     }
-    var ObjectRenderer = (function() {
+    var ObjectRenderer = (function () {
       function ObjectRenderer2(object, encodings, options) {
         _classCallCheck(this, ObjectRenderer2);
         this.object = object;
         this.encodings = encodings;
         this.options = options;
       }
-      _createClass(ObjectRenderer2, [{
-        key: "render",
-        value: function render2() {
-          this.object.encodings = this.encodings;
-        }
-      }]);
+      _createClass(ObjectRenderer2, [
+        {
+          key: "render",
+          value: function render2() {
+            this.object.encodings = this.encodings;
+          },
+        },
+      ]);
       return ObjectRenderer2;
     })();
     exports2.default = ObjectRenderer;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/renderers/index.js
@@ -3453,7 +4188,7 @@ var require_renderers = __commonJS({
   "node_modules/jsbarcode/bin/renderers/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     var _canvas = require_canvas();
     var _canvas2 = _interopRequireDefault2(_canvas);
@@ -3464,8 +4199,12 @@ var require_renderers = __commonJS({
     function _interopRequireDefault2(obj) {
       return obj && obj.__esModule ? obj : { default: obj };
     }
-    exports2.default = { CanvasRenderer: _canvas2.default, SVGRenderer: _svg2.default, ObjectRenderer: _object2.default };
-  }
+    exports2.default = {
+      CanvasRenderer: _canvas2.default,
+      SVGRenderer: _svg2.default,
+      ObjectRenderer: _object2.default,
+    };
+  },
 });
 
 // node_modules/jsbarcode/bin/exceptions/exceptions.js
@@ -3473,7 +4212,7 @@ var require_exceptions = __commonJS({
   "node_modules/jsbarcode/bin/exceptions/exceptions.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
     function _classCallCheck(instance, Constructor) {
       if (!(instance instanceof Constructor)) {
@@ -3488,16 +4227,28 @@ var require_exceptions = __commonJS({
     }
     function _inherits(subClass, superClass) {
       if (typeof superClass !== "function" && superClass !== null) {
-        throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        throw new TypeError(
+          "Super expression must either be null or a function, not " + typeof superClass,
+        );
       }
-      subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });
-      if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+      subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: { value: subClass, enumerable: false, writable: true, configurable: true },
+      });
+      if (superClass)
+        Object.setPrototypeOf
+          ? Object.setPrototypeOf(subClass, superClass)
+          : (subClass.__proto__ = superClass);
     }
-    var InvalidInputException = (function(_Error) {
+    var InvalidInputException = (function (_Error) {
       _inherits(InvalidInputException2, _Error);
       function InvalidInputException2(symbology, input) {
         _classCallCheck(this, InvalidInputException2);
-        var _this = _possibleConstructorReturn(this, (InvalidInputException2.__proto__ || Object.getPrototypeOf(InvalidInputException2)).call(this));
+        var _this = _possibleConstructorReturn(
+          this,
+          (InvalidInputException2.__proto__ || Object.getPrototypeOf(InvalidInputException2)).call(
+            this,
+          ),
+        );
         _this.name = "InvalidInputException";
         _this.symbology = symbology;
         _this.input = input;
@@ -3506,22 +4257,30 @@ var require_exceptions = __commonJS({
       }
       return InvalidInputException2;
     })(Error);
-    var InvalidElementException = (function(_Error2) {
+    var InvalidElementException = (function (_Error2) {
       _inherits(InvalidElementException2, _Error2);
       function InvalidElementException2() {
         _classCallCheck(this, InvalidElementException2);
-        var _this2 = _possibleConstructorReturn(this, (InvalidElementException2.__proto__ || Object.getPrototypeOf(InvalidElementException2)).call(this));
+        var _this2 = _possibleConstructorReturn(
+          this,
+          (
+            InvalidElementException2.__proto__ || Object.getPrototypeOf(InvalidElementException2)
+          ).call(this),
+        );
         _this2.name = "InvalidElementException";
         _this2.message = "Not supported type to render on";
         return _this2;
       }
       return InvalidElementException2;
     })(Error);
-    var NoElementException = (function(_Error3) {
+    var NoElementException = (function (_Error3) {
       _inherits(NoElementException2, _Error3);
       function NoElementException2() {
         _classCallCheck(this, NoElementException2);
-        var _this3 = _possibleConstructorReturn(this, (NoElementException2.__proto__ || Object.getPrototypeOf(NoElementException2)).call(this));
+        var _this3 = _possibleConstructorReturn(
+          this,
+          (NoElementException2.__proto__ || Object.getPrototypeOf(NoElementException2)).call(this),
+        );
         _this3.name = "NoElementException";
         _this3.message = "No element to render on.";
         return _this3;
@@ -3531,7 +4290,7 @@ var require_exceptions = __commonJS({
     exports2.InvalidInputException = InvalidInputException;
     exports2.InvalidElementException = InvalidElementException;
     exports2.NoElementException = NoElementException;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/help/getRenderProperties.js
@@ -3539,13 +4298,21 @@ var require_getRenderProperties = __commonJS({
   "node_modules/jsbarcode/bin/help/getRenderProperties.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function(obj) {
-      return typeof obj;
-    } : function(obj) {
-      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-    };
+    var _typeof =
+      typeof Symbol === "function" && typeof Symbol.iterator === "symbol"
+        ? function (obj) {
+            return typeof obj;
+          }
+        : function (obj) {
+            return obj &&
+              typeof Symbol === "function" &&
+              obj.constructor === Symbol &&
+              obj !== Symbol.prototype
+              ? "symbol"
+              : typeof obj;
+          };
     var _getOptionsFromElement = require_getOptionsFromElement();
     var _getOptionsFromElement2 = _interopRequireDefault2(_getOptionsFromElement);
     var _renderers = require_renderers();
@@ -3565,27 +4332,34 @@ var require_getRenderProperties = __commonJS({
         return returnArray;
       } else if (typeof HTMLCanvasElement !== "undefined" && element instanceof HTMLImageElement) {
         return newCanvasRenderProperties(element);
-      } else if (element && element.nodeName && element.nodeName.toLowerCase() === "svg" || typeof SVGElement !== "undefined" && element instanceof SVGElement) {
+      } else if (
+        (element && element.nodeName && element.nodeName.toLowerCase() === "svg") ||
+        (typeof SVGElement !== "undefined" && element instanceof SVGElement)
+      ) {
         return {
           element,
           options: (0, _getOptionsFromElement2.default)(element),
-          renderer: _renderers2.default.SVGRenderer
+          renderer: _renderers2.default.SVGRenderer,
         };
       } else if (typeof HTMLCanvasElement !== "undefined" && element instanceof HTMLCanvasElement) {
         return {
           element,
           options: (0, _getOptionsFromElement2.default)(element),
-          renderer: _renderers2.default.CanvasRenderer
+          renderer: _renderers2.default.CanvasRenderer,
         };
       } else if (element && element.getContext) {
         return {
           element,
-          renderer: _renderers2.default.CanvasRenderer
+          renderer: _renderers2.default.CanvasRenderer,
         };
-      } else if (element && (typeof element === "undefined" ? "undefined" : _typeof(element)) === "object" && !element.nodeName) {
+      } else if (
+        element &&
+        (typeof element === "undefined" ? "undefined" : _typeof(element)) === "object" &&
+        !element.nodeName
+      ) {
         return {
           element,
-          renderer: _renderers2.default.ObjectRenderer
+          renderer: _renderers2.default.ObjectRenderer,
         };
       } else {
         throw new _exceptions2.InvalidElementException();
@@ -3611,11 +4385,11 @@ var require_getRenderProperties = __commonJS({
         renderer: _renderers2.default.CanvasRenderer,
         afterRender: function afterRender() {
           imgElement.setAttribute("src", canvas.toDataURL());
-        }
+        },
       };
     }
     exports2.default = getRenderProperties;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/exceptions/ErrorHandler.js
@@ -3623,9 +4397,9 @@ var require_ErrorHandler = __commonJS({
   "node_modules/jsbarcode/bin/exceptions/ErrorHandler.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {
-      value: true
+      value: true,
     });
-    var _createClass = /* @__PURE__ */ (function() {
+    var _createClass = /* @__PURE__ */ (function () {
       function defineProperties(target, props) {
         for (var i = 0; i < props.length; i++) {
           var descriptor = props[i];
@@ -3635,7 +4409,7 @@ var require_ErrorHandler = __commonJS({
           Object.defineProperty(target, descriptor.key, descriptor);
         }
       }
-      return function(Constructor, protoProps, staticProps) {
+      return function (Constructor, protoProps, staticProps) {
         if (protoProps) defineProperties(Constructor.prototype, protoProps);
         if (staticProps) defineProperties(Constructor, staticProps);
         return Constructor;
@@ -3646,43 +4420,45 @@ var require_ErrorHandler = __commonJS({
         throw new TypeError("Cannot call a class as a function");
       }
     }
-    var ErrorHandler = (function() {
+    var ErrorHandler = (function () {
       function ErrorHandler2(api) {
         _classCallCheck(this, ErrorHandler2);
         this.api = api;
       }
-      _createClass(ErrorHandler2, [{
-        key: "handleCatch",
-        value: function handleCatch(e) {
-          if (e.name === "InvalidInputException") {
-            if (this.api._options.valid !== this.api._defaults.valid) {
-              this.api._options.valid(false);
+      _createClass(ErrorHandler2, [
+        {
+          key: "handleCatch",
+          value: function handleCatch(e) {
+            if (e.name === "InvalidInputException") {
+              if (this.api._options.valid !== this.api._defaults.valid) {
+                this.api._options.valid(false);
+              } else {
+                throw e.message;
+              }
             } else {
-              throw e.message;
+              throw e;
             }
-          } else {
-            throw e;
-          }
-          this.api.render = function() {
-          };
-        }
-      }, {
-        key: "wrapBarcodeCall",
-        value: function wrapBarcodeCall(func) {
-          try {
-            var result = func.apply(void 0, arguments);
-            this.api._options.valid(true);
-            return result;
-          } catch (e) {
-            this.handleCatch(e);
-            return this.api;
-          }
-        }
-      }]);
+            this.api.render = function () {};
+          },
+        },
+        {
+          key: "wrapBarcodeCall",
+          value: function wrapBarcodeCall(func) {
+            try {
+              var result = func.apply(void 0, arguments);
+              this.api._options.valid(true);
+              return result;
+            } catch (e) {
+              this.handleCatch(e);
+              return this.api;
+            }
+          },
+        },
+      ]);
       return ErrorHandler2;
     })();
     exports2.default = ErrorHandler;
-  }
+  },
 });
 
 // node_modules/jsbarcode/bin/JsBarcode.js
@@ -3706,8 +4482,7 @@ var _defaults2 = _interopRequireDefault(_defaults);
 function _interopRequireDefault(obj) {
   return obj && obj.__esModule ? obj : { default: obj };
 }
-var API = function API2() {
-};
+var API = function API2() {};
 var JsBarcode = function JsBarcode2(element, text, options) {
   var api = new API();
   if (typeof element === "undefined") {
@@ -3726,7 +4501,7 @@ var JsBarcode = function JsBarcode2(element, text, options) {
   }
   return api;
 };
-JsBarcode.getModule = function(name2) {
+JsBarcode.getModule = function (name2) {
   return _barcodes2.default[name2];
 };
 for (name in _barcodes2.default) {
@@ -3736,18 +4511,21 @@ for (name in _barcodes2.default) {
 }
 var name;
 function registerBarcode(barcodes, name2) {
-  API.prototype[name2] = API.prototype[name2.toUpperCase()] = API.prototype[name2.toLowerCase()] = function(text, options) {
-    var api = this;
-    return api._errorHandler.wrapBarcodeCall(function() {
-      options.text = typeof options.text === "undefined" ? void 0 : "" + options.text;
-      var newOptions = (0, _merge2.default)(api._options, options);
-      newOptions = (0, _optionsFromStrings2.default)(newOptions);
-      var Encoder = barcodes[name2];
-      var encoded = encode(text, Encoder, newOptions);
-      api._encodings.push(encoded);
-      return api;
-    });
-  };
+  API.prototype[name2] =
+    API.prototype[name2.toUpperCase()] =
+    API.prototype[name2.toLowerCase()] =
+      function (text, options) {
+        var api = this;
+        return api._errorHandler.wrapBarcodeCall(function () {
+          options.text = typeof options.text === "undefined" ? void 0 : "" + options.text;
+          var newOptions = (0, _merge2.default)(api._options, options);
+          newOptions = (0, _optionsFromStrings2.default)(newOptions);
+          var Encoder = barcodes[name2];
+          var encoded = encode(text, Encoder, newOptions);
+          api._encodings.push(encoded);
+          return api;
+        });
+      };
 }
 function encode(text, Encoder, options) {
   text = "" + text;
@@ -3768,16 +4546,16 @@ function autoSelectBarcode() {
   }
   return Object.keys(_barcodes2.default)[0];
 }
-API.prototype.options = function(options) {
+API.prototype.options = function (options) {
   this._options = (0, _merge2.default)(this._options, options);
   return this;
 };
-API.prototype.blank = function(size) {
+API.prototype.blank = function (size) {
   var zeroes = new Array(size + 1).join("0");
   this._encodings.push({ data: zeroes });
   return this;
 };
-API.prototype.init = function() {
+API.prototype.init = function () {
   if (!this._renderProperties) {
     return;
   }
@@ -3791,7 +4569,7 @@ API.prototype.init = function() {
     if (options.format == "auto") {
       options.format = autoSelectBarcode();
     }
-    this._errorHandler.wrapBarcodeCall(function() {
+    this._errorHandler.wrapBarcodeCall(function () {
       var text = options.value;
       var Encoder = _barcodes2.default[options.format.toUpperCase()];
       var encoded = encode(text, Encoder, options);
@@ -3799,7 +4577,7 @@ API.prototype.init = function() {
     });
   }
 };
-API.prototype.render = function() {
+API.prototype.render = function () {
   if (!this._renderProperties) {
     throw new _exceptions.NoElementException();
   }
@@ -3831,9 +4609,9 @@ if (typeof window !== "undefined") {
   window.JsBarcode = JsBarcode;
 }
 if (typeof jQuery !== "undefined") {
-  jQuery.fn.JsBarcode = function(content, options) {
+  jQuery.fn.JsBarcode = function (content, options) {
     var elementArray = [];
-    jQuery(this).each(function() {
+    jQuery(this).each(function () {
       elementArray.push(this);
     });
     return JsBarcode(elementArray, content, options);

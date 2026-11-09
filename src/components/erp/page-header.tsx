@@ -4,8 +4,16 @@ import { cn } from "@/lib/utils";
 const MODULE_BORDER = "border-primary";
 
 export function PageHeader({
-  title, description, eyebrow, actions,
-}: { title: string; description?: string; actions?: ReactNode; eyebrow?: string }) {
+  title,
+  description,
+  eyebrow,
+  actions,
+}: {
+  title: string;
+  description?: string;
+  actions?: ReactNode;
+  eyebrow?: string;
+}) {
   return (
     <div className="mb-6 flex flex-wrap items-center justify-between gap-4 sm:mb-8">
       <div className={cn("border-l-4 py-1 pl-4 sm:pl-5", MODULE_BORDER)}>

@@ -10,9 +10,10 @@ function criarStorage() {
       if (prop === "getItem") return (k: string) => (k in target ? target[k] : null);
       if (prop === "setItem") return (k: string, v: string) => void (target[k] = String(v));
       if (prop === "removeItem") return (k: string) => void delete target[k];
-      if (prop === "clear") return () => {
-        for (const k of Object.keys(target)) delete target[k];
-      };
+      if (prop === "clear")
+        return () => {
+          for (const k of Object.keys(target)) delete target[k];
+        };
       if (prop === "length") return Object.keys(target).length;
       if (prop === "key") return (i: number) => Object.keys(target)[i] ?? null;
       return Reflect.get(target, prop);
@@ -90,7 +91,10 @@ describe("cache de dados persistido no navegador", () => {
 
   it("descarta o cache de outro usuario (navegador compartilhado)", async () => {
     storage.setItem(CHAVE_USUARIO, "usuario-antigo");
-    storage.setItem(CHAVE_CACHE, JSON.stringify({ timestamp: Date.now(), buster: "v1", clientState: {} }));
+    storage.setItem(
+      CHAVE_CACHE,
+      JSON.stringify({ timestamp: Date.now(), buster: "v1", clientState: {} }),
+    );
     storage.setItem("sb-x-auth-token", JSON.stringify({ user: { id: "usuario-novo" } }));
 
     const mod = await carregarModulo();

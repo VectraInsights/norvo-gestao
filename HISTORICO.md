@@ -27,7 +27,7 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
      criando 31 tabelas no schema public. `.env` do repo atualizado para o novo projeto.
 
 6. **Google OAuth direto** — provider habilitado no Supabase novo com credenciais próprias do
-   Google Cloud (tipo *Aplicativo da Web*). Erro `redirect_uri_mismatch` resolvido ao cadastrar
+   Google Cloud (tipo _Aplicativo da Web_). Erro `redirect_uri_mismatch` resolvido ao cadastrar
    a callback certa: `https://lfxhimtbuazezjkjlddj.supabase.co/auth/v1/callback`.
    Redirect URLs autorizadas incluem `https://norvo-gestao.vercel.app/auth`.
 
@@ -76,35 +76,33 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
 29. **Filtros salvos no CT-e (29/09/2026)** — adicionada persistência por usuário e empresa para remetente, destinatário e período de entrada na tela `/fiscal/cte`, com salvar e aplicar filtros salvos. Alteração feita diretamente na `main`; o build foi iniciado, mas o processo foi encerrado pelo ambiente por falta de memória (código 137).
 30. **Electron apontado diretamente para o Worker (29/09/2026)** — atualizado `desktop/main.js` para abrir `https://norvo-gestao-cf.sptn201169.workers.dev`, evitando o redirecionamento pela Vercel. Validado com `node --check` e publicado diretamente na `main` no commit `00274ab`.
 
-**A fazer:** SMTP próprio (Resend); revisar `VITE_AI_URL` na Vercel; revisar a integração Supabase sem reinstalar nem alterar credenciais.
-25. **Diagnóstico de integração (29/09/2026)** — confirmado que o projeto correto é `norvo-gestao` (`lfxhimtbuazezjkjlddj`) na organização Supabase `VectraInsights's Org`; a equipe Vercel correta é `vectrainsights' projects`. Tentativas de instalar/reconectar a integração Supabase no v0 falharam antes da seleção da organização com `Failed to fetch dashboard project`; não foi possível reativar o MCP nem aplicar a migration. O projeto incorreto `jbrvfrylppesbnaoqjcb` foi identificado, mas não foi excluído por falta de ferramenta de exclusão e para evitar uma operação irreversível sem confirmação dentro do painel.
+**A fazer:** SMTP próprio (Resend); revisar `VITE_AI_URL` na Vercel; revisar a integração Supabase sem reinstalar nem alterar credenciais. 25. **Diagnóstico de integração (29/09/2026)** — confirmado que o projeto correto é `norvo-gestao` (`lfxhimtbuazezjkjlddj`) na organização Supabase `VectraInsights's Org`; a equipe Vercel correta é `vectrainsights' projects`. Tentativas de instalar/reconectar a integração Supabase no v0 falharam antes da seleção da organização com `Failed to fetch dashboard project`; não foi possível reativar o MCP nem aplicar a migration. O projeto incorreto `jbrvfrylppesbnaoqjcb` foi identificado, mas não foi excluído por falta de ferramenta de exclusão e para evitar uma operação irreversível sem confirmação dentro do painel.
 
 22. **CT-e complementar (26/09/2026)** — corrigida a abertura de CT-e complementar para aceitar tanto `xml_assinado` em JSON quanto XML puro, localizar tags por `localName` (inclusive XML com namespace) e herdar corretamente formulário, tomador, remetente/destinatário via NF referenciada, motorista, placas, pedágio e demais dados do CT-e original. A interface informa quando os dados originais foram carregados.
 
-21. **Modernização visual global (26/09/2026)** — iniciada a evolução do design system para tornar o Norvo mais apresentável, consistente e intuitivo em todos os módulos. A primeira entrega também adicionou ao Dashboard uma faixa de ações rápidas para tarefas frequentes, reduzindo a dependência do menu lateral. A primeira etapa atualizou tokens de raio, foco visível, seleção, redução de movimento, superfícies reutilizáveis, tabelas com cabeçalho/hover padronizados, cabeçalhos de página com hierarquia mais clara, sidebar com sombra e navegação ativa mais evidente, além de cabeçalho principal fixo durante a rolagem. A sequência planejada é: design system global, navegação/dashboard, tabelas/formulários e acabamento/acessibilidade. A segunda etapa refinou os componentes globais de Input, Select e Button, com bordas mais suaves, foco mais evidente, estados interativos consistentes e melhor feedback ao pressionar ações. A etapa seguinte refinou estados vazios e carregamentos: EmptyState agora tem hierarquia, contraste e ação central mais claros; Skeleton passou a ser mais neutro e explicitamente decorativo para leitores de tela. A etapa seguinte padronizou as tabelas compartilhadas com contêiner visual, rolagem horizontal segura, cabeçalhos mais legíveis, espaçamento consistente e hover de linha. A etapa de acabamento refinou os diálogos globais com overlay translúcido, desfoque sutil e superfície mais legível, preservando foco e navegação por teclado. A etapa responsiva ajustou o shell para telas menores: menu móvel com ícone acessível, conteúdo com espaçamento progressivo por breakpoint e backdrop mais suave, reduzindo aperto e rolagem desnecessária em notebooks compactos e tablets. A etapa de acessibilidade adicionou link de salto para o conteúdo principal, foco programático no container de conteúdo e padronização visual do Textarea. A etapa final de acabamento adicionou tipografia balanceada, scrollbar discreta e ajustes para tabelas e diálogos em telas pequenas. A nova rodada aprimorou recursos operacionais existentes: busca global limpa o termo ao fechar e central de notificações ganhou layout responsivo, estado vazio orientativo e melhor destaque visual. A etapa seguinte refinou a navegação estrutural com breadcrumbs acessíveis, rolagem horizontal segura no mobile, área ativa destacada e rótulo acessível para o botão inicial. O atalho da busca global também foi ampliado: além de Ctrl/Cmd+K, Ctrl/Cmd+/ abre a busca, com rótulo acessível explicando as opções. A etapa seguinte refinou a alternância de tema com labels dinâmicos, tooltip nativo e ícones decorativos corretamente ocultos para leitores de tela. A próxima etapa adicionou feedback visual de navegação: links do menu exibem uma barra de progresso discreta durante a transição e a animação respeita a redução de movimento configurada globalmente. O menu móvel agora também fecha com Escape, mantendo o foco e a navegação por teclado mais previsíveis. O drawer recebeu semântica de diálogo, botão explícito de fechamento e rótulos acessíveis para melhorar a operação em teclado e tecnologias assistivas. O body agora bloqueia a rolagem quando o drawer móvel está aberto, evitando que o conteúdo principal se mova por trás do menu. Também foi adicionado modo compacto persistido para tabelas densas e a busca global passou a localizar produtos por nome ou código. Filtros salvos, notificações persistentes e auditoria continuam aguardando a leitura do schema Supabase para criação segura de tabelas e RLS. A rodada seguinte adicionou regras globais de impressão e reforçou a leitura de placas, motorista e data do CT-e em XML puro, JSON encapsulado e XML com namespaces. A busca global passou a incluir colaboradores por nome ou CPF, respeitando a permissão do módulo de RH.
+23. **Modernização visual global (26/09/2026)** — iniciada a evolução do design system para tornar o Norvo mais apresentável, consistente e intuitivo em todos os módulos. A primeira entrega também adicionou ao Dashboard uma faixa de ações rápidas para tarefas frequentes, reduzindo a dependência do menu lateral. A primeira etapa atualizou tokens de raio, foco visível, seleção, redução de movimento, superfícies reutilizáveis, tabelas com cabeçalho/hover padronizados, cabeçalhos de página com hierarquia mais clara, sidebar com sombra e navegação ativa mais evidente, além de cabeçalho principal fixo durante a rolagem. A sequência planejada é: design system global, navegação/dashboard, tabelas/formulários e acabamento/acessibilidade. A segunda etapa refinou os componentes globais de Input, Select e Button, com bordas mais suaves, foco mais evidente, estados interativos consistentes e melhor feedback ao pressionar ações. A etapa seguinte refinou estados vazios e carregamentos: EmptyState agora tem hierarquia, contraste e ação central mais claros; Skeleton passou a ser mais neutro e explicitamente decorativo para leitores de tela. A etapa seguinte padronizou as tabelas compartilhadas com contêiner visual, rolagem horizontal segura, cabeçalhos mais legíveis, espaçamento consistente e hover de linha. A etapa de acabamento refinou os diálogos globais com overlay translúcido, desfoque sutil e superfície mais legível, preservando foco e navegação por teclado. A etapa responsiva ajustou o shell para telas menores: menu móvel com ícone acessível, conteúdo com espaçamento progressivo por breakpoint e backdrop mais suave, reduzindo aperto e rolagem desnecessária em notebooks compactos e tablets. A etapa de acessibilidade adicionou link de salto para o conteúdo principal, foco programático no container de conteúdo e padronização visual do Textarea. A etapa final de acabamento adicionou tipografia balanceada, scrollbar discreta e ajustes para tabelas e diálogos em telas pequenas. A nova rodada aprimorou recursos operacionais existentes: busca global limpa o termo ao fechar e central de notificações ganhou layout responsivo, estado vazio orientativo e melhor destaque visual. A etapa seguinte refinou a navegação estrutural com breadcrumbs acessíveis, rolagem horizontal segura no mobile, área ativa destacada e rótulo acessível para o botão inicial. O atalho da busca global também foi ampliado: além de Ctrl/Cmd+K, Ctrl/Cmd+/ abre a busca, com rótulo acessível explicando as opções. A etapa seguinte refinou a alternância de tema com labels dinâmicos, tooltip nativo e ícones decorativos corretamente ocultos para leitores de tela. A próxima etapa adicionou feedback visual de navegação: links do menu exibem uma barra de progresso discreta durante a transição e a animação respeita a redução de movimento configurada globalmente. O menu móvel agora também fecha com Escape, mantendo o foco e a navegação por teclado mais previsíveis. O drawer recebeu semântica de diálogo, botão explícito de fechamento e rótulos acessíveis para melhorar a operação em teclado e tecnologias assistivas. O body agora bloqueia a rolagem quando o drawer móvel está aberto, evitando que o conteúdo principal se mova por trás do menu. Também foi adicionado modo compacto persistido para tabelas densas e a busca global passou a localizar produtos por nome ou código. Filtros salvos, notificações persistentes e auditoria continuam aguardando a leitura do schema Supabase para criação segura de tabelas e RLS. A rodada seguinte adicionou regras globais de impressão e reforçou a leitura de placas, motorista e data do CT-e em XML puro, JSON encapsulado e XML com namespaces. A busca global passou a incluir colaboradores por nome ou CPF, respeitando a permissão do módulo de RH.
 
-
-10. **Service role key configurada** - `.env` saiu do versionamento (gitignore + `.env.example`
+24. **Service role key configurada** - `.env` saiu do versionamento (gitignore + `.env.example`
     como modelo); a secret `sb_secret_...` existe no `.env` local e nas env vars da Vercel.
     Nada no código usa `supabaseAdmin` ainda — configuração preventiva.
-11. **Limpeza de usuários de teste** - apagados via Auth Admin API no projeto atual; restou
+25. **Limpeza de usuários de teste** - apagados via Auth Admin API no projeto atual; restou
     apenas a conta real do dono (`sptn201169@gmail.com`). O projeto antigo da Lovable está
     abandonado e fora de escopo.
-12. **Commits passaram a usar** `vectrainsights@users.noreply.github.com` como autor — a Vercel
+26. **Commits passaram a usar** `vectrainsights@users.noreply.github.com` como autor — a Vercel
     Hobby bloqueia deploys de commits cujo email não está associado à conta GitHub.
-13. **Incidente de env vars na Vercel** — ao tirar o `.env` do repo, o site quebrou em produção
+27. **Incidente de env vars na Vercel** — ao tirar o `.env` do repo, o site quebrou em produção
     ("Algo saiu do trilho"): as chaves públicas só existiam no arquivo versionado. Corrigido
     cadastrando as 6 vars no dashboard da Vercel. Lição: TODA env var que o app lê deve existir
     no painel da Vercel; `.env` local serve só para desenvolvimento.
-14. **"Confirm email" verificado DESATIVADO** — `mailer_autoconfirm: true` confirmado via
+28. **"Confirm email" verificado DESATIVADO** — `mailer_autoconfirm: true` confirmado via
     Management API (22/08/2026); AGENTS.md dizia o contrário e foi corrigido.
-15. **Último resquício da Lovable removido: o plugin de build.** `vite.config.ts` reescrito com
+29. **Último resquício da Lovable removido: o plugin de build.** `vite.config.ts` reescrito com
     config nativa (tailwindcss + tsConfigPaths + tanstackStart com `server.entry = "server"` +
     nitro `defaultPreset: "cloudflare-module"` + viteReact, alias `@`, dedupe, lightningcss,
     envDefine de VITE_*). Deps `@lovable.dev/*` eliminadas; `bun.lock` deletado (apontava para
     registry privado da Lovable). Validado localmente: build `NITRO_PRESET=node-server` OK e
     smoke test HTTP 200 nas rotas `/` e `/auth`.
-16. **Módulo Férias (DP/RH)** — migration `20260822120000`: tabelas `ferias_periodos` (aquisitivo
+30. **Módulo Férias (DP/RH)** — migration `20260822120000`: tabelas `ferias_periodos` (aquisitivo
     12m + limite de concessão 18m calculados das datas) e `ferias_concessoes` (gozo, abono
     pecuniário ≤10 dias, adiantar 13º, `dias` gerado no banco), com RLS `is_empresa_member`,
     grants e triggers no padrão do projeto. Aplicada via Management API. Rota `/rh/ferias`
@@ -117,7 +115,7 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
     (não array) — corrigido acesso que deixava o nome em branco na tabela; adicionada edição
     do período aquisitivo (reabre o diálogo preenchido; colaborador fica travado, datas
     recalculam fim/limite, direito não pode ficar abaixo do já utilizado).
-18. **Redesign Férias: controle automático** — a pedido do dono ("não é mais fácil mostrar
+31. **Redesign Férias: controle automático** — a pedido do dono ("não é mais fácil mostrar
     todos os trabalhadores com situação de férias?"), os períodos aquisitivos passaram a ser
     DERIVADOS da `data_admissao` (ciclos de 12m + 6m para conceder, CLT art. 134). A tabela
     manual `ferias_periodos` foi REMOVIDA (migration `20260822120200`: 1 registro de teste,
@@ -129,14 +127,14 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
     aberto, datas de gozo (mín. 5d, após fim do ciclo), abono ≤10d e 13º adiantado; concessões
     existentes listadas com status editável. Direito fixo em 30 dias no MVP (proporcional
     fica para depois).
-19. **Cadastro de colaboradores endurecido** — obrigatórios: nome, CPF (11 dígitos),
+32. **Cadastro de colaboradores endurecido** — obrigatórios: nome, CPF (11 dígitos),
     cargo, salário >0, data de admissão (insumo das férias automáticas) e ao menos um
     telefone — múltiplos números permitidos, salvos juntos no campo texto `telefone`
     separados por " / " (migração para tabela própria quando houver integração WhatsApp/SMS).
     Campo data de demissão adicionado ao formulário (obrigatório quando status = demitido;
     coluna já existia). Validações são no app, sem NOT NULL no banco (linha real anterior
     ficaria inválida).
-20. **Modelo de acesso em 3 níveis (modo "aluguel"/SaaS)** — decisão do dono: ele é o
+33. **Modelo de acesso em 3 níveis (modo "aluguel"/SaaS)** — decisão do dono: ele é o
     SUPER ADMIN da plataforma (cria as empresas-cliente/aluguéis); cada empresa pagante tem
     um ADMIN que cria os usuários do próprio CNPJ com senha padrão e define módulos; membros
     veem apenas os módulos marcados. Implementação:
@@ -161,12 +159,12 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
     - Limitações MVP: restrição por módulo é na UI (RLS continua isolando por EMPRESA,
       não por módulo); super admin não vê empresas onde não é membro (gerenciar via SQL).
 
-21. **Estoque focado em transportadora** — análise do texto com sugestões genéricas de
+34. **Estoque focado em transportadora** — análise do texto com sugestões genéricas de
     gestão de estoque contra o contexto real (MVP, cliente-tipo transportadora: pneus,
     peças, óleo, ARLA): ADIAR lotes/validade, nº série, endereçamento, reservas,
     romaneio e código de barras; implementar o que fecha o ciclo operacional barato:
     - Migration `20260822130000`: RPC `public.transferir_estoque(produto, qtd, origem,
-      destino, obs)` SECURITY DEFINER — valida papel owner/admin/estoque, depósitos da
+destino, obs)` SECURITY DEFINER — valida papel owner/admin/estoque, depósitos da
       mesma empresa e saldo; grava o PAR entrada(destino)+saída(origem) numa transação
       (entrada primeiro evita alerta falso de estoque baixo). Estoque global não muda.
     - `/estoque/inventario`: contagem física por produto; divergências viram ajustes com
@@ -180,19 +178,19 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
       curva ABC 80/95 e itens parados (janela 60/90/180d). Tudo calculado no front.
     - Movimentações: dialog "Transferir" via RPC + coluna Depósito; opção "transferencia"
       removida do form simples (era inerte — trigger dá delta 0).
-22. **Fix RLS "permission denied for function is_empresa_member"** — ao criar o primeiro
+35. **Fix RLS "permission denied for function is_empresa_member"** — ao criar o primeiro
     colaborador no projeto novo, todo INSERT/SELECT em tabelas cujas policies usam a versão
     pública da função (colaboradores, comissoes, adiantamentos, emprestimos, folha_pagamento,
-    crm_*, ferias_*) falhava: a função foi recriada com ACL restrita (só postgres/service_role),
+    crm__, ferias__) falhava: a função foi recriada com ACL restrita (só postgres/service_role),
     sem grant para `authenticated` (a versão `private.` sempre teve o grant certo).
     Corrigido com `GRANT EXECUTE ... TO authenticated` (migration
     `20260822120100`) e validado simulando o role via `SET ROLE authenticated`.
-23. **Quick wins transportadora (categoria + CNH)** — migration `20260822131000`: coluna
+36. **Quick wins transportadora (categoria + CNH)** — migration `20260822131000`: coluna
     `produtos.categoria` (índice empresa+categoria) e `colaboradores.cnh_numero/
-    cnh_categoria/cnh_validade`. Produtos ganhou campo categoria com datalist e filtro;
+cnh_categoria/cnh_validade`. Produtos ganhou campo categoria com datalist e filtro;
     RH ganhou seção CNH opcional no formulário; o Dashboard lista motoristas com CNH
     vencida ou vencendo em até 30 dias junto dos alertas de estoque.
-24. **Módulo Frota & Viagens** — núcleo operacional da transportadora (migration
+37. **Módulo Frota & Viagens** — núcleo operacional da transportadora (migration
     `20260822132000`, tabelas `veiculos`, `viagens`, `viagem_despesas`; tipos
     veiculo_status e viagem_status; placa única por empresa):
     - `/frota/veiculos`: CRUD de caminhões (placa, modelo, tipo, ano, RNTRC, KM, status).
@@ -206,7 +204,7 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
     - Testado ponta a ponta via SQL: despesa→pagar ✓, vínculo ✓, conclusão→receita ✓,
       sem duplicação ✓, limpeza ✓. Módulo 'frota' adicionado às permissões (membros
       existentes precisam ter o módulo marcado pelo admin para ver o menu).
-25. **Catálogo de cargos + filtro de motoristas** — substituiu (no mesmo dia) uma marcação
+38. **Catálogo de cargos + filtro de motoristas** — substituiu (no mesmo dia) uma marcação
     "é motorista" que havia sido criada: agora existe a tabela `cargos` com 10 cargos
     padrão de transportadora (Motorista, Motorista Carreteiro, Ajudante, Mecânico,
     Estoquista, Administrativo, Financeiro, Atendimento, Comercial, Gerente) e suporte a
@@ -216,7 +214,7 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
     contendo "Motorist". Para esses cargos, nº da CNH e categoria são OBRIGATÓRIOS
     (validação no app) e a categoria virou dropdown (ACC, A, B, AB, C, D, E).
 
-26. **Pacote de melhorias de DP/RH e UX (24/08/2026)** — feedback do dono após testar:
+39. **Pacote de melhorias de DP/RH e UX (24/08/2026)** — feedback do dono após testar:
     - **Adiantamento recorrente mensal**: campo "Parcelas" REMOVIDO (gerava 1 lançamento com
       o total — bug). No lugar, checkbox "Recorrente mensal" + dia do pagamento (1–31).
       Um job pg_cron (`adiantamentos-recorrentes`, diário 03:15 UTC) chama a função
@@ -371,11 +369,12 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
 - **Commits**: `034c29c` (proxy), `81b767e` (endpoints corrigidos SVRS), `04e6de4` (todos estados).
 
 18. **Fix endpoints SEFAZ Nacionais (HTTP 404)**:
-   - O endpoint de **produção** `NFeDistribuicaoDFe` estava errado: `www.nfe.fazenda.gov.br` → `www1.nfe.fazenda.gov.br` (fonte: lista oficial SP Fazenda).
-   - O endpoint de **homologação** também estava errado: `www1.nfe.fazenda.gov.br` → `hom.nfe.fazenda.gov.br`.
-   - `NFeRecepcaoEvento4` em homologação: `www.nfe.fazenda.gov.br` → `hom.nfe.fazenda.gov.br`.
-   - Versão do `distDFeInt`: `1.01` → `1.00` (conforme WSDL e NT 2014.002).
-   - Commits: `b23580a` (Vercel), `e542dde` (CF).
+
+- O endpoint de **produção** `NFeDistribuicaoDFe` estava errado: `www.nfe.fazenda.gov.br` → `www1.nfe.fazenda.gov.br` (fonte: lista oficial SP Fazenda).
+- O endpoint de **homologação** também estava errado: `www1.nfe.fazenda.gov.br` → `hom.nfe.fazenda.gov.br`.
+- `NFeRecepcaoEvento4` em homologação: `www.nfe.fazenda.gov.br` → `hom.nfe.fazenda.gov.br`.
+- Versão do `distDFeInt`: `1.01` → `1.00` (conforme WSDL e NT 2014.002).
+- Commits: `b23580a` (Vercel), `e542dde` (CF).
 
 19. **Fix cUFAutor (cStat 137)**: código `91` hardcoded → código IBGE da UF da empresa via `getCodigoUf(uf)`.
     Commits: `361bc6e`, `f48be91`.
@@ -385,7 +384,7 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
     - Após cada consulta, `maxNSU` é salvo para retomar de onde parou.
     - Se cStat 656 (outro sistema avançou o cursor), reseta automaticamente para zero e refaz.
     - Toast exibe info de debug (cStat, endpoint, ambiente, CNPJ, cUFAutor).
-    Commits: `427283b`, `3aeaad1`.
+      Commits: `427283b`, `3aeaad1`.
 
 21. **Cron job SEFAZ 2x/dia** (`vercel.json` + `src/lib/sefaz-cron.ts`):
     - Vercel Cron roda às 8h e 20h BRT (`0 11,23 * * *` UTC).
@@ -420,7 +419,7 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
 
 26. **Timer de retry correto (cStat 656)**: `last_query_at` agora só é atualizado em consulta
     SUCESSO (cStat 138/137). cStat 656 não mexe no timer — a contagem de 1h começa da última
-    vez que *conseguimos* consultar, não do último clique. Commits: `7a21484` / `2a53277`.
+    vez que _conseguimos_ consultar, não do último clique. Commits: `7a21484` / `2a53277`.
 
 27. **Cron job SEFAZ a cada 20min (00:00–07:00 BRT)**: `vercel.json` com
     `*/20 3-9 * * *`. Cron pula empresa se `last_query_at` < 1h (evita cStat 656).
@@ -472,7 +471,7 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
       invalidando `categorias-financeiras-pagar`/`cadastros-categorias`/`categorias-opt`.
     - Mutation `criarCategoriaInline` com tratamento `23505` e `toast`.
 
-33. **Estrutura CT-e / MDF-e — 28/08/2026** (este commit):
+32. **Estrutura CT-e / MDF-e — 28/08/2026** (este commit):
     - Emissão CT-e (57) e MDF-e (58) adiada anteriormente (~2–3 semanas) agora com **fase 1
       de estrutura** para desbloquear implantação incremental:
     - Migration `20260828010000_cte_mdf_estrutura.sql` já aplicada em prod: tabelas
@@ -501,7 +500,7 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
       SOAP mTLS por UF (validar URLs SP/MG/RS × SVRS), server fns reais, UI de emissão vinculada
       a Viagens/Veículos.
 
-32. **Fix categoria não persistia no produto — 27/08/2026** (este commit):
+33. **Fix categoria não persistia no produto — 27/08/2026** (este commit):
     - `handleConfirmarXmlUpload` criava produto com `insert {codigo, nome, un, preco...}` sem
       `categoria` (`fiscal.recebidas.tsx:574`) e o `update` de produto existente ignorava
       categoria (`:571`). Produto "PASTILHA FREIO" aparecia como "Sem categoria" na edição
@@ -544,22 +543,22 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - Dialog `Novo CT-e` com 3 `Card`s seccionados e ícones: **Tomador** (`UsersRound`), **Rota** (`RouteIcon`/`MapPin` com Env/Ini/Fim), **Carga, valores e fiscal** (`Package`/`DollarSign`/`Building2`, CFOP/RNTRC, `vPrest`/`vCarga`/`peso` + badges das NF-es vinculadas).
 
 40. **CT-e por partes + cabeçalho removido + Tomador do XML — 28/08/2026** (este commit):
-     - Cabeçalho **Nome Empresa / Remetente / Destinatário / Placa / Mercadoria** removido de `fiscal.cte.tsx` (`CardContent` `grid-cols-5`) conforme seta — agora inicia direto em `Embarque via CT-e`.
-     - `handleImportNFeXml` com `tomador` via `transp>modFrete` do XML: `0`→Remetente (`emit`), `1`→Destinatário (`dest`), `2`→Transportadora (`transp>transporta`), preenchendo `mercadorias[].tomador`/`tomadorCnpj` e `Listagem das Notas Fiscais` coluna **Tomador** (amarelo) corretamente — antes fixo `dest`.
-     - Coluna **Tomador** adicionada na `Listagem das Notas Fiscais` (após Destinatário), checkbox desmarcado por padrão (`selecionadas: Set` vazio, usuário escolhe), validação `Gerar CT-e` só com selecionadas e bloqueio se `Set(destCnpj)` ou `Set(tomadorCnpj)` >1 ("destinos diferentes").
-     - Botão renomeado `Importar NF-e (múltiplos XML)` → **`Importar NFes (XML)`** (`UploadCloud`, `multiple`).
+    - Cabeçalho **Nome Empresa / Remetente / Destinatário / Placa / Mercadoria** removido de `fiscal.cte.tsx` (`CardContent` `grid-cols-5`) conforme seta — agora inicia direto em `Embarque via CT-e`.
+    - `handleImportNFeXml` com `tomador` via `transp>modFrete` do XML: `0`→Remetente (`emit`), `1`→Destinatário (`dest`), `2`→Transportadora (`transp>transporta`), preenchendo `mercadorias[].tomador`/`tomadorCnpj` e `Listagem das Notas Fiscais` coluna **Tomador** (amarelo) corretamente — antes fixo `dest`.
+    - Coluna **Tomador** adicionada na `Listagem das Notas Fiscais` (após Destinatário), checkbox desmarcado por padrão (`selecionadas: Set` vazio, usuário escolhe), validação `Gerar CT-e` só com selecionadas e bloqueio se `Set(destCnpj)` ou `Set(tomadorCnpj)` >1 ("destinos diferentes").
+    - Botão renomeado `Importar NF-e (múltiplos XML)` → **`Importar NFes (XML)`** (`UploadCloud`, `multiple`).
 
 41. **CT-e dialog robusto estilo STM + CFOPs compartilhados — 28/08/2026** (commits `d8fc2b3`/`b849fc9`):
-     - Removida **Listagem de Mercadorias** (CARGA GERAL/NCM) e banner azul `prefillBanner` da tela principal (`fiscal.cte.tsx`).
-     - Dialog **Conhecimento de Transporte Avulso** reescrito com 4 abas estilo STM: **Remetente/Destinatário** (cards Remetente/Destinatário auto puxados, Tomador, Rota Coleta/Entrega), **Doc Mercadorias** (tabela Modelo/Chave/Remetente/Destinatário/Nº/Série/Data/Peso/Valor), **Seguros/Veículos** (Seguradora/Apólice/Base Calc/RCTR-C/RCF-DC/Responsável dropdown, Motorista/CIOT/Placas), **Taxas/Despesas Acessórias** (Pedágio 3 eixos/Ad Valorem/GRIS/Taxas + Forma Pagamento Pedágio).
-     - Header do dialog com **N° Conhecimento, Data Emissão (DateInput), CFOP Saída** (dropdown); removidos **Espécie Veículo** e **Base Cálculo Frete** conforme pedido (grid 5→3).
-     - Criado `src/lib/cfops-transporte.ts:1` com `CFOPS_TODOS` (~500 códigos oficiais 1.xxx–7.xxx exatos do PDF), `CFOPS_TRANSPORTE`/`MOD_FRETE_OPTIONS` (0 CIF,1 FOB,2 Terceiros,3 Próprio Remetente,4 Próprio Destinatário,9 Sem Ocorrência) e `RESPONSAVEL_CTE_OPTIONS` (0 Remetente a 5 Tomador de Serviço), compartilhado entre CT-e e NF. Doc Mercadorias no dialog agora filtra `selecionadas.size>0 ? filtradas : todas` para não mostrar todas as 4 quando só 2 selecionadas.
+    - Removida **Listagem de Mercadorias** (CARGA GERAL/NCM) e banner azul `prefillBanner` da tela principal (`fiscal.cte.tsx`).
+    - Dialog **Conhecimento de Transporte Avulso** reescrito com 4 abas estilo STM: **Remetente/Destinatário** (cards Remetente/Destinatário auto puxados, Tomador, Rota Coleta/Entrega), **Doc Mercadorias** (tabela Modelo/Chave/Remetente/Destinatário/Nº/Série/Data/Peso/Valor), **Seguros/Veículos** (Seguradora/Apólice/Base Calc/RCTR-C/RCF-DC/Responsável dropdown, Motorista/CIOT/Placas), **Taxas/Despesas Acessórias** (Pedágio 3 eixos/Ad Valorem/GRIS/Taxas + Forma Pagamento Pedágio).
+    - Header do dialog com **N° Conhecimento, Data Emissão (DateInput), CFOP Saída** (dropdown); removidos **Espécie Veículo** e **Base Cálculo Frete** conforme pedido (grid 5→3).
+    - Criado `src/lib/cfops-transporte.ts:1` com `CFOPS_TODOS` (~500 códigos oficiais 1.xxx–7.xxx exatos do PDF), `CFOPS_TRANSPORTE`/`MOD_FRETE_OPTIONS` (0 CIF,1 FOB,2 Terceiros,3 Próprio Remetente,4 Próprio Destinatário,9 Sem Ocorrência) e `RESPONSAVEL_CTE_OPTIONS` (0 Remetente a 5 Tomador de Serviço), compartilhado entre CT-e e NF. Doc Mercadorias no dialog agora filtra `selecionadas.size>0 ? filtradas : todas` para não mostrar todas as 4 quando só 2 selecionadas.
 
 42. **CFOPs separados por uso + calendário e Tomador corrigidos — 28/08/2026** (commits `800e480`/`b862a27`, `7df5eb5`/`5dfdb83`, `49a076f`/`f71d94d`):
-     - `cfops-transporte.ts:640` split: `CFOPS_CTE` (19 códigos de transporte: 5.351–5.360 estaduais, 6.351–6.360 interestaduais, 7.358 internacional) exclusivo do **CT-e** (`fiscal.cte.tsx:21` import `CFOPS_CTE`), `CFOPS_TODOS`/`CFOPS_NOTAS` mantidos para **Notas de Compra/Devolução**.
-     - **Calendário padrão ERP**: `DateInput` (`date-input.tsx:22`, `Calendar` dropdown pt-BR, `maxToday`, ícone popover) no **Data Emissão** do dialog (`fiscal.cte.tsx:385`, `form.dataEmissao`) e no **Período de Entrada** da listagem (`periodoIni`/`periodoFim` useState, `DateInput` flex-1), trocando `Input type=date` nativo.
-     - **Tomador corrigido para modFrete 0**: `mercadorias` estendida com `tomadorUF/CMun/XMun/modFrete` (`:37`), `handleImportNFeXml` com `tomaByMod {"0":"0","1":"3","2":"4","3":"0","4":"3","9":"4"}` para preencher `toma` correto, `Gerar CT-e` (`:340`) agora usa `tomadorCnpj/tomador/tomadorUF` em vez de `destCnpj/dest` — NF com `FRETE 0-Por conta do Rem` (imagem 3) agora puxa `TECNO2000...` (Remetente) correto, não `INSTITUTO NACIONAL DO SEGURO SOCIAL` (imagem 4 corrigida). Screenshot `INSTITUTO NA...` com frete CIF validado.
-     - **Período de Entrada layout**: grid 4→ `border rounded` com `grid lg:grid-cols-3` + linha resumo `Qtde NF-e • Peso Bruto • Valor` com `border-t pt-2 flex-wrap gap-x-3` sem sobreposição com botão **Consulta** (`:209`).
+    - `cfops-transporte.ts:640` split: `CFOPS_CTE` (19 códigos de transporte: 5.351–5.360 estaduais, 6.351–6.360 interestaduais, 7.358 internacional) exclusivo do **CT-e** (`fiscal.cte.tsx:21` import `CFOPS_CTE`), `CFOPS_TODOS`/`CFOPS_NOTAS` mantidos para **Notas de Compra/Devolução**.
+    - **Calendário padrão ERP**: `DateInput` (`date-input.tsx:22`, `Calendar` dropdown pt-BR, `maxToday`, ícone popover) no **Data Emissão** do dialog (`fiscal.cte.tsx:385`, `form.dataEmissao`) e no **Período de Entrada** da listagem (`periodoIni`/`periodoFim` useState, `DateInput` flex-1), trocando `Input type=date` nativo.
+    - **Tomador corrigido para modFrete 0**: `mercadorias` estendida com `tomadorUF/CMun/XMun/modFrete` (`:37`), `handleImportNFeXml` com `tomaByMod {"0":"0","1":"3","2":"4","3":"0","4":"3","9":"4"}` para preencher `toma` correto, `Gerar CT-e` (`:340`) agora usa `tomadorCnpj/tomador/tomadorUF` em vez de `destCnpj/dest` — NF com `FRETE 0-Por conta do Rem` (imagem 3) agora puxa `TECNO2000...` (Remetente) correto, não `INSTITUTO NACIONAL DO SEGURO SOCIAL` (imagem 4 corrigida). Screenshot `INSTITUTO NA...` com frete CIF validado.
+    - **Período de Entrada layout**: grid 4→ `border rounded` com `grid lg:grid-cols-3` + linha resumo `Qtde NF-e • Peso Bruto • Valor` com `border-t pt-2 flex-wrap gap-x-3` sem sobreposição com botão **Consulta** (`:209`).
 
 43. **Controle de CNH + toxicológico dos motoristas — 28/08/2026** (commit `e3b5574`, merge `197c940`):
     - Migration `20260828110000_b7c4e9a2-5d8f-4a1b-9e6c-3f2a8d4b7c91.sql` (aplicada): coluna `colaboradores.toxico_exame DATE` (último exame; validade = exame + 2 anos e 6 meses, CTB art. 148-A).
@@ -567,6 +566,7 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - Dashboard: alerta "Alertas & estoque baixo" lista separadamente **CNH** e **Toxicológico** por motorista ativo (vencido/vencendo em 30 dias).
     - Frota → Viagens: select de motorista exibe ⚠ (CNH/toxicológico vencendo em 30 dias) e **bloqueia salvar** quando a documentação está vencida.
     - Merge com o remoto: unidos 160 commits (CT-e/MDF-e, CFOPs, financeiro, adiantamentos, cargos customizáveis) — conflito resolvido em `rh.colaboradores.tsx` (mantidos `toxico_exame` + `optante_vt`).
+
 - Limpeza de tipagem: zerado o `tsc --noEmit` dos erros pré-existentes do remoto — casts `as unknown as`/`as any` em fiscal.cte/mdf/recebidas, `binary.raw.encode` p/ node-forge (fiscal.configuracoes), `rpc(... as never)` (rh.adiantamentos) e correção do `gerarEmLote` em rh.folha (contador real no toast em vez de `vars.length` sempre 0).
 
 44. **Git sem login repetido + fim de linha padronizado — 28/08/2026**:
@@ -604,7 +604,9 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
       avisos e modificações fantasmas.
     - `tsc --noEmit` limpo: 20 erros TS pré-existentes do remoto corrigidos (fiscal.*,
       rh.adiantamentos, rh.comissoes, rh.folha).
+
 ---
+
 47. **Veiculos - CRLV PDF + campos proprietario/eixos/categoria** - 30/08/2026:
     - Migration 20260829120000_seguradoras.sql: tabela seguradoras (empresa_id, nome, cnpj/telefone) + eiculos.seguradora_id FK.
     - Migration 20260829130000_veiculos_extras.sql: colunas proprietario, eixos, categoria (tipo veicular 1-8 conforme CRLV) em eiculos.
@@ -640,9 +642,9 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
 
 53. **Sync geral + limpeza de TypeScript** - 30/08/2026:
     - Merge de 160+ commits do remoto com conflitos resolvidos (fiscal, frota, rh, financeiro).
-    - 	sc --noEmit zerado: casts  s unknown as/ s any corrigidos em fiscal.cte, fiscal.mdf, fiscal.recebidas, rh.adiantamentos, rh.comissoes, rh.folha.
+    - sc --noEmit zerado: casts s unknown as/ s any corrigidos em fiscal.cte, fiscal.mdf, fiscal.recebidas, rh.adiantamentos, rh.comissoes, rh.folha.
     - inary.raw.encode p/ node-forge (fiscal.configuracoes) corrigido.
-    - gerarEmLote em rh.folha corrigido (contador real no toast em vez de  ars.length sempre 0).
+    - gerarEmLote em rh.folha corrigido (contador real no toast em vez de ars.length sempre 0).
 
 54. **RNTRC com Nome, CNPJ e Categoria** - 01/09/2026:
     - Migration aplicada: coluna `descricao` removida, `nome` e `cnpj` (ambos obrigatórios) adicionados a `rntrc_lista`.
@@ -737,6 +739,7 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - Mesma abordagem da emissão: envelope SOAP 1.1 + SOAPAction customizado.
 
 ---
+
 ## 03/09/2026 — CT-e: raiz da rejeição = CNPJ errado na empresa
 
 Decodificando a chave de acesso das CT-e rejeitadas (`31260983919614000160...`),
@@ -751,9 +754,11 @@ o CNPJ embutido é `83919614000160` — diferente do CNPJ correto da TECNO2000
   (futuramente o código priorizará `cert.cnpj` sobre `emp.cnpj`).
 
 Mudanças no código (commits `df2d23b` cf / `fb0dff8` vercel):
+
 - `complemento` adicionado ao emit em `emitirCteFn`, `previewCteXmlFn` e proxy.
 - Logs de debug `[CTE-DEBUG]` e `[CTE-PROXY-DEBUG]` com CNPJ/UF.
 - `emitirCte` no proxy agora recebe `emitUf` em vez de `uf` genérica.
+
 ---
 
 ## CT-e: correção ordem toma + logging detalhado SEFAZ - 03/09/2026
@@ -764,6 +769,7 @@ Analisando o XSD do CTeSimp (`cteTiposBasico_v4.00.xsd`), o `<toma>` tem ordem e
 O XML rejeitado tinha `<fone>` ANTES de `<enderToma>` — violação de schema (cStat 225).
 
 Fix (commit `d9fa9b9` cf / `4592eff` vercel):
+
 - `<enderToma>` movido para ANTES de `<fone>` (antes: fone → enderToma; agora: enderToma → fone)
 - Logging detalhado adicionado: XML assinado completo, Base64 comprimido, endpoint URL,
   resposta SEFAZ COMPLETA (não truncada), dados de input (toma, emit, endereços)
@@ -840,6 +846,7 @@ Após a correção do QR code e autorização do CT-e em produção, o cancelame
 2. **Posicionamento da assinatura**: Para `<eventoCTe>`, a assinatura XML precisa estar DENTRO do elemento `<eventoCTe>` (antes de `</eventoCTe>`), mas não existia branch `</eventoCTe>` — o código ia direto para `</CTeSimp>`.
 
 **Correções aplicadas em `src/lib/sefaz.ts`:**
+
 - Regex: `/<inf(?:NFe|Cte|MDFe)/` → `/<inf(?:NFe|Cte|Evento|MDFe)/` (ambas `tryForgeSignXml` e `signXmlNative`)
 - Placement: adicionar `</eventoCTe>` como **primeiro** check antes de `</CTeSimp>` em ambas funções
 
@@ -1301,21 +1308,25 @@ Commits: CF `a036d99` + Vercel `fbcf9ad`
 ## CT-e, Percursos e robustez de emissao (09-10/09/2026)
 
 ### Percursos (tabela `cte_percursos`, ex-`cte_rotas`)
+
 - Migrations `20260909130000_cte_rotas.sql` e `20260909140000_cte_percursos_extend.sql` aplicadas (rename + codigo + ~48 colunas: consig/redespacho, seguro, pedagio, distancia/duracao, fiscal, obs, emissao).
 - Match automatico ESTRITO por CNPJ remetente+destinatario+tomador (sem fallback); salvamento silencioso a cada emissao/rascunho; numero do percurso no cabecalho do CT-e (card removido a pedido).
 - Pagina Fiscal -> Percursos: lista + edicao em abas sem rolagem (Geral | Seguro e Pedagio); chave (rem/dest/toma) travada; busca CNPJ em consignatario/redespacho (contatos -> BrasilAPI -> ReceitaWS) com cura do cadastro; entrega amarrada em redespacho > destinatario; endereco completado via cadastro; DialogContent fullscreen por padrao (Ctrl+K preservado).
 - Percurso NUNCA guarda motorista/frete; Gerar/Novo CT-e zeram dados de viagem e nao reaproveitam tomador/coleta/entrega (edicao de rascunho preservada).
 
 ### Emissao robusta (Vercel proxy + server)
+
 - `return ret` faltando no mutationFn fazia todo envio cair no toast de rejeitado mesmo autorizado (causa raiz do "autorizado com toast de erro").
 - Reconciliacao via consSit: resposta de erro, ECONNRESET no envio e no cancelamento (135/155); retry com backoff (3x) no envio e na consulta; toast de resposta vazia com diagnostico (console + JSON).
 - Agent mTLS fixado em TLS 1.2.
 - 10/09 ~10h35: `hcte.fazenda.mg.gov.br` passou a resetar TODAS as conexoes (envio e consulta, TLS 1.2 e 1.3, Vercel e local). Portal no ar, SVRS ok, NFe nacional ok => homologacao MG fora do ar. Numeros 900015-900017 ficaram como rejeitados locais; retomar do 900018 e limpar rejeitados.
 
 ### CT-e UI (Transporte sem rolagem)
+
 - Dialogo maximizado; Transporte compacto (Seguro 2 linhas, Veiculo 3 campos Cavalo/Reboque 1/2 com limpar, Componentes em 1 linha MoneyInput); ICMS e vTPrest sobre o total (menos pedagio, Lei 10.209); pedagio default "Sem Pagamento" + trava obrigatoria em Free Flow/TAGs (alimenta MDF-e); DACTE com seguro; toasts enxutos (sem "Percurso aplicado").
 
 ### Distancia/duracao do Percurso
+
 - Calculo via CEP (BrasilAPI) + rota OSRM (menor alternativa); duracao = dist/50 km/h + descansos Lei 13.103, arredonda p/ hora cheia; destino = redespacho > destinatario.
 
 Commits CF `e52f69a..0115b69` (53) + Vercel espelhos + Worker redeployado a cada mudanca.
@@ -1378,6 +1389,7 @@ Commits CF `9113282` + Vercel `eba27ef` + Worker `91291ef6` (+ fix `64b9d36`: o 
 ---
 
 ## DACTE com barras e QR reais (11/09/2026)
+
 - Barras CODE-128C reais da chave (MOC 4.00) via JsBarcode+canvas; QR vetorial do `qrCodCTe` do XML via qrcode-generator (módulos desenhados no PDF, 25mm). Fallback p/ barras simuladas fora do browser ou sem chave.
 - Download lê `qrCodCTe` (`infCTeSupl`) do XML autorizado. Preview segue sem QR (só existe após autorizar) e com barras reais se já houver chave.
 - Libs vendorizadas em `src/lib/vendor/` (bundles oficiais jsbarcode 3.12.3 + qrcode-generator 2.0.4) porque o `package.json` está com lock de escrita — documentar ao destravar.
@@ -1437,78 +1449,93 @@ PENDENTE (dashboard Vercel): criar env `VITE_AI_URL=https://norvo-gestao-cf.sptn
 - `src/server.ts`: na Vercel (host `*.vercel.app`), tudo que nao for `/api/sefaz*` redireciona 308 para o Worker (preserva metodo/corpo). `/api/sefaz` e `/api/sefaz-cron` seguem normais; `/api/ai/chat` antigo passa a cair no Worker em vez de 404.
 - MDF-e validado antes: emite/consulta/encerra via proxy `/api/sefaz`, funciona servido pelo Worker — redirect nao quebra nada fiscal.
 - PENDENTE: repointar o exe Electron (desktop carrega a URL da Vercel; redirect leva ao Worker sozinho, mas o ideal e apontar direto).
-Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885`.
+  Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885`.
+
 ---
 
 ## Fundo claro mais suave (14/09/2026)
 
 - `--background` 0.985 -> 0.95 (papel quente, menos glare); `--muted`, `--secondary` e `--sidebar` desceram junto p/ manter a hierarquia. Cards seguem brancos, modo escuro intocado.
+
 ---
 
 ## Caixas off-white quente (14/09/2026)
 
 - `--card` e `--popover` 1.0 -> 0.975 quente: caixas seguem claras contra a pagina, sem o claro de branco puro.
+
 ---
 
 ## Coleta/Entrega travadas nas origens (14/09/2026)
 
 - Coleta/Entrega (municipio+UF) viraram somente-leitura com tooltip ("Segue o remetente" / "Segue redespacho/destinatario"); fora do tab.
 - Efeito novo: coleta segue o remetente (NF-e emitente + contato). Entrega (ja automatica) ganhou fallback de contato quando a NF-e vem sem cidade.
+
 ---
 
 ## Sidebar com tom proprio (14/09/2026)
 
 - Sidebar em taupe quente (0.87) com borda e destaque de selecao acompanhando; texto escuro mantido (contraste ok). Modo escuro intocado.
+
 ---
 
 ## Sidebar escura com tom proprio (14/09/2026)
 
 - `.dark --sidebar` 0.20 -> 0.24 (painel elevado sobre a pagina 0.18) e `--sidebar-accent` acompanhando.
+
 ---
 
 ## Tema claro neutro de baixo contraste (14/09/2026)
 
 - Superficies claras (fundo, caixas, muted, sidebar, bordas, textos) migradas do creme quente p/ cinza neutro frio; pagina (0.92) e caixas (0.935) quase no mesmo tom. Terracota e cores semanticas mantidos; modo escuro intocado.
+
 ---
 
 ## Sidebar terracota clara (14/09/2026)
 
 - Sidebar do tema claro com banho terracota (fundo, selecao e borda); texto escuro mantido.
+
 ---
 
 ## Botao importar sem amarelo chapado (14/09/2026)
 
 - Labels de importacao (CT-e e veiculos) com `bg-amber-100` fixo migrados p/ tokens `accent` do tema — acompanham claro/escuro sem gritar.
+
 ---
 
 ## HTML sem cache (14/09/2026)
 
 - Respostas `text/html` com `Cache-Control: no-cache`: sem isso o navegador reaproveitava o shell antigo no F5 simples (sem validadores p/ revalidar) e o tema novo nao aparecia.
+
 ---
 
 ## Tema claro bem mais escuro (14/09/2026)
 
 - Prova via console: o neutro anterior (0.92) estava aplicado, mas claro demais. Pagina 0.92->0.86, caixas 0.935->0.89, demais superficies acompanhando; sidebar terracota segue distinta.
+
 ---
 
 ## Offwhite quente de volta (14/09/2026)
 
 - Cinza neutro revertido: fundo offwhite quente (0.94), caixas (0.97), textos e bordas na familia quente; sidebar terracota mantida.
+
 ---
 
 ## Marca verde no claro (14/09/2026)
 
 - Primario/anel/graficos/sidebar/accent: terracota -> verde profundo, combinando com o offwhite. Ambar semantico (alertas) mantido; modo escuro intocado.
+
 ---
 
 ## IE aceita ISENTO digitado (14/09/2026)
 
 - Os 4 campos de IE (tomador, destinatario, consignatario, redespacho) apagavam letras a cada tecla (`replace(/\D/g)`), tornando ISENTO impossivel de digitar. Agora aceitam A-Z0-9 em maiusculas (numeros como antes). Validacao e XML ja tratavam ISENTO.
+
 ---
 
 ## Pedagio "sem" sempre marcado (14/09/2026)
 
 - Valores legados de `pedagio_pagto` (ex. "sem") nao casavam com nenhum radio e deixavam tudo desmarcado. `pagtoSeguro()` normaliza qualquer valor p/ um dos 4 validos (padrao sem-pagamento) nos radios, no calculo, ao aplicar percurso e ao salvar; select do percurso com a mesma guarda.
+
 ---
 
 ## DACTE igual ao modelo oficial (14/09/2026)
@@ -1516,6 +1543,7 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 - `dacte-pdf.ts` reescrito no layout exato da referencia (Juvenal 37105): cabecalho com subquadros, barras+chave, protocolo/versao, meta 5 itens, CFOP pontuado, previsao viagem, blocos rotulados, tomador com cidade/UF, produto+averbacao, carga+seguro combinados, componentes em grade fixa 4x3 + totais, ICMS/IBS no formato oficial, documentos em 2 colunas (Tipo/Serie-Nro/Chave), linha IBPT, info adicionais, modal lotacao completo (conjunto, vale-pedagio, motorista, lacres), canhoto oficial. Saiu: caixa de consulta, peso avulso, rodape de impressao.
 - Chamador extrai do XML: dhEmi, versao, toma, proPred, xOutCat, infQ, IBSCBS, vTotTrib, compl, IE toma, rodo completo (veic/moto/lacres/prop/valePed/CIOT/dPrev), CFOP/ide corrigido; pjForm p/ seguro/apolice/averbacao/formaPagto; lookups p/ CNPJ seguradora, CPF motorista, fones.
 - Validado gerando o PDF do 37105: 1 pagina A4.
+
 ---
 
 ## DACTE: toast unico, dest via contato, header sem tilt (14/09/2026)
@@ -1523,47 +1551,56 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 - Toast de percurso some apos o 1o aviso por documento (sessionStorage por chave).
 - Destinatario: CNPJ cai p/ o achado via NF-e + endereco/IE/fone via contato full (antes so percurso); fones emit/rem via contato.
 - Cabecalho: textos do emitente saiam INCLINADOS (size passado como angulo no doc.text!) + estouravam a caixa. Travados retos, linhas reequilibradas p/ caber. QR validado nitido no render local.
+
 ---
 
 ## Tipo de logradouro via CEP no DACTE (14/09/2026)
 
 - Novo `lib/endereco.ts`: detecta prefixo (Av/Rua/Alameda/...) e, se ausente, busca a rua pelo CEP na BrasilAPI conferindo o nome. Validado: NAZARE+66035445 -> Avenida Nazare.
 - DACTE (rem/dest/emit/toma) usa o logradouro enriquecido; dado gravado intacto. Form e contatos seguem exibindo a origem.
+
 ---
 
 ## Enriquecido volta p/ o cadastro (14/09/2026)
 
 - Ao gerar o DACTE, se o contato esta sem prefixo e o enriquecido tem, grava de volta (rem/dest). Dado manual com prefixo nunca e sobrescrito; idempotente.
+
 ---
 
 ## DACTE tudo maiusculo (14/09/2026)
 
 - Rua vinda da API em caixa alta + `cut()` do PDF forca maiusculas em nomes/enderecos/cidades. Obs e info adicionais seguem livres.
+
 ---
 
 ## Ordem dos icones do CT-e (14/09/2026)
 
 - Acoes: olho, XML, PDF, cancelar, lupa por ultimo (fora do rascunho).
+
 ---
 
 ## Cabecalho estilo imagem 2 (14/09/2026)
 
 - Emitente com logo a esquerda + linhas rotuladas (Endereco/Bairro+CEP/Cidade+Tel/CNPJ+IE), sem nome em texto e sem QR no cabecalho ( segue no padrao da imagem 2; barras+chave+protocolo cobrem a consulta). Suframa sem corte.
+
 ---
 
 ## Cabecalho imagem 2 + QR de volta (14/09/2026)
 
 - Emitente: logo + nome + linhas rotuladas iguais a referencia. QR 20mm ao lado das barras/chave (cabecalho sem espaco p/ os 25mm do MOC); blocos compactados p/ manter 1 pagina (validado no render local).
+
 ---
 
 ## Subcolunas DACTE reequilibradas (14/09/2026)
 
 - Data Emissao (16 chars) invadia a coluna do Modal; larguras 13/12/15/8/14 -> 13/11/13/7/18.
+
 ---
 
 ## Legenda das barras centralizada + respiro sublinha (14/09/2026)
 
 - Caption da chave centralizada com barras e numero; sublinha DACTE com folga da borda; obs box 8 p/ manter 1 pagina.
+
 ---
 
 ## Operacao em 14/09/2026 (nota)
@@ -1573,188 +1610,222 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 - Vercel precisa das envs `VITE_AI_URL` (chat) e `SUPABASE_SERVICE_ROLE_KEY` (proxy); Worker precisa do secret `SUPABASE_SERVICE_ROLE_KEY` (sem ele, `/api/sefaz` retorna 401).
 - HTML com `no-cache`: sem isso o navegador reaproveita o shell velho no F5.
 - Incidentes do dia (resolvidos): token do CF Builds rolado (recriar em Settings -> Builds), trigger GitHub->Vercel mudo (disconnect/reconnect do repo destravou).
+
 ---
 
 ## Sucesso em teal (14/09/2026)
 
 - `--success` e `--chart-2` do claro: oliva -> teal, separando do verde da marca. Escuro intocado.
+
 ---
 
 ## Toast de percurso: 1x para sempre (15/09/2026)
 
 - Guard era sessionStorage (morria a cada dia). Agora localStorage por chave: avisou uma vez, nao repete.
+
 ---
 
 ## Percurso garantido na emissao e na cura (15/09/2026)
 
 - Causa do toast fantasma: `persistirPercursoSilencioso` (emissao/rascunho) e a cura do DACTE exigiam tomador 14 digitos; doc sem tomador resolvido nunca ganhava percurso. Cura agora so exige rem+dest; erro do insert aparece no toast (1x) em vez de silencio; match do form normaliza digitos.
+
 ---
 
 ## Cabecalho 2 colunas + QR 25mm (15/09/2026)
 
 - Esquerda: emitente + DACTE + faixa Modal; direita: QR 25mm (MOC) + barras + chave. Compactado p/ 1 pagina.
+
 ---
 
 ## Metades alinhadas + divisor QR/barras (15/09/2026)
 
 - Caixa direita ancorada no topo (estava 1mm deslocada); linha separando QR do codigo de barras.
+
 ---
 
 ## Arquivos com nome da chave (15/09/2026)
 
 - Download do XML e do PDF salvam como `<chave>.xml` / `<chave>.pdf` (cai p/ numero se sem chave).
+
 ---
 
 ## Remetente via NF-e, nao via emitente (15/09/2026)
 
 - Simplificado nao tem grupo `rem`: o codigo usava o emitente (Juvenal) como remetente. Agora: XML rem -> NF-e emitente -> percurso -> contato -> emit. Vale p/ CNPJ/nome/cidade/UF/endereco/IE/fone. Mesmo vale p/ dest nome/cidade/UF via NF-e.
 - Com remD correto, o match do percurso (TECNO->INSS) acerta e o toast some; fone do emitente separado do remetente.
+
 ---
 
 ## Cabecalho meio a meio (15/09/2026)
 
 - Colunas 98/98 (antes 116/80 que esticava o endereco); conteudo da esquerda reequilibrado.
+
 ---
 
 ## DACTE centralizado (teste) + CEP sem cola (15/09/2026)
 
 - Titulo/subtitulo centralizados na coluna; CEP deslocado (colava no bairro).
+
 ---
 
 ## DACTE emitente com endereco proprio (15/09/2026)
 
 - Bug: `emitEndereco` do DACTE (doc autorizado) montado com rua/numero do REMETENTE (`remLogEnr/remNroRaw`); caixa do emitente misturava rua do remetente com resto do emitente.
 - Fix: le `enderEmit > xLgr/nro/CEP` do XML autorizado + `completarLogradouro`; preview/rascunho ja usavam `empresas` (ok).
+
 ---
 
 ## Tabela CT-e: chave completa + acoes a direita (15/09/2026)
 
 - Coluna Chave sem truncate: exibe os 44 digitos (`break-all`, mono 11px).
 - Coluna Acoes alinhada ao canto direito (`justify-end`, header `text-right`).
+
 ---
 
 ## Tabela CT-e: chave colada no olho (15/09/2026)
 
 - Digitos da chave alinhados a direita (`text-right pr-1`); celula de acoes com `pl-1`: respiro minimo sem sobrepor.
+
 ---
 
 ## DACTE emitente: dois-pontos + valores a esquerda (15/09/2026)
 
 - Rotulo `Endereço :`; coluna de valores 17->14mm (bairro nao encosta mais no CEP); CNPJ alinhado junto.
+
 ---
 
 ## Tabela CT-e: titulos centralizados (15/09/2026)
 
 - Todos os `TableHead` (Numero, Serie, Status, Notas, Valor, Chave, Acoes) com `text-center`; celulas de dados inalteradas.
+
 ---
 
 ## DACTE emitente: bairro completo (15/09/2026)
 
 - Bairro corta em 13 (era 10): `SAO SEBASTIAO` inteiro; rotulo/valor do CEP 2mm a direita.
+
 ---
 
 ## DACTE emitente: bairro ate 20 letras (15/09/2026)
 
 - Bairro corta em 20 (fonte 5.5); CEP deslocado para a direita; validado com 20 letras sem encostar.
+
 ---
 
 ## DACTE: protocolo na coluna esquerda (15/09/2026)
 
 - Pilha esquerda: emitente + DACTE (11) + modal (5) + protocolo com Versao (6); total 43 igual a coluna QR (intacta).
 - Removida a faixa de protocolo largura total (duplicava); 1 pagina mantida.
+
 ---
 
 ## DACTE emitente: CEP/Tel/Insc alinhados (15/09/2026)
 
 - Rotulos em ex+38; valores/IE compensados; bairro 20 em fonte 5 (validado sem colar).
+
 ---
 
 ## DACTE faixa meta: tipo, responsavel, tomador (15/09/2026)
 
 - Tipo `EMISSAO NORMAL` separado; Responsavel = usuario logado (`user_metadata.nome`, fallback email) nos 2 fluxos.
 - Tomador pela identidade dos CNPJs (rem/dest/exp/rec), nao pelo codigo; `<toma>` direto lido no Simplificado.
+
 ---
 
 ## DACTE: CFOP + inicio/termino na mesma linha (15/09/2026)
 
 - Faixa unica: CFOP primeiro (natureza por inteiro) + Inicio + Termino; Previsao Inicio Viagem removida.
+
 ---
 
 ## DACTE: CFOP oficial + responsavel do cadastro (15/09/2026)
 
 - CFOP mostra descricao oficial da tabela (`6.352 - Prestacao ... a comercio`); natOp vira fallback.
 - Responsavel = `empresa_users.nome` (cadastro da conta) + metadata; sem fragmento de email.
+
 ---
 
 ## DACTE: protocolo com : + logradouro sem tipo (15/09/2026)
 
 - Protocolo/Versao com `:` e numeros colados (2mm).
 - `completarLogradouro` aceita rua da API sem tipo conhecido (Vereador/Deputado/Doutor); writeback acompanha.
+
 ---
 
 ## Contatos refeitos com dados do XML da NF-e (15/09/2026)
 
 - Import le `enderEmit/enderDest > nro` (nunca lido); numero vai ao contato.
 - `upsertContatoFromNfe` ATUALIZA existente com endereco do XML (prefixo Rua/Av, numero, bairro, CEP, IE, fone); antes ignorava. Nome so se vazio; tipo preservado.
+
 ---
 
 ## Cancelamento usa ambiente do documento (15/09/2026)
 
 - 216 acontecia pq o cancel ia p/ producao (nfe_config) mesmo p/ CT-e de homologacao; agora usa body.ambiente > documento > global.
+
 ---
 
 ## Fiscal > Cadastro (clientes+fornecedores) (15/09/2026)
 
 - Nova rota `/fiscal/cadastro`: contatos cliente/fornecedor/ambos juntos, com busca, filtro por tipo e CRUD completo (IE, endereco com numero, lookup CNPJ).
 - Item `Cadastro` no menu Fiscal apos Percursos (mesmo modulo fiscal, sem permissao nova).
+
 ---
 
 ## Fiscal isolado em fiscal_cadastros (15/09/2026)
 
 - Tabela propria `fiscal_cadastros` (RLS membros, trigger updated_at) + backfill de 13 contatos; Cadastro sem tipo; CT-e (import, percursos, preview, DACTE) le/grava so nela.
+
 ---
 
 ## Numeracao CT-e por ambiente, homologacao do 500 (15/09/2026)
 
 - 539: proxy reusava numero sem filtrar ambiente; agora max numerico por empresa+ambiente, homologacao `max+1,500`.
+
 ---
 
 ## Logradouro: acento no meio da palavra + fallback tomador (15/09/2026)
 
 - `norm()` trocava acento por espaco (DECIO->DE CIO) e a conferencia falhava; agora remove diacriticos. Caso real validado: VEREADOR DECIO DE PAULA + 35574825 -> RUA VEREADOR DECIO DE PAULA.
 - Tomador usa cadastro (logr/nro/cep/fone) quando o XML nao traz; fone do tomador no DACTE.
+
 ---
 
 ## DACTE: quantidade medida/cobrada em pt-BR (15/09/2026)
 
 - `fmtQtd`: ponto no milhar + virgula no decimal, preservando as casas (6750.0000 -> 6.750,0000).
+
 ---
 
 ## Mercadorias: coluna Qtde (qVol do XML) (15/09/2026)
 
 - Import le `transp/vol/qVol`; coluna `qvol` nova; tela mostra Qtde por NF + total de volumes; rascunho preserva.
+
 ---
 
 ## DACTE: valor da carga + volumes (15/09/2026)
 
 - `valorCarga` le `vCarga` do Simplificado (vMerc so no normal); `qtdVol` soma `qvol` das NF-es (doc e preview).
+
 ---
 
 ## DACTE: componentes centralizados (15/09/2026)
 
 - Fileiras Nome/Valor centralizadas na faixa (estavam no pe); totais com respiro da borda.
+
 ---
 
 ## DACTE: faixa IBS dentro da pagina (15/09/2026)
 
 - Colunas do IBS somavam 210mm (pagina tem 198); reequilibradas p/ 188 + folga no ICMS ST.
+
 ---
 
 ## Emissao persiste form p/ DACTE (seguradora/apolice) (15/09/2026)
 
 - `xml_assinado` do autorizado vira `{xml, form}`; seguradora, apolice, averbacao e demais campos do form saem no DACTE. Leitores (download, tabela, revert) compativeis.
-- DACTE: caixa Observacoes com altura dinamica (LIM - y - resto, +1mm folga p/ 
-eed(17)) p/ canhoto encostar no rodape; tomador RUA, NUMERO - BAIRRO - CIDADE / UF em 1 linha (ec6abc/24726f4).
+- DACTE: caixa Observacoes com altura dinamica (LIM - y - resto, +1mm folga p/
+  eed(17)) p/ canhoto encostar no rodape; tomador RUA, NUMERO - BAIRRO - CIDADE / UF em 1 linha (ec6abc/24726f4).
 
 - DACTE item 2.8: dashH tracejada entre linhas de componentes, Servico/Receber, obs/homolog; canhoto 4 colunas (Nome/RG|Assinatura|Prestacao|CT-e) (29a6d11/790e4b7).
 
@@ -1770,8 +1841,8 @@ eed(17)) p/ canhoto encostar no rodape; tomador RUA, NUMERO - BAIRRO - CIDADE / 
 
 - DACTE conjunto: subcabecalho Tipo/Placa/Renavam/UF/RNTRC; vale-pedagio exibido uma unica vez.
 
-- CTE: RNTRC do modal puxa de 
-ntrc_lista (match CNPJ emissora); emissao bloqueada sem RNTRC (nunca ISENTO).
+- CTE: RNTRC do modal puxa de
+  ntrc_lista (match CNPJ emissora); emissao bloqueada sem RNTRC (nunca ISENTO).
 
 - DACTE vale-pedagio: subcabecalho CNPJ Fornecedor/Numero Comprovante/CNPJ Responsavel/Vale Pedagio; comprovante ate 20 chars.
 
@@ -1923,7 +1994,7 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 - Observações: limite fixo de 2 linhas removido — imprime quantas
   couberem na caixa (`maxObs` pela altura; excedente corta sem quebrar
   a página). Marca d'água de homologação só se sobrar espaço.
--   Canhoto: `LIM` 291→293, margem inferior ~7mm→~5mm (mínimo seguro;
+- Canhoto: `LIM` 291→293, margem inferior ~7mm→~5mm (mínimo seguro;
   abaixo disso impressora comum corta). Espelhado na Vercel.
 
 ## DACTE obs em 3 linhas + tarja sempre (22/09/2026)
@@ -1934,12 +2005,14 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   por tamanho da caixa). Espelhado na Vercel.
 
 ## NF sem percurso em vermelho + cadastro com volta (22/09/2026)
+
 - Embarque: NF sem percurso (rem+dest+toma) em vermelho com tooltip.
 - Gerar com NF sem percurso leva a Fiscal → Percursos com rascunho
   pré-preenchido (chave travada); salvar cria (insert + código sequencial)
   e volta ao CT-e. Espelhado na Vercel.
 
 ## Coleta/Entrega auto + PIS/COFINS padrão (22/09/2026)
+
 - Percurso novo vindo do CT-e já nasce com coleta=remetente e
   entrega=destinatário (cidade/UF da NF ou do cadastro); coleta amarrada
   no remetente como a entrega já era no destino/redespacho.
@@ -1960,6 +2033,7 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   averbação). Espelhado na Vercel.
 
 ## MDF-e: lista, fullscreen e via autorizados (22/09/2026)
+
 - Query sem `cfop` (coluna inexistente derrubava a lista) + erro visível.
 - Dialog Novo MDF-e em tela cheia.
 - Autorizados ganhou checkbox por CT-e + botão Gerar MDF-e: abre o
@@ -2033,7 +2107,7 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 - Transbordo vai para o XML: quando checked, gera `infMDFeTransp`
   (chMDFe) em cada `infMunDescarga` usando as chaves de 44 dígitos
   digitadas (1º/2º/3º). Obs: no leiaute esse grupo é validação F43/F44
-  para modal Aquaviário —   vale validar na SEFAZ se o rodo aceita.
+  para modal Aquaviário — vale validar na SEFAZ se o rodo aceita.
   Espelhado na Vercel.
 
 ## Novo MDF-e em boxes separados (23/09/2026)
@@ -2052,7 +2126,6 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   continuam vindo dos CT-es (encerramento mantém select entre
   destinos). Série agora editável (antes fixa "1") e vai pro XML.
   Espelhado na Vercel.
-
 
 ## MDF-e serie 000 fixa + ambiente do nfe_config (23/09/2026)
 
@@ -2191,7 +2264,7 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 ## MDF-e Reboque/CIOT na 2a coluna + Percurso limpo (23/09/2026)
 
 - Coluna 1: Nome/Veiculo/Motorista; coluna 2: Tipo + Reboque(s)
-  + CIOT (caixas mais largas, sem truncar).
+  - CIOT (caixas mais largas, sem truncar).
 - Percurso: removidos select "Adicionar UF na ordem" e
   observacao do titulo (vira "Percurso *"); botoes Exclui/▲▼
   foram para o cabecalho; adicionar segue pelos botoes de UF.
@@ -2649,7 +2722,7 @@ Espelhado na Vercel.
 ## .gitignore endurecido (24/09/2026)
 
 - Mesclado pedido com entradas do projeto: certs (*.pfx/.p12/
-  .pem/.key/.crt), build/, out/, *.tsbuildinfo, .env.*,
+  .pem/.key/.crt), build/, out/, _.tsbuildinfo, .env._,
   coverage, Thumbs.db, .pnpm-store. Nada sensivel estava
   rastreado (.env e chaves fora do git); .env.example segue
   versionado de proposito. Sem git rm necessario.
@@ -2710,9 +2783,9 @@ Espelhado na Vercel.
 ## BUILD 027: seg regra 699 completa (25/09/2026)
 
 - 699 exige grupo todo: CNPJ do responsavel no infResp + infSeg
-  + nApol + nAver. Averbacao: do CT-e, com fallback p/ cadastro
-  da seguradora (mesmo que o CT-e usa). completarSegMdf agora
-  reconstrói o grupo com dados do CT-e. Espelhado na Vercel.
+  - nApol + nAver. Averbacao: do CT-e, com fallback p/ cadastro
+    da seguradora (mesmo que o CT-e usa). completarSegMdf agora
+    reconstrói o grupo com dados do CT-e. Espelhado na Vercel.
 
 ## BUILD 028: nAver ficticia em homologacao (25/09/2026)
 
@@ -2863,8 +2936,10 @@ Espelhado na Vercel.
   dela; terceiro segue vazio. Espelhado.
 
 ## CNPJ/CPF do proprietário + endereço do emitente (25/09/2026)- Veículos: nova coluna `proprietario_doc` (migration
-  `20260925120000`; CNPJ 14 ou CPF 11 dígitos, opcional) com campo no
-  cadastro, coluna na tabela e busca; dialog de cadastro em tela cheia.
+
+`20260925120000`; CNPJ 14 ou CPF 11 dígitos, opcional) com campo no
+cadastro, coluna na tabela e busca; dialog de cadastro em tela cheia.
+
 - DAMDFE usa o doc cadastrado na coluna DOC PROPRIETÁRIO (tração e
   reboques), com fallback para nome-bate-com-empresa.
 - MDF-e: `enderEmit` agora é o endereço do EMITENTE (cidade/UF da
@@ -2882,17 +2957,21 @@ Espelhado na Vercel.
 - Espelhado na Vercel via push em main.
 
 ## Consulta com fallback de action + save sem migration (25/09/2026)- SVRS rejeitou as duas formas da action de consulta em momentos
-  distintos: `consultarMdf` tenta `mdfeConsulta` e, em fault "not
-  recognized", tenta `MDFeConsulta` (log indica qual aceitou).
+
+distintos: `consultarMdf` tenta `mdfeConsulta` e, em fault "not
+recognized", tenta `MDFeConsulta` (log indica qual aceitou).
+
 - Salvamento do veículo tolera banco sem a coluna nova: em erro de
   schema-cache de `proprietario_doc`, salva sem ela e avisa para rodar
   a migration `20260925120000` no Supabase (SQL Editor).
 - Espelhado na Vercel via push em main.
 
 ## Protocolo manual no cancelamento (25/09/2026)- SVRS homologação rejeita a consulta nas duas formas de action
-  (serviço fora do ar/lado SVRS): dialog de cancelamento ganhou campo
-  opcional de protocolo (15 dígitos, pré-preenchido do registro) para
-  colar o nProt do Portal Nacional e cancelar sem depender da consulta.
+
+(serviço fora do ar/lado SVRS): dialog de cancelamento ganhou campo
+opcional de protocolo (15 dígitos, pré-preenchido do registro) para
+colar o nProt do Portal Nacional e cancelar sem depender da consulta.
+
 - Espelhado na Vercel via push em main.
 
 ## Sem abreviação de UF no MDF-e (25/09/2026)
@@ -2904,32 +2983,42 @@ Espelhado na Vercel.
 - Espelhado na Vercel via push em main.
 
 ## Protocolo automático via Não Encerrados (25/09/2026)- `protocoloDoMdf` agora tenta consulta situação e, em falha, consulta
-  não-encerrados (`MDFeConsNaoEnc`, filtra a chave e extrai o `nProt`).
+
+não-encerrados (`MDFeConsNaoEnc`, filtra a chave e extrai o `nProt`).
+
 - Encerrar/cancelar retornam `protocoloUsado`; server functions gravam
   de volta em `mdf_documentos.protocolo_sefaz` (backfill, uma única vez).
   Campo manual do dialog mantido como último recurso.
 - Espelhado na Vercel via push em main.
 
 ## Digest do evento sobre infEvento (25/09/2026)- 297 no cancelar/encerrar: `signXml(evento)` sem `digestInput` gerava o
-  digest sobre o `<eventoMDFe>` inteiro, mas o Reference aponta o
-  `infEvento`. Novo `signMdfEventoXml` canonicaliza o `infEvento`
-  (ápice com xmlns) e assina sobre ele (provado localmente: digests
-  divergem). Vale para cancelar e encerrar.
+
+digest sobre o `<eventoMDFe>` inteiro, mas o Reference aponta o
+`infEvento`. Novo `signMdfEventoXml` canonicaliza o `infEvento`
+(ápice com xmlns) e assina sobre ele (provado localmente: digests
+divergem). Vale para cancelar e encerrar.
+
 - Espelhado na Vercel via push em main.
 
 ## Protocolo gravado na emissão (25/09/2026)- Emissão autorizada sem `protocolo_sefaz`: extração do `nProt` agora
-  tolera prefixo de namespace em `infProt`/`nProt`/`chMDFe`/`cStat` e
-  registra no log se o bloco `infProt` veio presente ou ausente.
+
+tolera prefixo de namespace em `infProt`/`nProt`/`chMDFe`/`cStat` e
+registra no log se o bloco `infProt` veio presente ou ausente.
+
 - Espelhado na Vercel via push em main.
 
 ## Número/série gravados no autorizado (25/09/2026)- Autorizado sem número na tela: o `upsert` de sucesso não gravava
-  `numero`/`serie` (só o rejeitado gravava). Agora grava nos dois
-  caminhos (server function e proxy), via parâmetro ou via `<nMDF>` e
-  `<serie>` do XML.
+
+`numero`/`serie` (só o rejeitado gravava). Agora grava nos dois
+caminhos (server function e proxy), via parâmetro ou via `<nMDF>` e
+`<serie>` do XML.
+
 - Espelhado na Vercel via push em main.
 
 ## Abas fiscais reorganizadas (25/09/2026)- Sem aba Todos (embarque do CT-e mantida); ordem: Aguardando envio,
-  Rejeitados, Cancelados, Autorizados (rótulos no plural nas 2 telas).
+
+Rejeitados, Cancelados, Autorizados (rótulos no plural nas 2 telas).
+
 - CT-e Autorizados com sub-abas Sem MDF-e / Com MDF-e (vínculo extraído
   dos XMLs dos manifestos ativos); MDF-e Autorizados com Abertos /
   Encerrados.
@@ -3103,7 +3192,6 @@ Espelhado na Vercel.
 - Caixas de Observação e Informações Adicionais Fisco com `rows={2}`.
 - Push direto em `main`.
 
-
 ## Percurso e UFs esticam até o rodapé (26/09/2026)
 
 - Caixas de Percurso e Adicionar UF agora se estendem até a linha dos botões.
@@ -3113,14 +3201,12 @@ Espelhado na Vercel.
   `content-start` para os botões ficarem no topo sem esticar.
 - Espelhado via push em `main`.
 
-
 ## Percurso/UFs: height 100% no grid da última linha (26/09/2026)
 
 - Corrigido: grid `md:grid-cols-10` da última seção recebe `height: "100%"`
   explícito para ocupar toda a área do grid-cell pai (1fr do gridTemplateRows).
   `flex-1` não tem efeito dentro de grid — trocado por `height: 100%`.
 - Tabela de percurso mantém `flex-1 min-h-0` para esticar dentro da coluna.
-
 
 ## Cores por módulo na sidebar e cabeçalhos (26/09/2026)
 
@@ -3135,7 +3221,6 @@ Espelhado na Vercel.
   e em `page-header.tsx` (mapa `MODULE_COLORS`).
 - Espelhado via push em `main`.
 
-
 ## MDF-e ui-31: cabeçalhos coloridos + percurso esticado (26/09/2026)
 
 - Caixas do Novo MDF-e com cabeçalho `bg-muted/60` + texto cinza uppercase
@@ -3147,7 +3232,6 @@ Espelhado na Vercel.
 - Sidebar: revertida para cor única (primária) no item ativo — sem cores por módulo.
 - PageHeader: borda esquerda colorida por módulo (mantida — aprovada na ui).
 - Espelhado via push em `main`.
-
 
 ## MDF-e ui-32: scroll no conteúdo + cabeçalhos mais visíveis (26/09/2026)
 
@@ -3174,7 +3258,6 @@ Espelhado na Vercel.
   integração nova nem altera variáveis de ambiente.
 - Validado com build de produção. O lint global continua apontando pendências preexistentes
   em scripts e componentes não relacionados.
-
 
 ## Electron de volta para a Vercel (28/09/2026)
 
@@ -3490,7 +3573,7 @@ Espelhado na Vercel.
   importador roda camada de texto + até 3 recortes de OCR e mescla,
   cada fonte preenchendo só os campos ainda vazios.
 - Âncoras sem depender de rótulo: linha do CPF traz `<CPF> <registro>
-  <categoria>` lado a lado; validade = maior data do doc (exclui
+<categoria>` lado a lado; validade = maior data do doc (exclui
   nascimento e datas grudadas em EMISSÃO/HABILITAÇÃO).
 - Rótulos tolerantes a OCR (espaço faltando, 0/O, caixa mista) + MRZ
   mesmo sem `<<<` (linha após as datas, só maiúsculas).
@@ -3787,7 +3870,7 @@ Espelhado na Vercel.
 - `lib/antt-ciot.ts`: payload DCS v1.1 (ints, BRT -03:00, RNTRC 9d,
   ContratantesCargFrac, Justificativa null, IdentificadorPix auto) +
   IdOperacao via /token+/gerar + mTLS A1. Server `antt-ciot-server`
-  + proxy `anttCiotDeclarar`, sempre homologação.
+  - proxy `anttCiotDeclarar`, sempre homologação.
 - CT-e: campo CIOT ligado ao form + botão Emitir (com confirmação de
   frota própria), tipo pagto + chave, protocolo exibido; CIOT zera ao
   reaproveitar base; flui p/ MDF-e/DACTE/rascunho. TAC bloqueado pela
@@ -4015,6 +4098,7 @@ Espelhado na Vercel.
 - Botão/diálogo "Preencher lote" viraram "Preencher CIOT".
 
 ## CT-e Normal: 225 resolvido via XSD oficial (02/10)
+
 - Baixado o XSD oficial (`cteTiposBasico_v4.00.xsd`, NT2026.002) e
   extraída a sequência do TCTe: faltava `<indIEToma>` no `ide`
   (antes do toma3/toma4) e o `vTotDFe` é filho do `<imp>` — não
@@ -4109,6 +4193,7 @@ Espelhado na Vercel.
   não tem como corrigir no documento — só cancelando e reemitindo.
 
 ## CT-e: cancelamento devolve NF do Normal (03/10)
+
 - Cancelar CT-e Normal não devolvia as NF-es: o extrator só lia
   `<chNFe>` (Simplificado); Normal usa `<infNFe><chave>`. Novo
   `chavesNFeDoXml` cobre os dois formatos (+ JSON de rascunho).
@@ -4133,6 +4218,7 @@ Espelhado na Vercel.
   dois caminhos de gravação) — DACTE certo mesmo com bundle antigo.
 
 ## CT-e: DACTE em construtor único + PWA (03/10)
+
 - Não precisa de dois: a prévia recebe o XML (`previewCteXmlFn`
   retorna), então usa o mesmo `gerarDacteBlob` via componente
   `PreviewDacte` — o objeto form-based de ~140 linhas foi removido.
@@ -4144,8 +4230,10 @@ Espelhado na Vercel.
   100% online (sem cache).
 
 ## CT-e: visualizar não reescreve percurso/entrega (03/10)- Abrir os dados de um CT-e mostrava o percurso do EMBARQUE (ex.
-  0003) em vez do documento (0001): `docsAtuais()` agora usa as NF-es
-  do próprio doc (via `nfesTodas`) quando visualizando.
+
+3.  em vez do documento (0001): `docsAtuais()` agora usa as NF-es
+    do próprio doc (via `nfesTodas`) quando visualizando.
+
 - Efeitos de auto-percurso/entrega/coleta não rodam em visualização
   (antes reescreviam o form exibido com dados do embarque).
 - Causa raiz do MARABA/AP: percurso sem `entrega_cmun` fazia o
@@ -4155,21 +4243,25 @@ Espelhado na Vercel.
   antigos). Visualizar CT-e carrega as NF-es do documento.
 
 ## CT-e: DACTE lê cidades/UF por regex (03/10)- O DACTE tentava o XML primeiro (`tag()`), mas o `querySelector`
-  falha em silêncio com namespace conforme o motor — caía no form
-  velho (AP). Leitura do `ide` agora por regex no XML cru, comprovada
-  contra o XML do 542 (MARABA/PA).
+
+falha em silêncio com namespace conforme o motor — caía no form
+velho (AP). Leitura do `ide` agora por regex no XML cru, comprovada
+contra o XML do 542 (MARABA/PA).
 
 ## CT-e: resumo no cancelar + versão no menu (03/10)- Cancelar (1 ou lote): "1 CT-e cancelado" / "N CT-es cancelados" e
-  "1 NF-e devolvida" / "N NF-es devolvidas" — sem spam por item.
+
+"1 NF-e devolvida" / "N NF-es devolvidas" — sem spam por item.
+
 - Botão "Devolver NF-es" removido dos Cancelados (a devolução segue
   automática no cancelar, preservando NF com dono).
 - Rodapé do menu mostra `v <sha do commit>` (Vercel injeta) — dá p/
   conferir na hora se o deploy atual está rodando.
 
 ## CT-e: PDF velho no app instalado (03/10)- XML (PA) + sistema (PA) certos e PDF (AP) errado com código novo =
-  contexto desatualizado: o app instalado (PWA) fica com o JS velho
-  na memória; F5 na aba do navegador não o atualiza. Solução: fechar
-  o app instalado por completo e reabrir (ou reinstalar).
+
+contexto desatualizado: o app instalado (PWA) fica com o JS velho
+na memória; F5 na aba do navegador não o atualiza. Solução: fechar
+o app instalado por completo e reabrir (ou reinstalar).
 
 ## Sistema: PWA removido (03/10)
 
@@ -4510,6 +4602,7 @@ Espelhado na Vercel.
 - Validado com `tsc` zerado e `npm run build` OK.
 
 ## DANFE: CSOSN, PAGAMENTO e anti-estouro (05/10)
+
 - O/CST agora lê CSOSN do Simples (ICMSSN101/102/201/202/500/900) e o
   cabeçalho vira O/CSOSN como no FSIST.
 - Seção PAGAMENTO (forma + valor do `<pag>`) quando há pagamento à vista;
@@ -4519,6 +4612,7 @@ Espelhado na Vercel.
 - Validado com `tsc` zerado, `vitest` e `npm run build` OK.
 
 ## Toast curto + * em obrigatório (05/10)
+
 - Erro de categoria sem produto vira só "Categoria obrigatória".
 - `*` no cabeçalho Categoria das duas tabelas de produtos (único campo
   validado de verdade).
@@ -4562,7 +4656,6 @@ Espelhado na Vercel.
   quebrou o build, só aparecia no `tsc --noEmit`.
 - Fix: `src/lib/vendor/vendor.d.ts` com `declare module "*.cjs"`.
   `tsc` zerado nesses arquivos; teste e build revalidados.
-
 
 ## Contas financeiras estilo Conta Azul (05/10)
 
@@ -5089,7 +5182,7 @@ Espelhado na Vercel.
 
 - Trilha de auditoria em Receber/Pagar vira modal pequeno centralizado
   (`sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2
-  sm:max-w-lg`), igual ao Novo lancamento — antes abria em tela cheia/lateral.
+sm:max-w-lg`), igual ao Novo lancamento — antes abria em tela cheia/lateral.
 - Nova aba `Cancelados (n)`: `Todos` passa a excluir cancelados;
   cancelado some das abas operacionais mas reaparece em Cancelados,
   onde o Reabrir (volta para `aberto`) fica disponivel na linha.
@@ -5211,8 +5304,8 @@ Espelhado na Vercel.
   filtro proprio com acento, lista nativa max-h-72 overflow-y-auto com
   overscroll-contain + wheel/touch isolados, limite de 100 linhas com
   aviso 'digite para refinar', teclado (setas + Enter) preservado.
-- Mesma interface (props) — todos os usos seguem iguais; 
-pm run build OK.
+- Mesma interface (props) — todos os usos seguem iguais;
+  pm run build OK.
 - Arquivo: src/components/erp/combobox.tsx.
 
 ## Transferencia aparece na conciliacao (07/10)
@@ -5224,8 +5317,10 @@ pm run build OK.
   a 'em aberto', igual ao excluir de receber/pagar).
 - Migration 20261007120000 reabre pernas pago nunca vinculadas ao extrato.
   APLICAR via dashboard SQL Editor (padrao das ultimas).
-- 
+-
+
 pm run build OK.
+
 - Arquivos: inanceiro.transferencias.tsx, supabase/migrations/20261007120000_transferencias_reabrir_pernas.sql.
 
 ## Atalho Transferir no Extrato e nas Contas (07/10)
@@ -5235,17 +5330,19 @@ pm run build OK.
 - Botoes Transferir no Extrato (ao lado de Exportar) e nas Contas
   (ao lado de Auditoria); pagina de Transferencias mantida.
 - Migration 20261007120000 aplicada no Supabase remoto (pernas reabertas).
-- 
+-
+
 pm run build OK.
 
 ## Transferir no Pagar/Receber + pernas fora do resultado (07/10)
 
 - Botao Transferir vai para Receber/Pagar (ao lado de Auditoria) e sai do
   Extrato; mantido nas Contas e na pagina de Transferencias.
-- Pernas (	ransferencia_id) fora de Receber/Pagar, Dashboard (a receber,
+- Pernas ( ransferencia_id) fora de Receber/Pagar, Dashboard (a receber,
   a pagar, proximos), Fluxo, DRE e Relatorios: somem do Sem categoria
   e nao inflam os cards; seguem no Extrato, Transferencias e conciliacao.
-- 
+-
+
 pm run build OK.
 
 ## Menu sem Transferencias entre contas (07/10)
@@ -5256,6 +5353,7 @@ pm run build OK.
 - Validado com `npm run build` OK.
 
 ## Busca por valor + pernas + abas sem rolagem (07/10)
+
 - Busca do Pagar/Receber casa tambem valor ("25,00" acha 25.00; a partir
   de 2 digitos p/ "0" nao casar tudo).
 - Pernas de transferencia aparecem SOMENTE com busca ativa (lista e
@@ -5265,6 +5363,7 @@ pm run build OK.
 - Validado com `npm run build` OK.
 
 ## DRE sem limite + colunas compactas (07/10)
+
 - Query em paginas de 1000 (antes `.limit(20000)` cortava a DRE em
   empresa grande sem aviso).
 - Padding das celulas reduzido p/ os 14 meses caberem sem rolagem
@@ -5324,6 +5423,7 @@ pm run build OK.
 - Validado com `npm run build` OK.
 
 ## Emprestimos com parcelas ajustaveis (07/10)
+
 - Cada parcela (Aberta) tem lapis p/ ajustar valor e vencimento: cobre
   carencia, baloes e cronogramas irregulares do banco (ex.: 6x 142,18 +
   6x 263 mil + 48x 410 mil) que o Price sozinho nao representa.
@@ -5444,6 +5544,7 @@ pm run build OK.
   dialogo "Novo credor" (segue tipo fornecedor); botao "Importar PDF";
   placeholders removidos da tela de contratos.
 - Validado com `npm run build` OK.
+
 ## Estoque restante sem cortes + busca por valor (08/10)
 
 - Fornecedores em paginas (antes 1000); busca casa email e telefone
@@ -5459,6 +5560,7 @@ pm run build OK.
 - ESTOQUE COMPLETO: Compras, Produtos, Fornecedores, Movimentacoes,
   Inventario, Reposicao, Relatorios.
 - Validado com `npm run build` OK.
+
 ## Vendas sem cortes + busca por valor (08/10)
 
 - Vendas faturadas em paginas (antes 200); ganha busca
@@ -5470,6 +5572,7 @@ pm run build OK.
 - CRM: oportunidades e contatos em paginas; busca casa valor.
 - VENDAS COMPLETO: Vendas, Pedidos, Clientes, CRM.
 - Validado com `npm run build` OK.
+
 ## Frota sem cortes + busca por valor (08/10)
 
 - Multas em paginas (antes 500) + seletor de veiculos em paginas;
@@ -5480,6 +5583,7 @@ pm run build OK.
   e veiculos do seletor em paginas; busca casa frete.
 - FROTA COMPLETO: Veiculos, Viagens, Multas.
 - Validado com `npm run build` OK.
+
 ## Projetos sem cortes + busca por valor (08/10)
 
 - OS em paginas (antes corte em 1000); seletores de clientes
@@ -5488,6 +5592,7 @@ pm run build OK.
   paginas; busca casa orcamento ("25,00" acha 25.00).
 - PROJETOS COMPLETO: Projetos, Ordens de servico.
 - Validado com `npm run build` OK.
+
 ## Colaboradores no padrao visual (08/10)
 
 - Cabecalho com eyebrow "DP / RH"; busca h-9 rounded-xl com
@@ -5498,6 +5603,7 @@ pm run build OK.
   excluir com rounded-2xl e lixeira em vermelho.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+
 ## Folha no padrao visual (08/10)
 
 - Cabecalho com eyebrow "DP / RH"; busca h-9 rounded-xl com
@@ -5509,6 +5615,7 @@ pm run build OK.
   confirms com rounded-2xl.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+
 ## Ferias no padrao visual (08/10)
 
 - Cabecalho com eyebrow "DP / RH"; alertas em cards rounded-2xl.
@@ -5519,6 +5626,7 @@ pm run build OK.
 - Confirm com rounded-2xl.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+
 ## Adiantamentos no padrao visual (08/10)
 
 - Eyebrow "DP / RH"; busca h-9 rounded-xl com botao limpar;
@@ -5528,6 +5636,7 @@ pm run build OK.
 - Acoes h-8 rounded-lg; lixeira vermelha; confirms rounded-2xl.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+
 ## Comissoes no padrao visual (08/10)
 
 - Eyebrow "DP / RH"; busca h-9 rounded-xl com botao limpar;
@@ -5537,6 +5646,7 @@ pm run build OK.
 - Acoes h-8 rounded-lg; lixeira vermelha; confirms rounded-2xl.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+
 ## Calculadora no padrao visual (08/10)
 
 - Cabecalho com eyebrow "DP / RH"; abas em barra rounded-xl.
@@ -5545,6 +5655,7 @@ pm run build OK.
   (mesma altura do MoneyInput).
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+
 ## Usuarios: retoques finais do padrao (08/10)
 
 - Eyebrow "Configuracoes"; tabela compacta com cabecalho
@@ -5553,6 +5664,7 @@ pm run build OK.
 - CONFIG COMPLETO no visual.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+
 ## Recebidas no padrao visual (08/10)
 
 - 4 dialogos (chave, detalhes, categoria, auditoria) com
@@ -5561,12 +5673,14 @@ pm run build OK.
 - Fullscreen de analise do XML mantido (intencional).
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+
 ## Emitidas no padrao visual (08/10)
 
 - 3 dialogos com rounded-2xl; tabela compacta com
   cabecalho estatico.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+
 ## MDF-e no padrao visual (08/10)
 
 - 2 dialogos pequenos com rounded-2xl; tabela principal
@@ -5574,12 +5688,14 @@ pm run build OK.
 - Fullscreens de emissao e pickers internos mantidos.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+
 ## Percursos no padrao visual (08/10)
 
 - Tabela compacta com cabecalho estatico; dialogo de
   edicao com rounded-2xl.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+
 ## Fiscal visual completo (08/10)
 
 - Configuracoes: dialogo CFOP com rounded-2xl.
@@ -5590,6 +5706,7 @@ pm run build OK.
 - FISCAL COMPLETO tambem no visual.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+
 ## Projetos no padrao visual (08/10)
 
 - OS e Projetos: eyebrow "Projetos"; busca h-9 rounded-xl
@@ -5600,17 +5717,21 @@ pm run build OK.
   status em pills; acoes h-8 rounded-lg; confirms rounded-2xl.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+
 ## Melhoria visual módulo Estoque (08/10/2026)
 
 - Todas as 7 páginas de Estoque alinhadas ao padrão visual dos módulos Fiscal/RH:
-  - Cards com ounded-2xl shadow-panel, tabelas com [&_td]:px-3 [&_th]:px-3.
+  - Cards com
+    ounded-2xl shadow-panel, tabelas com [&_td]:px-3 [&_th]:px-3.
   - Inputs de busca com h-9 rounded-xl pl-10 pr-10 shadow-sm, botões de limpar.
   - Botões com h-9 rounded-xl px-4 shadow-sm transition-all hover:shadow-md active:scale-95.
-  - DialogContent com ounded-2xl, error components com card + ícone + botão tentar novamente.
+  - DialogContent com
+    ounded-2xl, error components com card + ícone + botão tentar novamente.
   - Skeleton loading em Card com space-y-2 p-4.
   - Páginas: Produtos, Compras, Inventário, Movimentações, Reposição, Relatórios, Fornecedores.
-- Sem mudança de lógica ou comportamento. Validado com 
-pm run build OK.
+- Sem mudança de lógica ou comportamento. Validado com
+  pm run build OK.
+
 ## Fornecedores: fix Skeleton is not defined (08/10)
 
 - `/estoque/fornecedores` quebrava com "Skeleton is not defined": o
@@ -5627,14 +5748,14 @@ pm run build OK.
   Usuarios e acessos. Excecao de sort do Fiscal removida: todos
   os grupos agora ordenam itens de A-Z (pt-BR).
 - Rota /fiscal/configuracoes mantida (sem quebra de links/permissoes);
-  so mudou o grupo no menu. 	sc limpo em nav-config.
+  so mudou o grupo no menu. sc limpo em nav-config.
 
 ## Nav: sem Configuracoes duplicado (09/10)
 
 - Grupo Configuracoes passa a ter so Configuracoes fiscais e
   Usuarios e acessos. O Configuracoes geral (/configuracoes) segue
   acessivel pelo menu do usuario (avatar) e pela busca, sem repetir
-  na sidebar. 	sc limpo em nav-config.
+  na sidebar. sc limpo em nav-config.
 
 ## Nav: sidebar sem grupo Configuracoes, tudo no geral (09/10)
 
@@ -5642,67 +5763,65 @@ pm run build OK.
   acessos passam para o Configuracoes geral: cards-hub na pagina
   /configuracoes (respeitando permissao fiscal/admin) + itens no
   menu do usuario (avatar) e na busca.
-- Fiscal segue em ordem alfabetica. 	sc sem erros novos
-  (4 de baseline em configuracoes.index) e 
-pm run build OK.
+- Fiscal segue em ordem alfabetica. sc sem erros novos
+  (4 de baseline em configuracoes.index) e
+  pm run build OK.
 
 ## Configuracoes: atalhos no mesmo estilo (09/10)
 
 - Cards-hub removidos; Fiscais e Usuarios viram links de texto no
-  estilo identico ao Gerenciar empresas. 	sc sem erros novos e
-  
+  estilo identico ao Gerenciar empresas. sc sem erros novos e
+
 pm run build OK.
 
 ## Configuracoes: abas no estilo dos links (09/10)
 
 - Abas (Categorias, Condicoes, RNTRC, Seguradoras, NF-e) sem o
   fundo cinza: viram links de texto verdes como os de cima, com a
-  ativa destacada. 	sc sem erros novos e 
-pm run build OK.
+  ativa destacada. sc sem erros novos e
+  pm run build OK.
 
 ## Configuracoes: aba ativa sem fundo (09/10)
 
 - Aba ativa sem pill de fundo: so texto verde, igual aos links
-  de cima. 	sc sem erros novos e 
-pm run build OK.
+  de cima. sc sem erros novos e
+  pm run build OK.
 
 ## Configuracoes: hub unico sem abas (09/10)
 
 - Fim das abas: Categorias, Condicoes, RNTRC, Seguradoras e NF-e
   viram paginas proprias (links como os de cima, com voltar).
 - /configuracoes e o menu do avatar com entrada unica.
-- 	sc sem erros novos e 
-pm run build OK.
+- sc sem erros novos e
+  pm run build OK.
 
 ## Configuracoes: secao inline na inicial (09/10)
 
 - Links das 5 secoes trocam o conteudo na propria /configuracoes
   via ?secao= (ativa sublinhada); rotas antigas redirecionam.
-- 	sc sem erros novos e 
-pm run build OK.
+- sc sem erros novos e
+  pm run build OK.
 
 ## Configuracoes: tudo inline, sem redirecionamentos (09/10)
 
 - Fiscais, Empresas e Usuarios abrem inline em ?secao= (lazy);
   rotas antigas redirecionam ao hub; 5 stubs excluidos; busca e
-  +Nova empresa apontam ao hub. 	sc/uild OK.
+  +Nova empresa apontam ao hub. sc/uild OK.
 
 ## Placeholders removidos (09/10)
 
 - Removidos ~200 placeholders de inputs, selects e comboboxes em
   44 arquivos (buscas, formularios, filtros, paleta, onboarding).
 - Excecao: CT-e, MDF-e, emitidas e recebidas intactos (regra fiscal).
-- 	sc identico a baseline (117 linhas) e 
-pm run build OK.
-
+- sc identico a baseline (117 linhas) e
+  pm run build OK.
 
 ## Tabela NCM + campo no produto (09/10)
 
 - Migration cria public.ncm (leitura autenticados); seed via
   scripts/seed-ncm.mjs do JSON oficial Classif (10.516 NCMs).
 - Produto ganha campo NCM com busca + validacao 8 digitos.
-- BrasilAPI descartada (defasada desde 2022). 	sc/uild OK.
-
+- BrasilAPI descartada (defasada desde 2022). sc/uild OK.
 
 ## NCM aplicado no banco (09/10)
 
@@ -5710,53 +5829,46 @@ pm run build OK.
   tabela public.ncm com 10.516 NCMs vigentes (Gecex 926/2026).
 - Seed em lotes de 500 com ON CONFLICT; RLS leitura autenticados.
 
-
 ## CT-e item 1: toma + docAnt (09/10)
 
 - Builder traduz modFrete da tela p/ toma oficial (0/3/4); 9 bloqueado.
 - tomaByMod virou identidade; docAnt emiDocAnt agrupado por CNPJ.
-- 11/11 testes vitest; 	sc identico a baseline; uild OK.
-
+- 11/11 testes vitest; sc identico a baseline; uild OK.
 
 ## CT-e item 2: CIOT no XML (09/10)
 
 - Helper ciotXml + form.ciot no modalRod (2 emissores + servidor).
-- 14/14 testes; 	sc identico a baseline; uild OK.
-
+- 14/14 testes; sc identico a baseline; uild OK.
 
 ## CT-e item 3: rodo no simplificado (09/10)
 
 - Helpers veicTracaoXml/veicReboqueXml unicos; simp ganha tracao+reboque.
-- 15/15 testes; 	sc identico a baseline; uild OK.
-
+- 15/15 testes; sc identico a baseline; uild OK.
 
 ## CT-e item 4: seg + posicao docAnt + revert CIOT (09/10)
 
 - <seg> (respSeg 4/5, xSeg, nApol, nAver) no Normal; MOC nao
   tem CIOT/valePed no 4.00: revert CIOT do XML (form/DACTE mantidos).
-- docAnt como filho de infCTeNorm. 17/17 testes; 	sc/build OK.
-
+- docAnt como filho de infCTeNorm. 17/17 testes; sc/build OK.
 
 ## CT-e item 5: ICMSSN no Simples (09/10)
 
 - CRT 1/4 emite <ICMSSN> com CSOSN; CST exige CSOSN p/ SN.
-- 20/20 testes; 	sc identico a baseline; uild OK.
-
+- 20/20 testes; sc identico a baseline; uild OK.
 
 ## CT-e compl no XML (09/10)
 
 - <compl><xObs> (obsGerais, 2000 chars) apos infCTeNorm no Normal.
 - Sem tara/capacidade, sem OCC, sem CIOT/valePed (fora do 4.00).
-- 22/22 testes; 	sc identico a baseline; uild OK.
-
+- 22/22 testes; sc identico a baseline; uild OK.
 
 ## RTC fase 2 atras de flag (09/10)
 
-- Migration tc_config + cclasstrib (14 cods) aplicada no banco.
+- Migration
+  tc_config + cclasstrib (14 cods) aplicada no banco.
 - Aba Reforma Tributaria (toggle + cClassTrib); builder emite grupos
   novos so com fase2 ligada (padrao: tudo como hoje).
 - 27/27 testes; tsc identico; build OK.
-
 
 ## CT-e cabecalho neutro (13/10)
 
@@ -5764,7 +5876,6 @@ pm run build OK.
   titulo em text-primary, TabsList em bg-muted.
 - Abas ativas em bg-background + text-primary semibold; inativas em
   text-muted-foreground. Mesmo padrao do MDF-e/dialogos.
-
 
 ## Percurso volta p/ destino sem redespacho (13/10)
 
@@ -5774,7 +5885,6 @@ pm run build OK.
 - Salvar normaliza antes de montar dstOrg, entao mudouRota detecta e o
   calcDistDur recalcula distancia/duracao p/ o destino correto.
 
-
 ## Conciliacao mantem descricao ao escolher categoria (13/10)
 
 - Causa: descricao vinha do memo so na exibicao (getRow); ao escolher a
@@ -5783,7 +5893,6 @@ pm run build OK.
 - Fix: pre-inicializa rows com emptyRow(tx.memo) ao carregar txs; escolha
   de categoria/contato/centro agora mescla e preserva a descricao.
 
-
 ## Conciliar por linha com loading individual (13/10)
 
 - Causa: conciliando={criarEConciliar.isPending} global acendia o spinner
@@ -5791,13 +5900,11 @@ pm run build OK.
 - Fix: set conciliandoIds por tx.id; botao de cada linha gira so na
   propria; bulk "Conciliar" segue global.
 
-
 ## Financeiro "Cadastros" vira "Categorias e centros" (13/10)
 
 - Menu, titulo, tab do navegador e dialog de auditoria renomeados: a tela
   so tem categorias financeiras e centros de custo — "Cadastros" sozinho
   confundia com cadastro de clientes. Rota inalterada.
-
 
 ## Conciliacao aprende cliente/categoria por memo (13/10)
 
@@ -6236,6 +6343,7 @@ pm run build OK.
 - tsc sem erros novos; `npm run build` OK.
 
 ---
+
 ## 62. **Layout e UX das telas de CT-e e MDF-e — outubro/2026** (commits 37237068, 55664d24, 7527385b, 72c70a48, 60e336e5, 20196612, 77980237, 9788594d, 7c076070, d0f00dbd)
 
 - **Cabeçalhos padronizados**: CT-e passou de `<h1>` solto para `PageHeader` com `eyebrow="Fiscal"` e `actions` com `PrimaryButton` "Novo CT-e". MDF-e já usava `PageHeader`; mantido.
@@ -6611,7 +6719,7 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
 ## Frota: sufixo do proprietario no CRLV + RNTRC preenchendo o dono (21/10)
 
 - **Parser do CRLV perdia o sufixo juridico**: o padrao 1 (`CARROCERIA FECHADA <nome>
-  <sufixo>`) e o padrao 3 (`0XP <x> <nome> <sufixo> <cnpj>`) usavam o sufixo (LTDA/EPP/
+<sufixo>`) e o padrao 3 (`0XP <x> <nome> <sufixo> <cnpj>`) usavam o sufixo (LTDA/EPP/
   MEI/EIRELI/SA) como grupo **nao capturado** — o nome do proprietor saia sem o sufixo
   ("ROSANGELA RIBEIRO MENDES EPP" virava "ROSANGELA RIBEIRO MENDES"). O sufixo agora tem
   captura propria e entra no nome.
@@ -6708,13 +6816,13 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
      "generico" so valia para "CARGA CAMINHAO").
   4. **Ano**: o recorte do rotulo "ANO FABRICACAO" pega so o ano de fabricacao (2005),
      nao o de exercicio (2026) nem o de modelo (2006).
-  Validado no PDF real (MQK4089, "Print to PDF" 100% vetorial) com o codigo de
-  verdade: placa MQK4089, renavam 00860983307, chassi 8AJCR32GX60001257, ano 2005,
-  nome JUVENAL TRANSPORTES LTDA-EPP, cnpj 03.919.614/0001-60, especie CARGA
-  CAMINHONETE, carroceria CARROCERIA ABERTA, marca I/TOYOTA HILUX CS4X2, eixos 2,
-  categoria PARTICULAR -> tipo **Van/Furgao**. `npm test` (87).
-  O render do pdfjs nesses PDFs e pesado (a pagina tem ~3.600 operadores de vetor):
-  o botao mostra "Lendo PDF (OCR)...".
+     Validado no PDF real (MQK4089, "Print to PDF" 100% vetorial) com o codigo de
+     verdade: placa MQK4089, renavam 00860983307, chassi 8AJCR32GX60001257, ano 2005,
+     nome JUVENAL TRANSPORTES LTDA-EPP, cnpj 03.919.614/0001-60, especie CARGA
+     CAMINHONETE, carroceria CARROCERIA ABERTA, marca I/TOYOTA HILUX CS4X2, eixos 2,
+     categoria PARTICULAR -> tipo **Van/Furgao**. `npm test` (87).
+     O render do pdfjs nesses PDFs e pesado (a pagina tem ~3.600 operadores de vetor):
+     o botao mostra "Lendo PDF (OCR)...".
 - **Tela de cadastro de NCM saiu de `src/routes`** (aviso do TanStack por arquivo sem
   `Route`) para `src/components/erp/ncm-fiscal-cadastro.tsx`. `npm test` (81).
 - **Tela de Veiculos sem rolagem fora**: a pagina virou coluna flex com altura da viewport

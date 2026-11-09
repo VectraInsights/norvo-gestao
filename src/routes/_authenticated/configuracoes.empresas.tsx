@@ -1,10 +1,24 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { PrimaryButton } from "@/components/erp/primary-button";
 import {
   AlertDialog,
@@ -16,7 +30,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Plus, Loader2, Search, Trash2, Pencil } from "lucide-react";
 import { SearchField } from "@/components/erp/search-field";
 import { useMemo, useState } from "react";
@@ -36,8 +56,18 @@ export const Route = createFileRoute("/_authenticated/configuracoes/empresas")({
 });
 
 const emptyForm = {
-  cnpj: "", nome_fantasia: "", razao_social: "", email: "", telefone: "",
-  logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "", cep: "",
+  cnpj: "",
+  nome_fantasia: "",
+  razao_social: "",
+  email: "",
+  telefone: "",
+  logradouro: "",
+  numero: "",
+  complemento: "",
+  bairro: "",
+  cidade: "",
+  uf: "",
+  cep: "",
   regime_tributario: "simples",
 };
 
@@ -55,7 +85,12 @@ function regimeFromBrasilApi(d: any): string {
   return "lucro_presumido";
 }
 
-type Empresa = typeof emptyForm & { id: string; created_by?: string; created_at?: string; updated_at?: string };
+type Empresa = typeof emptyForm & {
+  id: string;
+  created_by?: string;
+  created_at?: string;
+  updated_at?: string;
+};
 
 function friendlyEmpresaError(error: { message?: string; code?: string }) {
   if (error.code === "23505" || error.message?.toLowerCase().includes("duplicate key")) {
@@ -78,8 +113,15 @@ export function EmpresasPage() {
     staleTime: 5 * 60_000,
     gcTime: 15 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("empresas").select("id,created_by,created_at,updated_at,cnpj,nome_fantasia,razao_social,email,telefone,logradouro,numero,complemento,bairro,cidade,uf,cep,regime_tributario").order("created_at").limit(100);
-      if (error) throw error; return (data ?? []) as Empresa[];
+      const { data, error } = await supabase
+        .from("empresas")
+        .select(
+          "id,created_by,created_at,updated_at,cnpj,nome_fantasia,razao_social,email,telefone,logradouro,numero,complemento,bairro,cidade,uf,cep,regime_tributario",
+        )
+        .order("created_at")
+        .limit(100);
+      if (error) throw error;
+      return (data ?? []) as Empresa[];
     },
   });
 
@@ -87,10 +129,12 @@ export function EmpresasPage() {
     const q = busca.trim().toLowerCase();
     return (empresas ?? []).filter((e) => {
       if (!q) return true;
-      return (e.nome_fantasia || "").toLowerCase().includes(q)
-        || (e.razao_social || "").toLowerCase().includes(q)
-        || (e.cnpj || "").replace(/\D/g, "").includes(q.replace(/\D/g, ""))
-        || (e.cidade || "").toLowerCase().includes(q);
+      return (
+        (e.nome_fantasia || "").toLowerCase().includes(q) ||
+        (e.razao_social || "").toLowerCase().includes(q) ||
+        (e.cnpj || "").replace(/\D/g, "").includes(q.replace(/\D/g, "")) ||
+        (e.cidade || "").toLowerCase().includes(q)
+      );
     });
   }, [empresas, busca]);
 
@@ -133,7 +177,9 @@ export function EmpresasPage() {
         setLookingUp(false);
         return;
       }
-    } catch { /* ignore, seguirá para busca */ }
+    } catch {
+      /* ignore, seguirá para busca */
+    }
     try {
       const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`);
       if (!res.ok) throw new Error("CNPJ não encontrado");
@@ -188,18 +234,30 @@ export function EmpresasPage() {
       const { error } = await supabase.from("empresas").update(payload).eq("id", editing.id);
       if (error) return toast.error(friendlyEmpresaError(error));
     } else {
-      const { data: inserted, error } = await supabase.from("empresas").insert({ ...payload, created_by: u.user.id }).select("id").single();
+      const { data: inserted, error } = await supabase
+        .from("empresas")
+        .insert({ ...payload, created_by: u.user.id })
+        .select("id")
+        .single();
       if (error) return toast.error(friendlyEmpresaError(error));
       targetId = (inserted as any)?.id ?? null;
     }
     // sincroniza regime para nfe_config (usado no CT-e para PIS/COFINS)
     try {
       if (targetId) {
-        await supabase.from("nfe_config").upsert({ empresa_id: targetId, regime_tributario: (form as any).regime_tributario || "simples" } as any, { onConflict: "empresa_id" });
+        await supabase.from("nfe_config").upsert(
+          {
+            empresa_id: targetId,
+            regime_tributario: (form as any).regime_tributario || "simples",
+          } as any,
+          { onConflict: "empresa_id" },
+        );
       }
     } catch {}
     toast.success(editing ? "Empresa atualizada" : "Empresa criada");
-    setOpen(false); setEditing(null); setForm(emptyForm);
+    setOpen(false);
+    setEditing(null);
+    setForm(emptyForm);
     await qc.invalidateQueries({ queryKey: ["empresas"] });
     await qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
     await qc.invalidateQueries({ queryKey: ["nfe-config"] });
@@ -210,10 +268,13 @@ export function EmpresasPage() {
     const { error } = await supabase.from("empresas").delete().eq("id", editing.id);
     if (error) return toast.error(error.message);
     const remaining = (empresas ?? []).filter((empresa) => empresa.id !== editing.id);
-    if (getSelectedEmpresaId() === editing.id && remaining[0]) setSelectedEmpresaId(remaining[0].id);
+    if (getSelectedEmpresaId() === editing.id && remaining[0])
+      setSelectedEmpresaId(remaining[0].id);
     toast.success("Empresa excluída");
     setConfirmExcluir(false);
-    setOpen(false); setEditing(null); setForm(emptyForm);
+    setOpen(false);
+    setEditing(null);
+    setForm(emptyForm);
     await qc.invalidateQueries({ queryKey: ["empresas"] });
     await qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
   };
@@ -223,27 +284,78 @@ export function EmpresasPage() {
       <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={setBusca} />
         <div className="flex items-center gap-2">
-          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(emptyForm); }}>
-            <DialogTrigger asChild><PrimaryButton onClick={openNew}><Plus className="mr-1.5 h-4 w-4" />Nova empresa</PrimaryButton></DialogTrigger>
+          <Dialog
+            open={open}
+            onOpenChange={(v) => {
+              setOpen(v);
+              if (!v) setForm(emptyForm);
+            }}
+          >
+            <DialogTrigger asChild>
+              <PrimaryButton onClick={openNew}>
+                <Plus className="mr-1.5 h-4 w-4" />
+                Nova empresa
+              </PrimaryButton>
+            </DialogTrigger>
             <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
-              <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">{editing ? "Editar empresa" : "Nova empresa"}</DialogTitle></DialogHeader>
+              <DialogHeader className="gap-1.5 pb-1">
+                <DialogTitle className="tracking-tight">
+                  {editing ? "Editar empresa" : "Nova empresa"}
+                </DialogTitle>
+              </DialogHeader>
               <form onSubmit={submit} className="space-y-4">
                 <div className="grid gap-1.5">
                   <Label>CNPJ</Label>
                   <div className="flex gap-2">
-                    <Input value={form.cnpj} className="h-10 rounded-xl"
+                    <Input
+                      value={form.cnpj}
+                      className="h-10 rounded-xl"
                       onChange={(e) => setForm({ ...form, cnpj: maskDoc(e.target.value) })}
-                      onKeyDown={handleCnpjKeyDown} />
-                    <Button type="button" variant="outline" onClick={lookupCnpj} disabled={lookingUp || !form.cnpj} className="h-10 w-10 shrink-0 rounded-xl shadow-sm">
-                      {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                      onKeyDown={handleCnpjKeyDown}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={lookupCnpj}
+                      disabled={lookingUp || !form.cnpj}
+                      className="h-10 w-10 shrink-0 rounded-xl shadow-sm"
+                    >
+                      {lookingUp ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Search className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
-                <div className="grid gap-1.5"><Label>Nome da empresa <span className="text-destructive">*</span></Label><Input required value={form.nome_fantasia} onChange={(e) => setForm({ ...form, nome_fantasia: e.target.value })} className="h-10 rounded-xl" /></div>
-                <div className="grid gap-1.5"><Label>Razão social</Label><Input value={form.razao_social} onChange={(e) => setForm({ ...form, razao_social: e.target.value })} className="h-10 rounded-xl" /></div>
-                <div className="grid gap-1.5"><Label>Regime tributário</Label>
-                  <Select value={(form as any).regime_tributario} onValueChange={v => setForm({ ...form, regime_tributario: v } as any)}>
-                    <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
+                <div className="grid gap-1.5">
+                  <Label>
+                    Nome da empresa <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    required
+                    value={form.nome_fantasia}
+                    onChange={(e) => setForm({ ...form, nome_fantasia: e.target.value })}
+                    className="h-10 rounded-xl"
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Razão social</Label>
+                  <Input
+                    value={form.razao_social}
+                    onChange={(e) => setForm({ ...form, razao_social: e.target.value })}
+                    className="h-10 rounded-xl"
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Regime tributário</Label>
+                  <Select
+                    value={(form as any).regime_tributario}
+                    onValueChange={(v) => setForm({ ...form, regime_tributario: v } as any)}
+                  >
+                    <SelectTrigger className="h-10 rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="simples">Simples Nacional</SelectItem>
                       <SelectItem value="lucro_presumido">Lucro Presumido</SelectItem>
@@ -251,32 +363,110 @@ export function EmpresasPage() {
                       <SelectItem value="mei">MEI</SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-[11px] leading-relaxed text-muted-foreground">Usado para PIS/COFINS automático no CT-e.</p>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    Usado para PIS/COFINS automático no CT-e.
+                  </p>
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="grid gap-1.5"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="h-10 rounded-xl" /></div>
-                  <div className="grid gap-1.5"><Label>Telefone</Label><Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} className="h-10 rounded-xl" /></div>
+                  <div className="grid gap-1.5">
+                    <Label>Email</Label>
+                    <Input
+                      type="email"
+                      value={form.email}
+                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      className="h-10 rounded-xl"
+                    />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>Telefone</Label>
+                    <Input
+                      value={form.telefone}
+                      onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+                      className="h-10 rounded-xl"
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_100px]">
-                  <div className="grid gap-1.5"><Label>Logradouro</Label><Input value={form.logradouro} onChange={(e) => setForm({ ...form, logradouro: e.target.value })} className="h-10 rounded-xl" /></div>
-                  <div className="grid gap-1.5"><Label>Número</Label><Input value={form.numero} onChange={(e) => setForm({ ...form, numero: e.target.value })} className="h-10 rounded-xl" /></div>
+                  <div className="grid gap-1.5">
+                    <Label>Logradouro</Label>
+                    <Input
+                      value={form.logradouro}
+                      onChange={(e) => setForm({ ...form, logradouro: e.target.value })}
+                      className="h-10 rounded-xl"
+                    />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>Número</Label>
+                    <Input
+                      value={form.numero}
+                      onChange={(e) => setForm({ ...form, numero: e.target.value })}
+                      className="h-10 rounded-xl"
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="grid gap-1.5"><Label>Bairro</Label><Input value={form.bairro} onChange={(e) => setForm({ ...form, bairro: e.target.value })} className="h-10 rounded-xl" /></div>
-                  <div className="grid gap-1.5"><Label>Complemento</Label><Input value={form.complemento} onChange={(e) => setForm({ ...form, complemento: e.target.value })} className="h-10 rounded-xl" /></div>
+                  <div className="grid gap-1.5">
+                    <Label>Bairro</Label>
+                    <Input
+                      value={form.bairro}
+                      onChange={(e) => setForm({ ...form, bairro: e.target.value })}
+                      className="h-10 rounded-xl"
+                    />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>Complemento</Label>
+                    <Input
+                      value={form.complemento}
+                      onChange={(e) => setForm({ ...form, complemento: e.target.value })}
+                      className="h-10 rounded-xl"
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-[1fr_80px_120px]">
-                  <div className="grid gap-1.5"><Label>Cidade</Label><Input value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} className="h-10 rounded-xl" /></div>
-                  <div className="grid gap-1.5"><Label>UF</Label><Input maxLength={2} value={form.uf} onChange={(e) => setForm({ ...form, uf: e.target.value.toUpperCase() })} className="h-10 rounded-xl" /></div>
-                  <div className="grid gap-1.5"><Label>CEP</Label><Input value={form.cep} onChange={(e) => setForm({ ...form, cep: e.target.value })} className="h-10 rounded-xl" /></div>
+                  <div className="grid gap-1.5">
+                    <Label>Cidade</Label>
+                    <Input
+                      value={form.cidade}
+                      onChange={(e) => setForm({ ...form, cidade: e.target.value })}
+                      className="h-10 rounded-xl"
+                    />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>UF</Label>
+                    <Input
+                      maxLength={2}
+                      value={form.uf}
+                      onChange={(e) => setForm({ ...form, uf: e.target.value.toUpperCase() })}
+                      className="h-10 rounded-xl"
+                    />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>CEP</Label>
+                    <Input
+                      value={form.cep}
+                      onChange={(e) => setForm({ ...form, cep: e.target.value })}
+                      className="h-10 rounded-xl"
+                    />
+                  </div>
                 </div>
                 <DialogFooter className="gap-2 sm:justify-between">
                   {editing && (
-                    <Button type="button" variant="destructive" onClick={() => setConfirmExcluir(true)} className="h-10 rounded-xl px-5">
-                      <Trash2 className="mr-2 h-4 w-4" />Excluir
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={() => setConfirmExcluir(true)}
+                      className="h-10 rounded-xl px-5"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Excluir
                     </Button>
                   )}
-                  <Button type="submit" className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">Salvar</Button>
+                  <Button
+                    type="submit"
+                    className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                  >
+                    Salvar
+                  </Button>
                 </DialogFooter>
               </form>
             </DialogContent>
@@ -284,14 +474,21 @@ export function EmpresasPage() {
           <AlertDialog open={confirmExcluir} onOpenChange={setConfirmExcluir}>
             <AlertDialogContent className="rounded-2xl">
               <AlertDialogHeader className="gap-1.5">
-                <AlertDialogTitle className="tracking-tight">Excluir {editing?.nome_fantasia}?</AlertDialogTitle>
+                <AlertDialogTitle className="tracking-tight">
+                  Excluir {editing?.nome_fantasia}?
+                </AlertDialogTitle>
                 <AlertDialogDescription className="leading-relaxed">
-                  Esta ação é crítica e irreversível: todos os dados vinculados a esta empresa também serão removidos.
+                  Esta ação é crítica e irreversível: todos os dados vinculados a esta empresa
+                  também serão removidos.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter className="gap-2">
                 <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
-                <AlertDialogAction data-acao className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={deleteEmpresa}>
+                <AlertDialogAction
+                  data-acao
+                  className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={deleteEmpresa}
+                >
                   Excluir empresa
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -301,23 +498,43 @@ export function EmpresasPage() {
       </div>
       <Card className="overflow-hidden rounded-2xl shadow-panel">
         <Table>
-          <TableHeader><TableRow><TableHead>Nome fantasia</TableHead><TableHead>Razão social</TableHead><TableHead>CNPJ</TableHead><TableHead>Cidade</TableHead><TableHead className="w-12" /></TableRow></TableHeader>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nome fantasia</TableHead>
+              <TableHead>Razão social</TableHead>
+              <TableHead>CNPJ</TableHead>
+              <TableHead>Cidade</TableHead>
+              <TableHead className="w-12" />
+            </TableRow>
+          </TableHeader>
           <TableBody>
             {filtrados.map((e) => (
               <TableRow key={e.id} className="transition-colors hover:bg-accent/30">
                 <TableCell className="font-medium">{e.nome_fantasia}</TableCell>
                 <TableCell className="text-muted-foreground">{e.razao_social ?? "—"}</TableCell>
                 <TableCell className="text-tabular">{e.cnpj ? maskDoc(e.cnpj) : "—"}</TableCell>
-                <TableCell className="text-muted-foreground">{e.cidade ? `${e.cidade}/${e.uf ?? ""}` : "—"}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {e.cidade ? `${e.cidade}/${e.uf ?? ""}` : "—"}
+                </TableCell>
                 <TableCell className="w-12">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" title="Editar" onClick={() => openEdit(e)}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-lg"
+                    title="Editar"
+                    onClick={() => openEdit(e)}
+                  >
                     <Pencil className="h-4 w-4" />
                   </Button>
                 </TableCell>
               </TableRow>
             ))}
             {filtrados.length === 0 && (
-              <TableRow><TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">Nenhuma empresa encontrada.</TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
+                  Nenhuma empresa encontrada.
+                </TableCell>
+              </TableRow>
             )}
           </TableBody>
         </Table>

@@ -10,9 +10,7 @@ const NCM_URL =
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 if (!SUPABASE_URL || !SERVICE_KEY) {
-  console.error(
-    "Defina SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no ambiente antes de rodar.",
-  );
+  console.error("Defina SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no ambiente antes de rodar.");
   process.exit(1);
 }
 
@@ -40,10 +38,7 @@ async function main() {
       descricao: String(r.Descricao || "").trim(),
       data_inicio: brToIso(r.Data_Inicio),
       data_fim: brToIso(r.Data_Fim),
-      ato:
-        [r.Tipo_Ato_Ini, r.Numero_Ato_Ini, r.Ano_Ato_Ini]
-          .filter(Boolean)
-          .join(" ") || null,
+      ato: [r.Tipo_Ato_Ini, r.Numero_Ato_Ini, r.Ano_Ato_Ini].filter(Boolean).join(" ") || null,
     });
   }
   console.log(`NCMs de 8 dígitos: ${rows.length}`);

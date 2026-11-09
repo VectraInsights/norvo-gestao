@@ -13,7 +13,11 @@ export const Route = createFileRoute("/_authenticated")({
     if (error || !data.user) throw redirect({ to: "/auth" });
   },
   pendingComponent: () => (
-    <main className="grid min-h-screen place-items-center bg-background px-4" aria-busy="true" aria-label="Carregando página">
+    <main
+      className="grid min-h-screen place-items-center bg-background px-4"
+      aria-busy="true"
+      aria-label="Carregando página"
+    >
       <div className="erp-surface flex w-full max-w-xs flex-col items-center gap-3 p-8 text-center">
         <Loader2 className="size-8 animate-spin text-primary" aria-hidden="true" />
         <p className="text-sm font-medium text-foreground">Preparando seu painel…</p>
@@ -41,7 +45,11 @@ function RequireEmpresa({ children }: { children: ReactNode }) {
     retry: 1,
     queryFn: async () => {
       // Gate só precisa saber se existe ao menos uma empresa.
-      const { data, error } = await supabase.from("empresas").select("id,created_at").order("created_at").limit(5);
+      const { data, error } = await supabase
+        .from("empresas")
+        .select("id,created_at")
+        .order("created_at")
+        .limit(5);
       if (error) throw error;
       return data ?? [];
     },

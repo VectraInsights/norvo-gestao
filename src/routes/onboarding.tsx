@@ -9,7 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/onboarding")({
   ssr: false,
@@ -23,7 +29,12 @@ export const Route = createFileRoute("/onboarding")({
 });
 
 const emptyForm = {
-  cnpj: "", nome_fantasia: "", razao_social: "", email: "", telefone: "", regime_tributario: "simples" as string,
+  cnpj: "",
+  nome_fantasia: "",
+  razao_social: "",
+  email: "",
+  telefone: "",
+  regime_tributario: "simples" as string,
 };
 
 function regimeFromBrasilApi(d: any): string {
@@ -104,13 +115,16 @@ function OnboardingPage() {
       if (criada?.id) {
         setSelectedEmpresaId(criada.id);
         // cria nfe_config com regime para PIS/COFINS automático no CT-e
-        await supabase.from("nfe_config").upsert({
-          empresa_id: criada.id,
-          regime_tributario: (form.regime_tributario as string) || "simples",
-          ambiente: "homologacao",
-          serie: 1,
-          proximo_numero: 1,
-        } as any, { onConflict: "empresa_id" });
+        await supabase.from("nfe_config").upsert(
+          {
+            empresa_id: criada.id,
+            regime_tributario: (form.regime_tributario as string) || "simples",
+            ambiente: "homologacao",
+            serie: 1,
+            proximo_numero: 1,
+          } as any,
+          { onConflict: "empresa_id" },
+        );
       }
       await qc.invalidateQueries({ queryKey: ["empresas"] });
       toast.success(`Bem-vindo(a), ${nome}!`);
@@ -129,7 +143,9 @@ function OnboardingPage() {
           <div className="mx-auto mb-2 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-[0_4px_16px_-4px_var(--color-primary)] ring-1 ring-primary/30">
             <Building2 className="h-8 w-8" />
           </div>
-          <CardTitle className="text-display text-3xl tracking-tight">Bem-vindo(a) ao Norvo!</CardTitle>
+          <CardTitle className="text-display text-3xl tracking-tight">
+            Bem-vindo(a) ao Norvo!
+          </CardTitle>
           <CardDescription className="mx-auto max-w-sm leading-relaxed">
             Falta só um passo: cadastre sua primeira empresa para começar a usar o sistema.
           </CardDescription>
@@ -139,30 +155,58 @@ function OnboardingPage() {
             <div className="grid gap-1.5">
               <Label>CNPJ (opcional)</Label>
               <div className="flex gap-2">
-                <Input value={form.cnpj} className="h-10 rounded-xl"
-                  onChange={(e) => setForm({ ...form, cnpj: e.target.value })} />
-                <Button type="button" variant="outline" onClick={lookupCnpj} className="h-10 w-10 shrink-0 rounded-xl shadow-sm"
+                <Input
+                  value={form.cnpj}
+                  className="h-10 rounded-xl"
+                  onChange={(e) => setForm({ ...form, cnpj: e.target.value })}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={lookupCnpj}
+                  className="h-10 w-10 shrink-0 rounded-xl shadow-sm"
                   disabled={lookingUp || !form.cnpj}
-                  title="Buscar dados na Receita Federal">
-                  {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                  title="Buscar dados na Receita Federal"
+                >
+                  {lookingUp ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Search className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>
             <div className="grid gap-1.5">
-              <Label>Nome da empresa <span className="text-destructive">*</span></Label>
-              <Input required value={form.nome_fantasia} className="h-10 rounded-xl"
+              <Label>
+                Nome da empresa <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                required
+                value={form.nome_fantasia}
+                className="h-10 rounded-xl"
                 onChange={(e) => setForm({ ...form, nome_fantasia: e.target.value })}
-                />
+              />
             </div>
             <div className="grid gap-1.5">
               <Label>Razão social</Label>
-              <Input value={form.razao_social} className="h-10 rounded-xl"
-                onChange={(e) => setForm({ ...form, razao_social: e.target.value })} />
+              <Input
+                value={form.razao_social}
+                className="h-10 rounded-xl"
+                onChange={(e) => setForm({ ...form, razao_social: e.target.value })}
+              />
             </div>
             <div className="grid gap-1.5">
-              <Label>Regime tributário <span className="text-muted-foreground text-xs">(usado p/ PIS/COFINS no CT-e)</span></Label>
-              <Select value={form.regime_tributario} onValueChange={v => setForm({ ...form, regime_tributario: v })}>
-                <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
+              <Label>
+                Regime tributário{" "}
+                <span className="text-muted-foreground text-xs">(usado p/ PIS/COFINS no CT-e)</span>
+              </Label>
+              <Select
+                value={form.regime_tributario}
+                onValueChange={(v) => setForm({ ...form, regime_tributario: v })}
+              >
+                <SelectTrigger className="h-10 rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="simples">Simples Nacional</SelectItem>
                   <SelectItem value="lucro_presumido">Lucro Presumido</SelectItem>
@@ -170,21 +214,35 @@ function OnboardingPage() {
                   <SelectItem value="mei">MEI</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-[11px] leading-relaxed text-muted-foreground">Preenchido automaticamente ao buscar CNPJ. PIS 0,65%/3% (Presumido) ou 1,65%/7,6% (Real) será aplicado no CT-e.</p>
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                Preenchido automaticamente ao buscar CNPJ. PIS 0,65%/3% (Presumido) ou 1,65%/7,6%
+                (Real) será aplicado no CT-e.
+              </p>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="grid gap-1.5">
                 <Label>Email</Label>
-                <Input type="email" value={form.email} className="h-10 rounded-xl"
-                  onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                <Input
+                  type="email"
+                  value={form.email}
+                  className="h-10 rounded-xl"
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label>Telefone</Label>
-                <Input value={form.telefone} className="h-10 rounded-xl"
-                  onChange={(e) => setForm({ ...form, telefone: e.target.value })} />
+                <Input
+                  value={form.telefone}
+                  className="h-10 rounded-xl"
+                  onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+                />
               </div>
             </div>
-            <Button type="submit" className="h-11 w-full rounded-xl text-base shadow-md transition-all hover:-translate-y-px hover:shadow-lg" disabled={saving}>
+            <Button
+              type="submit"
+              className="h-11 w-full rounded-xl text-base shadow-md transition-all hover:-translate-y-px hover:shadow-lg"
+              disabled={saving}
+            >
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Criar empresa e começar
             </Button>

@@ -11,11 +11,50 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MoneyInput } from "@/components/erp/money-input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Banknote, Plus, ChevronRight, Trash2, HandCoins, Pencil, Check, X, FileUp } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Banknote,
+  Plus,
+  ChevronRight,
+  Trash2,
+  HandCoins,
+  Pencil,
+  Check,
+  X,
+  FileUp,
+} from "lucide-react";
 import { SearchField } from "@/components/erp/search-field";
 import { StatusBadge } from "@/components/erp/status-badge";
 import { RouteErrorState } from "@/components/erp/route-error-state";
@@ -29,18 +68,32 @@ import { addMonths, format } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/financeiro/emprestimos")({
   component: EmprestimosPage,
-  errorComponent: RouteErrorState
+  errorComponent: RouteErrorState,
 });
 
 type Emprestimo = {
-  id: string; tipo: "emprestimo" | "financiamento"; descricao: string; credor: string | null;
-  valor_principal: number; taxa_juros_mensal: number; parcelas: number;
-  data_contratacao: string; primeiro_vencimento: string | null; status: string;
+  id: string;
+  tipo: "emprestimo" | "financiamento";
+  descricao: string;
+  credor: string | null;
+  valor_principal: number;
+  taxa_juros_mensal: number;
+  parcelas: number;
+  data_contratacao: string;
+  primeiro_vencimento: string | null;
+  status: string;
   conta_credito_id: string | null;
 };
 type Parcela = {
-  id: string; emprestimo_id: string; numero: number; data_vencimento: string;
-  valor: number; valor_juros: number; valor_amortizacao: number; status: string; lancamento_id: string | null;
+  id: string;
+  emprestimo_id: string;
+  numero: number;
+  data_vencimento: string;
+  valor: number;
+  valor_juros: number;
+  valor_amortizacao: number;
+  status: string;
+  lancamento_id: string | null;
 };
 
 /** Extrai o texto de todas as páginas de um PDF (pdfjs, padrão frota/RH). */
@@ -62,8 +115,9 @@ async function extrairTextoPdf(file: File): Promise<string> {
   for (let pg = 1; pg <= pdf.numPages; pg++) {
     const page = await pdf.getPage(pg);
     const tc = await page.getTextContent();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    texto += (tc.items as any[]).map((it) => (typeof it?.str === "string" ? it.str : "")).join(" ") + "\n";
+
+    texto +=
+      (tc.items as any[]).map((it) => (typeof it?.str === "string" ? it.str : "")).join(" ") + "\n";
   }
   return texto;
 }
@@ -88,7 +142,12 @@ function extrairCronograma(texto: string): LinhaPdf[] {
 }
 
 /** Cabeçalho da proposta: valor financiado, taxa a.m., nº parcelas, 1º venc, contratação. */
-function extrairCabecalhoPdf(texto: string): { principal?: string; taxa?: string; primeiro?: string; contratacao?: string } {
+function extrairCabecalhoPdf(texto: string): {
+  principal?: string;
+  taxa?: string;
+  primeiro?: string;
+  contratacao?: string;
+} {
   const out: { principal?: string; taxa?: string; primeiro?: string; contratacao?: string } = {};
   const br = (s: string) => s.replace(/\./g, "").replace(",", ".");
   let m: RegExpMatchArray | null;
@@ -144,12 +203,17 @@ function EmprestimosPage() {
   const [editForm, setEditForm] = useState({ descricao: "", credor: "", contaId: "" });
   // Edição manual de parcela (valor + vencimento): p/ contratos com carência,
   // balões ou parcelas irregulares que o Price não representa
-  const [editParc, setEditParc] = useState<{ id: string; valor: string; venc: string } | null>(null);
+  const [editParc, setEditParc] = useState<{ id: string; valor: string; venc: string } | null>(
+    null,
+  );
   // PDF lido no "Novo contrato": preenche o formulário + cronograma p/ o cadastro
   const pdfNovoRef = useRef<HTMLInputElement | null>(null);
   const [pdfLendoNovo, setPdfLendoNovo] = useState(false);
   // Cronograma lido no "Novo contrato": ao cadastrar, usa ele em vez do Price
-  const [pdfNovo, setPdfNovo] = useState<{ linhas: Array<{ numero: number; venc: string; valor: number }>; total: number } | null>(null);
+  const [pdfNovo, setPdfNovo] = useState<{
+    linhas: Array<{ numero: number; venc: string; valor: number }>;
+    total: number;
+  } | null>(null);
 
   const { data: lista, isLoading } = useQuery({
     enabled: !!empresa,
@@ -160,8 +224,14 @@ function EmprestimosPage() {
       // Busca em páginas de 1000 para nunca cortar a lista (sem limite silencioso)
       const todas: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
-        const { data, error } = await supabase.from("emprestimos" as never)
-          .select("id,tipo,descricao,credor,valor_principal,taxa_juros_mensal,parcelas,data_contratacao,primeiro_vencimento,status,conta_credito_id").eq("empresa_id", empresa!.id).order("data_contratacao", { ascending: false }).range(ini, ini + 999);
+        const { data, error } = await supabase
+          .from("emprestimos" as never)
+          .select(
+            "id,tipo,descricao,credor,valor_principal,taxa_juros_mensal,parcelas,data_contratacao,primeiro_vencimento,status,conta_credito_id",
+          )
+          .eq("empresa_id", empresa!.id)
+          .order("data_contratacao", { ascending: false })
+          .range(ini, ini + 999);
         if (error) throw error;
         todas.push(...(data ?? []));
         if (!data || (data as unknown[]).length < 1000) break;
@@ -176,8 +246,11 @@ function EmprestimosPage() {
     staleTime: 10 * 60_000,
     gcTime: 30 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("fornecedores")
-        .select("id,nome").eq("empresa_id", empresa!.id).order("nome");
+      const { data, error } = await supabase
+        .from("fornecedores")
+        .select("id,nome")
+        .eq("empresa_id", empresa!.id)
+        .order("nome");
       if (error) throw error;
       return (data ?? []) as unknown as Array<{ id: string; nome: string | null }>;
     },
@@ -189,8 +262,11 @@ function EmprestimosPage() {
     staleTime: 10 * 60_000,
     gcTime: 30 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("contas_bancarias")
-        .select("id,nome").eq("empresa_id", empresa!.id).order("nome");
+      const { data, error } = await supabase
+        .from("contas_bancarias")
+        .select("id,nome")
+        .eq("empresa_id", empresa!.id)
+        .order("nome");
       if (error) throw error;
       return (data ?? []) as unknown as Array<{ id: string; nome: string | null }>;
     },
@@ -211,8 +287,14 @@ function EmprestimosPage() {
       // Parcelas de um único contrato: busca em páginas (sem limite silencioso)
       const todas: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
-        const { data, error } = await supabase.from("emprestimo_parcelas" as never)
-          .select("id,emprestimo_id,numero,data_vencimento,valor,valor_juros,valor_amortizacao,status,lancamento_id").eq("emprestimo_id", sel!).order("numero").range(ini, ini + 999);
+        const { data, error } = await supabase
+          .from("emprestimo_parcelas" as never)
+          .select(
+            "id,emprestimo_id,numero,data_vencimento,valor,valor_juros,valor_amortizacao,status,lancamento_id",
+          )
+          .eq("emprestimo_id", sel!)
+          .order("numero")
+          .range(ini, ini + 999);
         if (error) throw error;
         todas.push(...(data ?? []));
         if (!data || (data as unknown[]).length < 1000) break;
@@ -232,11 +314,17 @@ function EmprestimosPage() {
   const nomeCredorNovo = (contatosEmp ?? []).find((c) => c.id === credorId)?.nome ?? "";
 
   const reset = () => {
-    setTipo("emprestimo"); setDescricao(""); setCredorId(""); setPrincipal("0");
-    setTaxa("0"); setParcelas("12");
+    setTipo("emprestimo");
+    setDescricao("");
+    setCredorId("");
+    setPrincipal("0");
+    setTaxa("0");
+    setParcelas("12");
     setContratacao(format(new Date(), "yyyy-MM-dd"));
     setPrimeiro(format(addMonths(new Date(), 1), "yyyy-MM-dd"));
-    setPdfNovo(null); setCredorId(""); setContaId("");
+    setPdfNovo(null);
+    setCredorId("");
+    setContaId("");
   };
 
   const criar = useMutation({
@@ -250,31 +338,54 @@ function EmprestimosPage() {
       if (n <= 0) throw new Error("Informe o número de parcelas");
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: emp, error } = await (supabase.from("emprestimos" as never) as any).insert({
-        empresa_id: empresa.id, tipo, descricao, credor: nomeCredorNovo || null,
-        valor_principal: p, taxa_juros_mensal: Number(taxa) || 0, parcelas: n,
-        data_contratacao: contratacao, primeiro_vencimento: primeiro,
-        conta_credito_id: contaId || null,
-      }).select("id").single();
+      const { data: emp, error } = await (supabase.from("emprestimos" as never) as any)
+        .insert({
+          empresa_id: empresa.id,
+          tipo,
+          descricao,
+          credor: nomeCredorNovo || null,
+          valor_principal: p,
+          taxa_juros_mensal: Number(taxa) || 0,
+          parcelas: n,
+          data_contratacao: contratacao,
+          primeiro_vencimento: primeiro,
+          conta_credito_id: contaId || null,
+        })
+        .select("id")
+        .single();
       if (error) throw error;
 
       // Com PDF: cronograma do banco; sem PDF: Price com parcelas iguais
       const linhas = comPdf
         ? pdfNovo!.linhas.map((l) => ({
-            numero: l.numero, data_vencimento: l.venc, valor: l.valor,
-            valor_juros: 0, valor_amortizacao: l.valor,
+            numero: l.numero,
+            data_vencimento: l.venc,
+            valor: l.valor,
+            valor_juros: 0,
+            valor_amortizacao: l.valor,
           }))
         : gerarPrice(p, Number(taxa) || 0, n, new Date(`${primeiro}T00:00:00`));
-      const linhasIns = linhas.map((l) => ({ ...l, empresa_id: empresa.id, emprestimo_id: emp.id }));
+      const linhasIns = linhas.map((l) => ({
+        ...l,
+        empresa_id: empresa.id,
+        emprestimo_id: emp.id,
+      }));
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: e2 } = await (supabase.from("emprestimo_parcelas" as never) as any).insert(linhasIns);
+      const { error: e2 } = await (supabase.from("emprestimo_parcelas" as never) as any).insert(
+        linhasIns,
+      );
       if (e2) throw e2;
       return comPdf;
     },
     onSuccess: (comPdf) => {
-      toast.success(comPdf ? "Contrato cadastrado com o cronograma do PDF" : "Contrato cadastrado — ajuste as parcelas se o banco usar valores diferentes");
+      toast.success(
+        comPdf
+          ? "Contrato cadastrado com o cronograma do PDF"
+          : "Contrato cadastrado — ajuste as parcelas se o banco usar valores diferentes",
+      );
       qc.invalidateQueries({ queryKey: ["emprestimos"] });
-      setOpen(false); reset();
+      setOpen(false);
+      reset();
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -283,7 +394,8 @@ function EmprestimosPage() {
     mutationFn: async () => {
       const alvo = parcelasSel.find((p) => p.id === editParc?.id);
       if (!alvo) throw new Error("Parcela não encontrada");
-      if (alvo.lancamento_id) throw new Error("Parcela já lançada no Contas a pagar — não pode ser alterada");
+      if (alvo.lancamento_id)
+        throw new Error("Parcela já lançada no Contas a pagar — não pode ser alterada");
       const v = Number(editParc?.valor) || 0;
       if (v <= 0) throw new Error("Informe o valor da parcela");
       if (!editParc?.venc) throw new Error("Informe o vencimento");
@@ -316,7 +428,8 @@ function EmprestimosPage() {
     try {
       const texto = await extrairTextoPdf(file);
       const linhas = extrairCronograma(texto);
-      if (!linhas.length) throw new Error("Nenhuma parcela encontrada no PDF (esperado: Nº + data + R$ valor)");
+      if (!linhas.length)
+        throw new Error("Nenhuma parcela encontrada no PDF (esperado: Nº + data + R$ valor)");
       const cab = extrairCabecalhoPdf(texto);
       if (cab.principal) setPrincipal(cab.principal);
       if (cab.taxa) setTaxa(cab.taxa);
@@ -343,15 +456,25 @@ function EmprestimosPage() {
       const contaBancariaId = (emp as Emprestimo | undefined)?.conta_credito_id ?? null;
       for (const p of pendentes) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: lanc, error } = await (supabase.from("lancamentos_financeiros") as any).insert({
-          empresa_id: empresa.id, tipo: "pagar", status: "aberto",
-          descricao: `${emp?.descricao ?? "Empréstimo"} — parcela ${p.numero}/${emp?.parcelas ?? ""}`,
-          valor: p.valor, data_emissao: format(new Date(), "yyyy-MM-dd"), data_vencimento: p.data_vencimento,
-          contato_id: contatoId, conta_bancaria_id: contaBancariaId,
-        }).select("id").single();
+        const { data: lanc, error } = await (supabase.from("lancamentos_financeiros") as any)
+          .insert({
+            empresa_id: empresa.id,
+            tipo: "pagar",
+            status: "aberto",
+            descricao: `${emp?.descricao ?? "Empréstimo"} — parcela ${p.numero}/${emp?.parcelas ?? ""}`,
+            valor: p.valor,
+            data_emissao: format(new Date(), "yyyy-MM-dd"),
+            data_vencimento: p.data_vencimento,
+            contato_id: contatoId,
+            conta_bancaria_id: contaBancariaId,
+          })
+          .select("id")
+          .single();
         if (error) throw error;
-        await supabase.from("emprestimo_parcelas" as never)
-          .update({ lancamento_id: lanc.id } as never).eq("id", p.id);
+        await supabase
+          .from("emprestimo_parcelas" as never)
+          .update({ lancamento_id: lanc.id } as never)
+          .eq("id", p.id);
       }
     },
     onSuccess: () => {
@@ -367,10 +490,13 @@ function EmprestimosPage() {
       if (!emprestimoSel) throw new Error("Selecione um contrato");
       if (!editForm.descricao.trim()) throw new Error("Informe a descrição");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase.from("emprestimos" as never) as any).update({
-        descricao: editForm.descricao, credor: editForm.credor || null,
-        conta_credito_id: editForm.contaId || null,
-      }).eq("id", emprestimoSel.id);
+      const { error } = await (supabase.from("emprestimos" as never) as any)
+        .update({
+          descricao: editForm.descricao,
+          credor: editForm.credor || null,
+          conta_credito_id: editForm.contaId || null,
+        })
+        .eq("id", emprestimoSel.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -384,26 +510,41 @@ function EmprestimosPage() {
   const excluir = useMutation({
     mutationFn: async (id: string) => {
       // Contas a pagar geradas pelo contrato: pendentes (aberto) somem junto; pagas ficam
-      const { data: parcs } = await supabase.from("emprestimo_parcelas" as never)
-        .select("lancamento_id").eq("emprestimo_id", id);
+      const { data: parcs } = await supabase
+        .from("emprestimo_parcelas" as never)
+        .select("lancamento_id")
+        .eq("emprestimo_id", id);
       const ids = ((parcs as unknown as Array<{ lancamento_id: string | null }>) ?? [])
-        .map((p) => p.lancamento_id).filter(Boolean) as string[];
-      let removidas = 0, mantidas = 0;
+        .map((p) => p.lancamento_id)
+        .filter(Boolean) as string[];
+      let removidas = 0,
+        mantidas = 0;
       if (ids.length) {
-        const { data: lancs } = await supabase.from("lancamentos_financeiros")
-          .select("id,status").in("id", ids);
+        const { data: lancs } = await supabase
+          .from("lancamentos_financeiros")
+          .select("id,status")
+          .in("id", ids);
         const abertas = ((lancs as unknown as Array<{ id: string; status: string }>) ?? [])
-          .filter((l) => l.status === "aberto").map((l) => l.id);
+          .filter((l) => l.status === "aberto")
+          .map((l) => l.id);
         mantidas = ids.length - abertas.length;
         if (abertas.length) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { error: eDel } = await (supabase.from("lancamentos_financeiros") as any).delete().in("id", abertas);
+          const { error: eDel } = await (supabase.from("lancamentos_financeiros") as any)
+            .delete()
+            .in("id", abertas);
           if (eDel) throw eDel;
           removidas = abertas.length;
         }
       }
-      await supabase.from("emprestimo_parcelas" as never).delete().eq("emprestimo_id", id);
-      const { error } = await supabase.from("emprestimos" as never).delete().eq("id", id);
+      await supabase
+        .from("emprestimo_parcelas" as never)
+        .delete()
+        .eq("emprestimo_id", id);
+      const { error } = await supabase
+        .from("emprestimos" as never)
+        .delete()
+        .eq("id", id);
       if (error) throw error;
       return { removidas, mantidas };
     },
@@ -430,7 +571,14 @@ function EmprestimosPage() {
       if ((e.descricao || "").toLowerCase().includes(q)) return true;
       if ((e.credor || "").toLowerCase().includes(q)) return true;
       // Pesquisa por valor: "25,00" acha 25000.00 (a partir de 2 dígitos)
-      if (qDig.length >= 2 && Number(e.valor_principal || 0).toFixed(2).replace(/\D/g, "").includes(qDig)) return true;
+      if (
+        qDig.length >= 2 &&
+        Number(e.valor_principal || 0)
+          .toFixed(2)
+          .replace(/\D/g, "")
+          .includes(qDig)
+      )
+        return true;
       return false;
     });
   }, [lista, busca]);
@@ -445,12 +593,22 @@ function EmprestimosPage() {
       <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={setBusca} />
         <div className="flex items-center gap-2">
-          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
+          <Dialog
+            open={open}
+            onOpenChange={(o) => {
+              setOpen(o);
+              if (!o) reset();
+            }}
+          >
             <DialogTrigger asChild>
-              <PrimaryButton><Plus className="mr-1.5 h-4 w-4" /> Novo contrato</PrimaryButton>
+              <PrimaryButton>
+                <Plus className="mr-1.5 h-4 w-4" /> Novo contrato
+              </PrimaryButton>
             </DialogTrigger>
             <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
-              <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Novo contrato</DialogTitle></DialogHeader>
+              <DialogHeader className="gap-1.5 pb-1">
+                <DialogTitle className="tracking-tight">Novo contrato</DialogTitle>
+              </DialogHeader>
               <input
                 ref={pdfNovoRef}
                 type="file"
@@ -463,18 +621,30 @@ function EmprestimosPage() {
                 }}
               />
               {!pdfNovo ? (
-                <Button variant="outline" onClick={() => pdfNovoRef.current?.click()} disabled={pdfLendoNovo} className="h-10 rounded-xl">
-                  <FileUp className="mr-1.5 h-4 w-4" /> {pdfLendoNovo ? "Lendo PDF…" : "Importar PDF"}
+                <Button
+                  variant="outline"
+                  onClick={() => pdfNovoRef.current?.click()}
+                  disabled={pdfLendoNovo}
+                  className="h-10 rounded-xl"
+                >
+                  <FileUp className="mr-1.5 h-4 w-4" />{" "}
+                  {pdfLendoNovo ? "Lendo PDF…" : "Importar PDF"}
                 </Button>
               ) : (
                 <div className="flex items-center justify-between gap-2 rounded-xl border bg-muted/50 p-3 text-sm shadow-sm">
                   <span className="leading-relaxed text-muted-foreground">
-                    PDF lido: <strong className="text-foreground">{pdfNovo.linhas.length} parcelas</strong> ·
+                    PDF lido:{" "}
+                    <strong className="text-foreground">{pdfNovo.linhas.length} parcelas</strong> ·
                     Total <strong className="text-foreground">{brl(pdfNovo.total)}</strong>
-                    <br />
-                    O contrato será criado com o cronograma do banco.
+                    <br />O contrato será criado com o cronograma do banco.
                   </span>
-                  <Button size="sm" variant="ghost" aria-label="Descartar PDF" onClick={() => setPdfNovo(null)} className="h-8 w-8 shrink-0 rounded-lg">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    aria-label="Descartar PDF"
+                    onClick={() => setPdfNovo(null)}
+                    className="h-8 w-8 shrink-0 rounded-lg"
+                  >
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
@@ -484,7 +654,9 @@ function EmprestimosPage() {
                   <div className="grid gap-1.5">
                     <Label>Tipo</Label>
                     <Select value={tipo} onValueChange={(v) => setTipo(v as typeof tipo)}>
-                      <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-10 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="emprestimo">Empréstimo</SelectItem>
                         <SelectItem value="financiamento">Financiamento</SelectItem>
@@ -494,7 +666,8 @@ function EmprestimosPage() {
                   <div className="grid gap-1.5">
                     <Label>Conta bancária</Label>
                     <Combobox
-                      value={contaId} onChange={setContaId}
+                      value={contaId}
+                      onChange={setContaId}
                       options={(contasEmp ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
                     />
                   </div>
@@ -510,7 +683,11 @@ function EmprestimosPage() {
                 </div>
                 <div className="grid gap-1.5">
                   <Label>Descrição</Label>
-                  <Input value={descricao} onChange={(e) => setDescricao(e.target.value)} className="h-10 rounded-xl" />
+                  <Input
+                    value={descricao}
+                    onChange={(e) => setDescricao(e.target.value)}
+                    className="h-10 rounded-xl"
+                  />
                 </div>
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div className="grid gap-1.5">
@@ -523,7 +700,13 @@ function EmprestimosPage() {
                   </div>
                   <div className="grid gap-1.5">
                     <Label>Parcelas</Label>
-                    <MoneyInput prefix="" decimals={0} value={parcelas} onChange={setParcelas} className="h-10" />
+                    <MoneyInput
+                      prefix=""
+                      decimals={0}
+                      value={parcelas}
+                      onChange={setParcelas}
+                      className="h-10"
+                    />
                   </div>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -538,16 +721,21 @@ function EmprestimosPage() {
                 </div>
                 {previa && !pdfNovo && (
                   <p className="rounded-xl border bg-muted/50 p-3.5 text-sm leading-relaxed text-muted-foreground shadow-sm">
-                    Parcela estimada: <strong className="text-foreground">{brl(previa.parcela)}</strong> ·
-                    Total a pagar: <strong className="text-foreground">{brl(previa.total)}</strong>
+                    Parcela estimada:{" "}
+                    <strong className="text-foreground">{brl(previa.parcela)}</strong> · Total a
+                    pagar: <strong className="text-foreground">{brl(previa.total)}</strong>
                     <br />
-                    Valores iguais (Price). Se o banco usar carência ou parcelas diferentes,
-                    leia o PDF acima ou ajuste cada parcela na lista do contrato.
+                    Valores iguais (Price). Se o banco usar carência ou parcelas diferentes, leia o
+                    PDF acima ou ajuste cada parcela na lista do contrato.
                   </p>
                 )}
               </div>
               <DialogFooter className="gap-2">
-                <Button onClick={() => criar.mutate()} disabled={criar.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+                <Button
+                  onClick={() => criar.mutate()}
+                  disabled={criar.isPending}
+                  className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                >
                   {criar.isPending ? "Salvando..." : "Cadastrar"}
                 </Button>
               </DialogFooter>
@@ -565,69 +753,116 @@ function EmprestimosPage() {
           />
           <Dialog open={editOpen} onOpenChange={setEditOpen}>
             <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
-              <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Editar contrato</DialogTitle></DialogHeader>
+              <DialogHeader className="gap-1.5 pb-1">
+                <DialogTitle className="tracking-tight">Editar contrato</DialogTitle>
+              </DialogHeader>
               {emprestimoSel && (
-              <div className="grid gap-4">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="grid gap-1.5">
-                    <Label>Tipo</Label>
-                    <Select value={emprestimoSel.tipo} disabled>
-                      <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="emprestimo">Empréstimo</SelectItem>
-                        <SelectItem value="financiamento">Financiamento</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <div className="grid gap-4">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid gap-1.5">
+                      <Label>Tipo</Label>
+                      <Select value={emprestimoSel.tipo} disabled>
+                        <SelectTrigger className="h-10 rounded-xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="emprestimo">Empréstimo</SelectItem>
+                          <SelectItem value="financiamento">Financiamento</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label>Conta bancária</Label>
+                      <Combobox
+                        value={editForm.contaId}
+                        onChange={(v) => setEditForm({ ...editForm, contaId: v })}
+                        options={(contasEmp ?? []).map((c) => ({
+                          value: c.id,
+                          label: c.nome ?? "",
+                        }))}
+                      />
+                    </div>
                   </div>
                   <div className="grid gap-1.5">
-                    <Label>Conta bancária</Label>
-                    <Combobox
-                      value={editForm.contaId}
-                      onChange={(v) => setEditForm({ ...editForm, contaId: v })}
-                      options={(contasEmp ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
+                    <Label>Credor</Label>
+                    <Input
+                      value={editForm.credor}
+                      onChange={(e) => setEditForm({ ...editForm, credor: e.target.value })}
+                      className="h-10 rounded-xl"
                     />
                   </div>
-                </div>
-                <div className="grid gap-1.5">
-                  <Label>Credor</Label>
-                  <Input value={editForm.credor} onChange={(e) => setEditForm({ ...editForm, credor: e.target.value })} className="h-10 rounded-xl" />
-                </div>
-                <div className="grid gap-1.5">
-                  <Label>Descrição</Label>
-                  <Input value={editForm.descricao} onChange={(e) => setEditForm({ ...editForm, descricao: e.target.value })} className="h-10 rounded-xl" />
-                </div>
-                <div className="grid gap-3 sm:grid-cols-3">
                   <div className="grid gap-1.5">
-                    <Label>Valor contratado</Label>
-                    <MoneyInput value={String(emprestimoSel.valor_principal ?? 0)} onChange={() => {}} disabled className="h-10" />
+                    <Label>Descrição</Label>
+                    <Input
+                      value={editForm.descricao}
+                      onChange={(e) => setEditForm({ ...editForm, descricao: e.target.value })}
+                      className="h-10 rounded-xl"
+                    />
                   </div>
-                  <div className="grid gap-1.5">
-                    <Label>Juros % a.m.</Label>
-                    <MoneyInput prefix="" value={String(emprestimoSel.taxa_juros_mensal ?? 0)} onChange={() => {}} disabled className="h-10" />
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="grid gap-1.5">
+                      <Label>Valor contratado</Label>
+                      <MoneyInput
+                        value={String(emprestimoSel.valor_principal ?? 0)}
+                        onChange={() => {}}
+                        disabled
+                        className="h-10"
+                      />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label>Juros % a.m.</Label>
+                      <MoneyInput
+                        prefix=""
+                        value={String(emprestimoSel.taxa_juros_mensal ?? 0)}
+                        onChange={() => {}}
+                        disabled
+                        className="h-10"
+                      />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label>Parcelas</Label>
+                      <MoneyInput
+                        prefix=""
+                        decimals={0}
+                        value={String(emprestimoSel.parcelas ?? 0)}
+                        onChange={() => {}}
+                        disabled
+                        className="h-10"
+                      />
+                    </div>
                   </div>
-                  <div className="grid gap-1.5">
-                    <Label>Parcelas</Label>
-                    <MoneyInput prefix="" decimals={0} value={String(emprestimoSel.parcelas ?? 0)} onChange={() => {}} disabled className="h-10" />
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid gap-1.5">
+                      <Label>Contratação</Label>
+                      <DateInput
+                        value={emprestimoSel.data_contratacao}
+                        onChange={() => {}}
+                        disabled
+                        className="h-10"
+                      />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label>1º vencimento</Label>
+                      <DateInput
+                        value={emprestimoSel.primeiro_vencimento ?? ""}
+                        onChange={() => {}}
+                        disabled
+                        className="h-10"
+                      />
+                    </div>
                   </div>
+                  <p className="rounded-xl border bg-muted/50 p-3 text-xs leading-relaxed text-muted-foreground">
+                    Valor, taxa, parcelas e datas não mudam aqui (as parcelas já foram geradas —
+                    ajuste cada uma no lápis da lista).
+                  </p>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="grid gap-1.5">
-                    <Label>Contratação</Label>
-                    <DateInput value={emprestimoSel.data_contratacao} onChange={() => {}} disabled className="h-10" />
-                  </div>
-                  <div className="grid gap-1.5">
-                    <Label>1º vencimento</Label>
-                    <DateInput value={emprestimoSel.primeiro_vencimento ?? ""} onChange={() => {}} disabled className="h-10" />
-                  </div>
-                </div>
-                <p className="rounded-xl border bg-muted/50 p-3 text-xs leading-relaxed text-muted-foreground">
-                  Valor, taxa, parcelas e datas não mudam aqui (as parcelas já foram geradas —
-                  ajuste cada uma no lápis da lista).
-                </p>
-              </div>
               )}
               <DialogFooter className="gap-2">
-                <Button onClick={() => salvarContrato.mutate()} disabled={salvarContrato.isPending} className="h-10 rounded-xl px-6">
+                <Button
+                  onClick={() => salvarContrato.mutate()}
+                  disabled={salvarContrato.isPending}
+                  className="h-10 rounded-xl px-6"
+                >
                   {salvarContrato.isPending ? "Salvando..." : "Salvar"}
                 </Button>
               </DialogFooter>
@@ -637,7 +872,11 @@ function EmprestimosPage() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-2.5">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-xl" />)}</div>
+        <div className="space-y-2.5">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-12 w-full rounded-xl" />
+          ))}
+        </div>
       ) : !lista?.length ? (
         <EmptyState
           icon={Banknote}
@@ -666,7 +905,11 @@ function EmprestimosPage() {
                 {filtrados.map((e) => (
                   <TableRow
                     key={e.id}
-                    className={sel === e.id ? "bg-muted/50" : "cursor-pointer transition-colors hover:bg-accent/30"}
+                    className={
+                      sel === e.id
+                        ? "bg-muted/50"
+                        : "cursor-pointer transition-colors hover:bg-accent/30"
+                    }
                     onClick={() => setSel(e.id)}
                   >
                     <TableCell>
@@ -676,9 +919,15 @@ function EmprestimosPage() {
                         {e.credor ? ` · ${e.credor}` : ""} · {dateBR(e.data_contratacao)}
                       </div>
                     </TableCell>
-                    <TableCell className="text-right text-tabular font-medium">{brl(e.valor_principal)}</TableCell>
-                    <TableCell className="text-right text-muted-foreground text-tabular">{e.parcelas}x</TableCell>
-                    <TableCell><ChevronRight className="h-4 w-4 text-muted-foreground" /></TableCell>
+                    <TableCell className="text-right text-tabular font-medium">
+                      {brl(e.valor_principal)}
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground text-tabular">
+                      {e.parcelas}x
+                    </TableCell>
+                    <TableCell>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -687,24 +936,37 @@ function EmprestimosPage() {
 
           <Card className="overflow-hidden rounded-2xl shadow-panel">
             {!emprestimoSel ? (
-              <p className="p-8 text-center text-sm leading-relaxed text-muted-foreground">Selecione um contrato para ver as parcelas.</p>
+              <p className="p-8 text-center text-sm leading-relaxed text-muted-foreground">
+                Selecione um contrato para ver as parcelas.
+              </p>
             ) : (
               <>
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-5 py-3.5">
                   <div>
-                    <p className="text-sm font-semibold tracking-tight">{emprestimoSel.descricao}</p>
+                    <p className="text-sm font-semibold tracking-tight">
+                      {emprestimoSel.descricao}
+                    </p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {emprestimoSel.parcelas}x · {Number(emprestimoSel.taxa_juros_mensal)}% a.m. · Soma das parcelas: <strong className="text-foreground">{brl(somaParcelasSel)}</strong>
+                      {emprestimoSel.parcelas}x · {Number(emprestimoSel.taxa_juros_mensal)}% a.m. ·
+                      Soma das parcelas:{" "}
+                      <strong className="text-foreground">{brl(somaParcelasSel)}</strong>
                       {emprestimoSel.credor ? ` · ${emprestimoSel.credor}` : ""}
-                      {nomeConta(emprestimoSel.conta_credito_id) ? ` · ${nomeConta(emprestimoSel.conta_credito_id)}` : ""}
+                      {nomeConta(emprestimoSel.conta_credito_id)
+                        ? ` · ${nomeConta(emprestimoSel.conta_credito_id)}`
+                        : ""}
                     </p>
                   </div>
                   <div className="flex gap-2">
                     <Button
-                      size="sm" variant="outline"
+                      size="sm"
+                      variant="outline"
                       onClick={() => {
                         if (!emprestimoSel) return;
-                        setEditForm({ descricao: emprestimoSel.descricao, credor: emprestimoSel.credor ?? "", contaId: emprestimoSel.conta_credito_id ?? "" });
+                        setEditForm({
+                          descricao: emprestimoSel.descricao,
+                          credor: emprestimoSel.credor ?? "",
+                          contaId: emprestimoSel.conta_credito_id ?? "",
+                        });
                         setEditOpen(true);
                       }}
                       title="Editar dados do contrato (não altera parcelas)"
@@ -713,14 +975,21 @@ function EmprestimosPage() {
                       <Pencil className="mr-1.5 h-4 w-4" /> Editar contrato
                     </Button>
                     <Button
-                      size="sm" variant="outline"
+                      size="sm"
+                      variant="outline"
                       onClick={() => gerarContasPagar.mutate(emprestimoSel.id)}
                       disabled={gerarContasPagar.isPending}
                       className="h-9 rounded-xl px-4 shadow-sm"
                     >
                       <HandCoins className="mr-1.5 h-4 w-4" /> Gerar contas a pagar
                     </Button>
-                    <Button size="sm" variant="ghost" aria-label="Excluir contrato" onClick={() => setConfExcluir(true)} className="h-9 w-9 rounded-xl">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      aria-label="Excluir contrato"
+                      onClick={() => setConfExcluir(true)}
+                      className="h-9 w-9 rounded-xl"
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -742,49 +1011,85 @@ function EmprestimosPage() {
                       {parcelasSel.map((p) => {
                         const editando = editParc?.id === p.id;
                         return (
-                        <TableRow key={p.id} className="transition-colors hover:bg-accent/30">
-                          <TableCell>{p.numero}</TableCell>
-                          <TableCell>
-                            {editando ? (
-                              <DateInput value={editParc.venc} onChange={(v) => setEditParc({ ...editParc, venc: v })} className="h-8 text-xs" />
-                            ) : (
-                              dateBR(p.data_vencimento)
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {editando ? (
-                              <MoneyInput value={editParc.valor} onChange={(v) => setEditParc({ ...editParc, valor: v })} className="h-8 text-xs" />
-                            ) : (
-                              brl(p.valor)
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right text-muted-foreground">{brl(p.valor_juros)}</TableCell>
-                          <TableCell className="text-right text-muted-foreground">{brl(p.valor_amortizacao)}</TableCell>
-                          <TableCell>
-                            <StatusBadge status={p.lancamento_id ? "lancada" : "aberta"} label={p.lancamento_id ? "Lançada" : "Aberta"} />
-                          </TableCell>
-                          <TableCell>
-                            {editando ? (
-                              <div className="flex gap-1">
-                                <Button size="sm" variant="ghost" aria-label="Salvar parcela" onClick={() => salvarParcela.mutate()} disabled={salvarParcela.isPending} className="h-8 w-8 rounded-lg">
-                                  <Check className="h-4 w-4" />
+                          <TableRow key={p.id} className="transition-colors hover:bg-accent/30">
+                            <TableCell>{p.numero}</TableCell>
+                            <TableCell>
+                              {editando ? (
+                                <DateInput
+                                  value={editParc.venc}
+                                  onChange={(v) => setEditParc({ ...editParc, venc: v })}
+                                  className="h-8 text-xs"
+                                />
+                              ) : (
+                                dateBR(p.data_vencimento)
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {editando ? (
+                                <MoneyInput
+                                  value={editParc.valor}
+                                  onChange={(v) => setEditParc({ ...editParc, valor: v })}
+                                  className="h-8 text-xs"
+                                />
+                              ) : (
+                                brl(p.valor)
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right text-muted-foreground">
+                              {brl(p.valor_juros)}
+                            </TableCell>
+                            <TableCell className="text-right text-muted-foreground">
+                              {brl(p.valor_amortizacao)}
+                            </TableCell>
+                            <TableCell>
+                              <StatusBadge
+                                status={p.lancamento_id ? "lancada" : "aberta"}
+                                label={p.lancamento_id ? "Lançada" : "Aberta"}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              {editando ? (
+                                <div className="flex gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    aria-label="Salvar parcela"
+                                    onClick={() => salvarParcela.mutate()}
+                                    disabled={salvarParcela.isPending}
+                                    className="h-8 w-8 rounded-lg"
+                                  >
+                                    <Check className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    aria-label="Cancelar edição"
+                                    onClick={() => setEditParc(null)}
+                                    className="h-8 w-8 rounded-lg"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ) : !p.lancamento_id ? (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  aria-label={`Ajustar parcela ${p.numero}`}
+                                  title="Ajustar valor e vencimento"
+                                  onClick={() =>
+                                    setEditParc({
+                                      id: p.id,
+                                      valor: String(p.valor ?? 0),
+                                      venc: p.data_vencimento,
+                                    })
+                                  }
+                                  className="h-8 w-8 rounded-lg"
+                                >
+                                  <Pencil className="h-4 w-4" />
                                 </Button>
-                                <Button size="sm" variant="ghost" aria-label="Cancelar edição" onClick={() => setEditParc(null)} className="h-8 w-8 rounded-lg">
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ) : !p.lancamento_id ? (
-                              <Button
-                                size="sm" variant="ghost" aria-label={`Ajustar parcela ${p.numero}`}
-                                title="Ajustar valor e vencimento"
-                                onClick={() => setEditParc({ id: p.id, valor: String(p.valor ?? 0), venc: p.data_vencimento })}
-                                className="h-8 w-8 rounded-lg"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                            ) : null}
-                          </TableCell>
-                        </TableRow>
+                              ) : null}
+                            </TableCell>
+                          </TableRow>
                         );
                       })}
                     </TableBody>

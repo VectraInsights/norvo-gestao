@@ -98,7 +98,9 @@ export function ncmValido(codigo: unknown): boolean {
 
 /** Normaliza o NCM: so digitos, ate 8. */
 export function normalizaNcm(codigo: unknown): string {
-  return String(codigo ?? "").replace(/\D/g, "").slice(0, 8);
+  return String(codigo ?? "")
+    .replace(/\D/g, "")
+    .slice(0, 8);
 }
 
 /** Chave de comparacao do cadastro (ncm + nome em minusculas, sem acento). */
@@ -126,7 +128,9 @@ export async function registrarNcmFiscal(
   const vistas = new Set<string>();
   for (const i of itens || []) {
     const ncm = normalizaNcm(i?.ncm);
-    const x_prod = String(i?.nome ?? "").trim().slice(0, 120);
+    const x_prod = String(i?.nome ?? "")
+      .trim()
+      .slice(0, 120);
     if (!ncmValido(ncm) || !x_prod) continue;
     const k = chaveNcmFiscal(ncm, x_prod);
     if (vistas.has(k)) continue;
@@ -147,17 +151,15 @@ export async function registrarNcmFiscal(
     );
     const novos = validos.filter((v) => !existentes.has(chaveNcmFiscal(v.ncm, v.x_prod)));
     if (!novos.length) return 0;
-    const { error: errIns } = await supabase
-      .from("ncm_fiscal" as never)
-      .insert(
-        novos.map((v) => ({
-          empresa_id: empresaId,
-          ncm: v.ncm,
-          x_prod: v.x_prod,
-          tp_carga: null,
-          origem: "nf",
-        })) as never,
-      );
+    const { error: errIns } = await supabase.from("ncm_fiscal" as never).insert(
+      novos.map((v) => ({
+        empresa_id: empresaId,
+        ncm: v.ncm,
+        x_prod: v.x_prod,
+        tp_carga: null,
+        origem: "nf",
+      })) as never,
+    );
     if (errIns) return 0;
     return novos.length;
   } catch {
@@ -198,7 +200,10 @@ export async function garantirPadraoNcmFiscal(empresaId: string): Promise<boolea
       .eq("empresa_id", empresaId);
     if (error) return false;
     const jaTem = ((existentes ?? []) as unknown as { id: string; x_prod: string }[]).some(
-      (r) => String(r.x_prod || "").trim().toUpperCase() === PRODUTO_PREDOMINANTE_PADRAO,
+      (r) =>
+        String(r.x_prod || "")
+          .trim()
+          .toUpperCase() === PRODUTO_PREDOMINANTE_PADRAO,
     );
     if (jaTem) return true;
     const { error: errIns } = await supabase.from("ncm_fiscal" as never).insert({

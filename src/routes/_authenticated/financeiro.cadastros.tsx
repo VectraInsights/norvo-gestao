@@ -9,9 +9,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +35,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Plus, Pencil, Trash2, FolderCog, Loader2, PlusCircle, ChevronRight } from "lucide-react";
 import { SearchField } from "@/components/erp/search-field";
 import { AuditDialog } from "@/components/erp/audit-dialog";
@@ -38,17 +57,39 @@ export const Route = createFileRoute("/_authenticated/financeiro/cadastros")({
   head: () => ({
     meta: [
       { title: "Categorias e centros — Norvo" },
-      { name: "description", content: "Cadastre e altere categorias financeiras e centros de custo da empresa." },
+      {
+        name: "description",
+        content: "Cadastre e altere categorias financeiras e centros de custo da empresa.",
+      },
       { property: "og:title", content: "Categorias e centros — Norvo" },
-      { property: "og:description", content: "Cadastre e altere categorias financeiras e centros de custo da empresa." },
+      {
+        property: "og:description",
+        content: "Cadastre e altere categorias financeiras e centros de custo da empresa.",
+      },
     ],
   }),
   errorComponent: RouteErrorState,
-  notFoundComponent: () => <div className="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground shadow-panel">Página não encontrada.</div>,
+  notFoundComponent: () => (
+    <div className="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground shadow-panel">
+      Página não encontrada.
+    </div>
+  ),
 });
 
-type Categoria = { id: string; nome: string; tipo: "receber" | "pagar"; parent_id: string | null; cor: string | null };
-type Centro = { id: string; nome: string; codigo: string | null; descricao: string | null; ativo: boolean };
+type Categoria = {
+  id: string;
+  nome: string;
+  tipo: "receber" | "pagar";
+  parent_id: string | null;
+  cor: string | null;
+};
+type Centro = {
+  id: string;
+  nome: string;
+  codigo: string | null;
+  descricao: string | null;
+  ativo: boolean;
+};
 
 function CadastrosPage() {
   const { data: empresa } = useEmpresaAtual();
@@ -57,7 +98,11 @@ function CadastrosPage() {
 
   // Auditoria (tabela auditoria_eventos): quem criou/editou/excluiu
   const [trilhaOpen, setTrilhaOpen] = useState(false);
-  const registrarAuditoria = async (acao: string, descricao: string, detalhes: Record<string, any> = {}) => {
+  const registrarAuditoria = async (
+    acao: string,
+    descricao: string,
+    detalhes: Record<string, any> = {},
+  ) => {
     try {
       if (!empresa) return;
       const { data: sess } = await supabase.auth.getUser();
@@ -72,13 +117,16 @@ function CadastrosPage() {
         entidade: "cadastro_financeiro",
         detalhes: { ...detalhes, descricao, user_nome: nome, user_email: u.email || "" },
       } as any);
-    } catch { /* trilha indisponível: não bloqueia o fluxo */ }
+    } catch {
+      /* trilha indisponível: não bloqueia o fluxo */
+    }
   };
   const trilhaQuery = useQuery({
     enabled: trilhaOpen && !!empresa,
     queryKey: ["auditoria-cadastros", empresa?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("auditoria_eventos" as never)
+      const { data, error } = await supabase
+        .from("auditoria_eventos" as never)
         .select("id,created_at,acao,detalhes")
         .eq("empresa_id", empresa!.id as never)
         .eq("modulo", "financeiro")
@@ -96,16 +144,26 @@ function CadastrosPage() {
     enabled: !!empresa,
     queryKey: catKey,
     queryFn: async (): Promise<Categoria[]> => {
-      const { data, error } = await supabase.from("categorias_financeiras")
-        .select("id,nome,tipo,parent_id,cor").eq("empresa_id", empresa!.id).order("nome");
+      const { data, error } = await supabase
+        .from("categorias_financeiras")
+        .select("id,nome,tipo,parent_id,cor")
+        .eq("empresa_id", empresa!.id)
+        .order("nome");
       if (error) throw error;
       return (data ?? []) as Categoria[];
     },
   });
 
   const [catOpen, setCatOpen] = useState(false);
-  const [catForm, setCatForm] = useState<{ id?: string; tipo: "receber" | "pagar"; nome: string; sub: string }>({
-    tipo: "pagar", nome: "", sub: "",
+  const [catForm, setCatForm] = useState<{
+    id?: string;
+    tipo: "receber" | "pagar";
+    nome: string;
+    sub: string;
+  }>({
+    tipo: "pagar",
+    nome: "",
+    sub: "",
   });
 
   const salvarCat = useMutation({
@@ -113,14 +171,22 @@ function CadastrosPage() {
       if (!empresa) throw new Error("Empresa não selecionada");
       if (!catForm.nome.trim()) throw new Error("Informe o nome");
       const norm = (s: string) =>
-        s.trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/\p{Diacritic}/gu, "");
+        s
+          .trim()
+          .toLocaleLowerCase("pt-BR")
+          .normalize("NFD")
+          .replace(/\p{Diacritic}/gu, "");
       const lista = categorias ?? [];
       const inserir = async (nome: string, parentId: string | null) => {
         const { error } = await supabase.from("categorias_financeiras").insert({
-          empresa_id: empresa.id, nome, tipo: catForm.tipo, parent_id: parentId,
+          empresa_id: empresa.id,
+          nome,
+          tipo: catForm.tipo,
+          parent_id: parentId,
         });
         if (error) {
-          if ((error as any).code === "23505") throw new Error("Já existe uma categoria com esse nome para este tipo");
+          if ((error as any).code === "23505")
+            throw new Error("Já existe uma categoria com esse nome para este tipo");
           throw error;
         }
       };
@@ -128,13 +194,20 @@ function CadastrosPage() {
       if (catForm.id) {
         const parentAtual = lista.find((c) => c.id === catForm.id)?.parent_id ?? null;
         const duplicada = lista.some(
-          (c) => c.id !== catForm.id && c.tipo === catForm.tipo && (c.parent_id ?? null) === parentAtual && norm(c.nome) === norm(catForm.nome),
+          (c) =>
+            c.id !== catForm.id &&
+            c.tipo === catForm.tipo &&
+            (c.parent_id ?? null) === parentAtual &&
+            norm(c.nome) === norm(catForm.nome),
         );
         if (duplicada) throw new Error("Já existe uma categoria com esse nome para este tipo");
-        const { error } = await supabase.from("categorias_financeiras")
-          .update({ nome: catForm.nome.trim(), tipo: catForm.tipo }).eq("id", catForm.id);
+        const { error } = await supabase
+          .from("categorias_financeiras")
+          .update({ nome: catForm.nome.trim(), tipo: catForm.tipo })
+          .eq("id", catForm.id);
         if (error) {
-          if ((error as any).code === "23505") throw new Error("Já existe uma categoria com esse nome para este tipo");
+          if ((error as any).code === "23505")
+            throw new Error("Já existe uma categoria com esse nome para este tipo");
           throw error;
         }
         return "Categoria salva";
@@ -143,22 +216,34 @@ function CadastrosPage() {
       const nomeCat = catForm.nome.trim();
       const nomeSub = catForm.sub.trim();
       if (!nomeSub) {
-        const duplicada = lista.some((c) => !c.parent_id && c.tipo === catForm.tipo && norm(c.nome) === norm(nomeCat));
+        const duplicada = lista.some(
+          (c) => !c.parent_id && c.tipo === catForm.tipo && norm(c.nome) === norm(nomeCat),
+        );
         if (duplicada) throw new Error("Já existe uma categoria com esse nome para este tipo");
         await inserir(nomeCat, null);
         return "Categoria salva";
       }
-      const pai = lista.find((c) => !c.parent_id && c.tipo === catForm.tipo && norm(c.nome) === norm(nomeCat));
+      const pai = lista.find(
+        (c) => !c.parent_id && c.tipo === catForm.tipo && norm(c.nome) === norm(nomeCat),
+      );
       let paiId: string;
       let criouPai = false;
       if (pai) {
         paiId = pai.id;
       } else {
-        const { data: novo, error } = await supabase.from("categorias_financeiras").insert({
-          empresa_id: empresa.id, nome: nomeCat, tipo: catForm.tipo, parent_id: null,
-        }).select("id").single();
+        const { data: novo, error } = await supabase
+          .from("categorias_financeiras")
+          .insert({
+            empresa_id: empresa.id,
+            nome: nomeCat,
+            tipo: catForm.tipo,
+            parent_id: null,
+          })
+          .select("id")
+          .single();
         if (error) {
-          if ((error as any).code === "23505") throw new Error("Já existe uma categoria com esse nome para este tipo");
+          if ((error as any).code === "23505")
+            throw new Error("Já existe uma categoria com esse nome para este tipo");
           throw error;
         }
         paiId = novo!.id;
@@ -217,8 +302,11 @@ function CadastrosPage() {
     enabled: !!empresa,
     queryKey: ccKey,
     queryFn: async (): Promise<Centro[]> => {
-      const { data, error } = await supabase.from("centros_custo")
-        .select("id,nome,codigo,descricao,ativo").eq("empresa_id", empresa!.id).order("nome");
+      const { data, error } = await supabase
+        .from("centros_custo")
+        .select("id,nome,codigo,descricao,ativo")
+        .eq("empresa_id", empresa!.id)
+        .order("nome");
       if (error) throw error;
       return (data ?? []) as Centro[];
     },
@@ -235,8 +323,16 @@ function CadastrosPage() {
     setSubstituta("none");
     if (!empresa) return;
     const [{ count: lanc }, { data: filhos }] = await Promise.all([
-      supabase.from("lancamentos_financeiros").select("id", { count: "exact", head: true }).eq("empresa_id", empresa.id).eq("categoria_id", c.id),
-      supabase.from("categorias_financeiras").select("id").eq("empresa_id", empresa.id).eq("parent_id", c.id),
+      supabase
+        .from("lancamentos_financeiros")
+        .select("id", { count: "exact", head: true })
+        .eq("empresa_id", empresa.id)
+        .eq("categoria_id", c.id),
+      supabase
+        .from("categorias_financeiras")
+        .select("id")
+        .eq("empresa_id", empresa.id)
+        .eq("parent_id", c.id),
     ]);
     setExclInfo({ lanc: lanc ?? 0, filhos: (filhos ?? []).length });
   };
@@ -250,11 +346,17 @@ function CadastrosPage() {
     }
     try {
       if (substituta !== "none") {
-        const { error: e1 } = await supabase.from("lancamentos_financeiros")
-          .update({ categoria_id: substituta }).eq("empresa_id", empresa.id).eq("categoria_id", confCat.id);
+        const { error: e1 } = await supabase
+          .from("lancamentos_financeiros")
+          .update({ categoria_id: substituta })
+          .eq("empresa_id", empresa.id)
+          .eq("categoria_id", confCat.id);
         if (e1) throw e1;
-        const { error: e2 } = await supabase.from("categorias_financeiras")
-          .update({ parent_id: substituta }).eq("empresa_id", empresa.id).eq("parent_id", confCat.id);
+        const { error: e2 } = await supabase
+          .from("categorias_financeiras")
+          .update({ parent_id: substituta })
+          .eq("empresa_id", empresa.id)
+          .eq("parent_id", confCat.id);
         if (e2) throw e2;
       }
       await excluirCat.mutateAsync(confCat.id);
@@ -265,8 +367,17 @@ function CadastrosPage() {
     }
   };
   const [confCc, setConfCc] = useState<Centro | null>(null);
-  const [ccForm, setCcForm] = useState<{ id?: string; nome: string; codigo: string; descricao: string; ativo: boolean }>({
-    nome: "", codigo: "", descricao: "", ativo: true,
+  const [ccForm, setCcForm] = useState<{
+    id?: string;
+    nome: string;
+    codigo: string;
+    descricao: string;
+    ativo: boolean;
+  }>({
+    nome: "",
+    codigo: "",
+    descricao: "",
+    ativo: true,
   });
 
   const salvarCc = useMutation({
@@ -287,7 +398,9 @@ function CadastrosPage() {
     },
     onSuccess: () => {
       toast.success("Centro de custo salvo");
-      void registrarAuditoria("criar", `Centro de custo "${ccForm.nome.trim()}" salvo`, { nome: ccForm.nome.trim() });
+      void registrarAuditoria("criar", `Centro de custo "${ccForm.nome.trim()}" salvo`, {
+        nome: ccForm.nome.trim(),
+      });
       setCcOpen(false);
       qc.invalidateQueries({ queryKey: ["cadastros-centros"] });
       qc.invalidateQueries({ queryKey: ["centros-custo"] });
@@ -312,10 +425,11 @@ function CadastrosPage() {
   const centrosFiltrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
     if (!q) return centros ?? [];
-    return (centros ?? []).filter((c) =>
-      (c.nome || "").toLowerCase().includes(q)
-      || (c.codigo || "").toLowerCase().includes(q)
-      || (c.descricao || "").toLowerCase().includes(q),
+    return (centros ?? []).filter(
+      (c) =>
+        (c.nome || "").toLowerCase().includes(q) ||
+        (c.codigo || "").toLowerCase().includes(q) ||
+        (c.descricao || "").toLowerCase().includes(q),
     );
   }, [centros, busca]);
 
@@ -329,7 +443,12 @@ function CadastrosPage() {
       <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={setBusca} />
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setTrilhaOpen(true)}
+            className="h-9 rounded-xl px-4 active:scale-95"
+          >
             Auditoria
           </Button>
         </div>
@@ -342,19 +461,28 @@ function CadastrosPage() {
         </TabsList>
 
         {/* Categorias */}
-        <TabsContent value="categorias" className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto [&_.erp-table-wrap]:max-h-none">
+        <TabsContent
+          value="categorias"
+          className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto [&_.erp-table-wrap]:max-h-none"
+        >
           {loadingCat ? (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {[0, 1].map((col) => (
-                <div key={col} className="space-y-2.5">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}</div>
+                <div key={col} className="space-y-2.5">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />
+                  ))}
+                </div>
               ))}
             </div>
           ) : (
             <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
-              {([
-                { tipo: "receber", titulo: "Receitas", lista: receitasFiltradas },
-                { tipo: "pagar", titulo: "Despesas", lista: despesasFiltradas },
-              ] as const).map((col) => {
+              {(
+                [
+                  { tipo: "receber", titulo: "Receitas", lista: receitasFiltradas },
+                  { tipo: "pagar", titulo: "Despesas", lista: despesasFiltradas },
+                ] as const
+              ).map((col) => {
                 const emBusca = busca.trim() !== "";
                 const pais = col.lista.filter((c) => !c.parent_id);
                 const filhosDe = new Map<string, typeof col.lista>();
@@ -368,124 +496,198 @@ function CadastrosPage() {
                 const acoes = (c: (typeof col.lista)[number]) => (
                   <div className="flex items-center justify-end gap-1">
                     {!c.parent_id && (
-                      <Button variant="ghost" size="icon" aria-label="Cadastrar subcategoria" title="Cadastrar subcategoria" className="h-8 w-8 rounded-lg"
-                        onClick={(e) => { e.stopPropagation(); setCatForm({ tipo: c.tipo, nome: c.nome, sub: "" }); setCatOpen(true); }}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Cadastrar subcategoria"
+                        title="Cadastrar subcategoria"
+                        className="h-8 w-8 rounded-lg"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCatForm({ tipo: c.tipo, nome: c.nome, sub: "" });
+                          setCatOpen(true);
+                        }}
+                      >
                         <PlusCircle className="h-4 w-4" />
                       </Button>
                     )}
-                    <Button variant="ghost" size="icon" aria-label="Editar categoria" title="Editar categoria" className="h-8 w-8 rounded-lg"
-                      onClick={(e) => { e.stopPropagation(); setCatForm({ id: c.id, nome: c.nome, tipo: c.tipo, sub: "" }); setCatOpen(true); }}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Editar categoria"
+                      title="Editar categoria"
+                      className="h-8 w-8 rounded-lg"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCatForm({ id: c.id, nome: c.nome, tipo: c.tipo, sub: "" });
+                        setCatOpen(true);
+                      }}
+                    >
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" aria-label="Remover categoria" title="Remover categoria" className="h-8 w-8 rounded-lg text-destructive"
-                      onClick={(e) => { e.stopPropagation(); void iniciarExclusaoCat(c); }}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Remover categoria"
+                      title="Remover categoria"
+                      className="h-8 w-8 rounded-lg text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void iniciarExclusaoCat(c);
+                      }}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 );
                 return (
-                <Card key={col.tipo} className="overflow-hidden rounded-2xl shadow-panel">
-                  <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-muted/40 px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold tracking-tight">{col.titulo}</span>
-                      <Badge variant="secondary">{col.lista.length}</Badge>
+                  <Card key={col.tipo} className="overflow-hidden rounded-2xl shadow-panel">
+                    <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-muted/40 px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold tracking-tight">{col.titulo}</span>
+                        <Badge variant="secondary">{col.lista.length}</Badge>
+                      </div>
+                      <PrimaryButton
+                        size="xs"
+                        onClick={() => {
+                          setCatForm({ tipo: col.tipo, nome: "", sub: "" });
+                          setCatOpen(true);
+                        }}
+                      >
+                        <Plus className="mr-1 h-3.5 w-3.5" />
+                        Nova categoria
+                      </PrimaryButton>
                     </div>
-                    <PrimaryButton size="xs" onClick={() => { setCatForm({ tipo: col.tipo, nome: "", sub: "" }); setCatOpen(true); }}>
-                      <Plus className="mr-1 h-3.5 w-3.5" />Nova categoria
-                    </PrimaryButton>
-                  </div>
-                  {col.lista.length === 0 ? (
-                    <p className="px-4 py-8 text-center text-sm text-muted-foreground">
-                      {busca ? "Nada encontrado para a busca." : `Nenhuma categoria de ${col.tipo === "pagar" ? "despesa" : "receita"}.`}
-                    </p>
-                  ) : emBusca ? (
-                    <Table>
-                      <TableBody>
-                        {col.lista.map((c) => (
-                          <TableRow key={c.id} className="transition-colors hover:bg-accent/30">
-                            <TableCell className={c.parent_id ? "text-muted-foreground" : "font-medium"}>
-                              <span className="flex items-center gap-2">
-                                {c.parent_id && <span className="h-4 w-1 shrink-0 rounded-full bg-primary/30" />}
-                                {c.nome}
-                              </span>
-                            </TableCell>
-                            <TableCell className="w-28">{acoes(c)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <Table>
-                      <TableBody>
-                        {pais.map((p) => {
-                          const filhos = filhosDe.get(p.id) ?? [];
-                          const aberto = expandCat.has(p.id);
-                          return (
-                            <Fragment key={p.id}>
-                              <TableRow
-                                className="cursor-pointer bg-muted/40 transition-colors hover:bg-muted/60"
-                                onClick={() => filhos.length > 0 && toggleCat(p.id)}
+                    {col.lista.length === 0 ? (
+                      <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+                        {busca
+                          ? "Nada encontrado para a busca."
+                          : `Nenhuma categoria de ${col.tipo === "pagar" ? "despesa" : "receita"}.`}
+                      </p>
+                    ) : emBusca ? (
+                      <Table>
+                        <TableBody>
+                          {col.lista.map((c) => (
+                            <TableRow key={c.id} className="transition-colors hover:bg-accent/30">
+                              <TableCell
+                                className={c.parent_id ? "text-muted-foreground" : "font-medium"}
                               >
-                                <TableCell className="font-medium">
-                                  <span className="flex items-center gap-1.5">
-                                    {filhos.length > 0 ? (
-                                      <ChevronRight className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${aberto ? "rotate-90" : ""}`} />
-                                    ) : (
-                                      <span className="w-4 shrink-0" />
-                                    )}
-                                    {p.nome}
-                                    {filhos.length > 0 && (
-                                      <Badge variant="secondary" className="ml-1">{filhos.length}</Badge>
-                                    )}
-                                  </span>
-                                </TableCell>
-                                <TableCell className="w-28">{acoes(p)}</TableCell>
-                              </TableRow>
-                              {aberto && filhos.map((f) => (
-                                <TableRow key={f.id} className="bg-background transition-colors hover:bg-accent/30">
-                                  <TableCell className="text-muted-foreground">
-                                    <span className="flex items-center gap-2 pl-6">
-                                      <span className="h-4 w-1 shrink-0 rounded-full bg-primary/30" />
-                                      {f.nome}
+                                <span className="flex items-center gap-2">
+                                  {c.parent_id && (
+                                    <span className="h-4 w-1 shrink-0 rounded-full bg-primary/30" />
+                                  )}
+                                  {c.nome}
+                                </span>
+                              </TableCell>
+                              <TableCell className="w-28">{acoes(c)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <Table>
+                        <TableBody>
+                          {pais.map((p) => {
+                            const filhos = filhosDe.get(p.id) ?? [];
+                            const aberto = expandCat.has(p.id);
+                            return (
+                              <Fragment key={p.id}>
+                                <TableRow
+                                  className="cursor-pointer bg-muted/40 transition-colors hover:bg-muted/60"
+                                  onClick={() => filhos.length > 0 && toggleCat(p.id)}
+                                >
+                                  <TableCell className="font-medium">
+                                    <span className="flex items-center gap-1.5">
+                                      {filhos.length > 0 ? (
+                                        <ChevronRight
+                                          className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${aberto ? "rotate-90" : ""}`}
+                                        />
+                                      ) : (
+                                        <span className="w-4 shrink-0" />
+                                      )}
+                                      {p.nome}
+                                      {filhos.length > 0 && (
+                                        <Badge variant="secondary" className="ml-1">
+                                          {filhos.length}
+                                        </Badge>
+                                      )}
                                     </span>
                                   </TableCell>
-                                  <TableCell className="w-28">{acoes(f)}</TableCell>
+                                  <TableCell className="w-28">{acoes(p)}</TableCell>
                                 </TableRow>
-                              ))}
-                            </Fragment>
-                          );
-                        })}
-                        {orfas.map((c) => (
-                          <TableRow key={c.id} className="bg-background transition-colors hover:bg-accent/30">
-                            <TableCell className="text-muted-foreground">
-                              <span className="flex items-center gap-2">
-                                <span className="h-4 w-1 shrink-0 rounded-full bg-primary/30" />
-                                {c.nome}
-                              </span>
-                            </TableCell>
-                            <TableCell className="w-28">{acoes(c)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </Card>
+                                {aberto &&
+                                  filhos.map((f) => (
+                                    <TableRow
+                                      key={f.id}
+                                      className="bg-background transition-colors hover:bg-accent/30"
+                                    >
+                                      <TableCell className="text-muted-foreground">
+                                        <span className="flex items-center gap-2 pl-6">
+                                          <span className="h-4 w-1 shrink-0 rounded-full bg-primary/30" />
+                                          {f.nome}
+                                        </span>
+                                      </TableCell>
+                                      <TableCell className="w-28">{acoes(f)}</TableCell>
+                                    </TableRow>
+                                  ))}
+                              </Fragment>
+                            );
+                          })}
+                          {orfas.map((c) => (
+                            <TableRow
+                              key={c.id}
+                              className="bg-background transition-colors hover:bg-accent/30"
+                            >
+                              <TableCell className="text-muted-foreground">
+                                <span className="flex items-center gap-2">
+                                  <span className="h-4 w-1 shrink-0 rounded-full bg-primary/30" />
+                                  {c.nome}
+                                </span>
+                              </TableCell>
+                              <TableCell className="w-28">{acoes(c)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </Card>
                 );
               })}
             </div>
           )}
         </TabsContent>
 
-        <TabsContent value="centros" className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto [&_.erp-table-wrap]:max-h-none">
+        <TabsContent
+          value="centros"
+          className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto [&_.erp-table-wrap]:max-h-none"
+        >
           <div className="flex justify-end">
-            <PrimaryButton onClick={() => { setCcForm({ nome: "", codigo: "", descricao: "", ativo: true }); setCcOpen(true); }}>
-              <Plus className="mr-1.5 h-4 w-4" />Novo centro de custo
+            <PrimaryButton
+              onClick={() => {
+                setCcForm({ nome: "", codigo: "", descricao: "", ativo: true });
+                setCcOpen(true);
+              }}
+            >
+              <Plus className="mr-1.5 h-4 w-4" />
+              Novo centro de custo
             </PrimaryButton>
           </div>
           {loadingCc ? (
-            <div className="space-y-2.5">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}</div>
+            <div className="space-y-2.5">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />
+              ))}
+            </div>
           ) : !centrosFiltrados?.length ? (
-            <EmptyState icon={FolderCog} title="Nenhum centro de custo" description={busca ? "Nada encontrado para a busca." : "Crie centros de custo para classificar os lançamentos."} />
+            <EmptyState
+              icon={FolderCog}
+              title="Nenhum centro de custo"
+              description={
+                busca
+                  ? "Nada encontrado para a busca."
+                  : "Crie centros de custo para classificar os lançamentos."
+              }
+            />
           ) : (
             <Card className="overflow-hidden rounded-2xl shadow-panel">
               <Table>
@@ -505,17 +707,43 @@ function CadastrosPage() {
                       <TableCell className="font-medium">{c.nome}</TableCell>
                       <TableCell className="text-muted-foreground">{c.descricao ?? "—"}</TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className={c.ativo ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}>
+                        <Badge
+                          variant="secondary"
+                          className={
+                            c.ativo
+                              ? "bg-success/15 text-success"
+                              : "bg-muted text-muted-foreground"
+                          }
+                        >
                           {c.ativo ? "Ativo" : "Inativo"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" aria-label="Editar" className="h-8 w-8 rounded-lg"
-                          onClick={() => { setCcForm({ id: c.id, nome: c.nome, codigo: c.codigo ?? "", descricao: c.descricao ?? "", ativo: c.ativo }); setCcOpen(true); }}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Editar"
+                          className="h-8 w-8 rounded-lg"
+                          onClick={() => {
+                            setCcForm({
+                              id: c.id,
+                              nome: c.nome,
+                              codigo: c.codigo ?? "",
+                              descricao: c.descricao ?? "",
+                              ativo: c.ativo,
+                            });
+                            setCcOpen(true);
+                          }}
+                        >
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" aria-label="Excluir" className="h-8 w-8 rounded-lg text-destructive"
-                          onClick={() => setConfCc(c)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Excluir"
+                          className="h-8 w-8 rounded-lg text-destructive"
+                          onClick={() => setConfCc(c)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -531,18 +759,40 @@ function CadastrosPage() {
       {/* Dialog categoria */}
       <Dialog open={catOpen} onOpenChange={setCatOpen}>
         <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
-          <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">{catForm.id ? "Editar categoria" : "Nova categoria"}</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); salvarCat.mutate(); }} className="space-y-4">
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">
+              {catForm.id ? "Editar categoria" : "Nova categoria"}
+            </DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              salvarCat.mutate();
+            }}
+            className="space-y-4"
+          >
             {catForm.id ? (
               <>
                 <div className="grid gap-1.5">
                   <Label>Nome *</Label>
-                  <Input required value={catForm.nome} onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })} className="h-10 rounded-xl" />
+                  <Input
+                    required
+                    value={catForm.nome}
+                    onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })}
+                    className="h-10 rounded-xl"
+                  />
                 </div>
                 <div className="grid gap-1.5">
                   <Label>Tipo *</Label>
-                  <Select value={catForm.tipo} onValueChange={(v) => setCatForm({ ...catForm, tipo: v as "receber" | "pagar" })}>
-                    <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
+                  <Select
+                    value={catForm.tipo}
+                    onValueChange={(v) =>
+                      setCatForm({ ...catForm, tipo: v as "receber" | "pagar" })
+                    }
+                  >
+                    <SelectTrigger className="h-10 rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="receber">Receita</SelectItem>
                       <SelectItem value="pagar">Despesa</SelectItem>
@@ -554,8 +804,15 @@ function CadastrosPage() {
               <>
                 <div className="grid gap-1.5">
                   <Label>Tipo *</Label>
-                  <Select value={catForm.tipo} onValueChange={(v) => setCatForm({ ...catForm, tipo: v as "receber" | "pagar" })}>
-                    <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
+                  <Select
+                    value={catForm.tipo}
+                    onValueChange={(v) =>
+                      setCatForm({ ...catForm, tipo: v as "receber" | "pagar" })
+                    }
+                  >
+                    <SelectTrigger className="h-10 rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="receber">Receita</SelectItem>
                       <SelectItem value="pagar">Despesa</SelectItem>
@@ -564,16 +821,29 @@ function CadastrosPage() {
                 </div>
                 <div className="grid gap-1.5">
                   <Label>Categoria *</Label>
-                  <Input required value={catForm.nome} onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })} className="h-10 rounded-xl" />
+                  <Input
+                    required
+                    value={catForm.nome}
+                    onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })}
+                    className="h-10 rounded-xl"
+                  />
                 </div>
                 <div className="grid gap-1.5">
                   <Label>Subcategoria</Label>
-                  <Input value={catForm.sub} onChange={(e) => setCatForm({ ...catForm, sub: e.target.value })} className="h-10 rounded-xl" />
+                  <Input
+                    value={catForm.sub}
+                    onChange={(e) => setCatForm({ ...catForm, sub: e.target.value })}
+                    className="h-10 rounded-xl"
+                  />
                 </div>
               </>
             )}
             <DialogFooter className="gap-2">
-              <Button type="submit" disabled={salvarCat.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+              <Button
+                type="submit"
+                disabled={salvarCat.isPending}
+                className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+              >
                 {salvarCat.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Salvar
               </Button>
             </DialogFooter>
@@ -584,26 +854,54 @@ function CadastrosPage() {
       {/* Dialog centro de custo */}
       <Dialog open={ccOpen} onOpenChange={setCcOpen}>
         <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
-          <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">{ccForm.id ? "Editar centro de custo" : "Novo centro de custo"}</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); salvarCc.mutate(); }} className="space-y-4">
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">
+              {ccForm.id ? "Editar centro de custo" : "Novo centro de custo"}
+            </DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              salvarCc.mutate();
+            }}
+            className="space-y-4"
+          >
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <div className="grid gap-1.5">
                 <Label>Código</Label>
-                <Input value={ccForm.codigo} onChange={(e) => setCcForm({ ...ccForm, codigo: e.target.value })} className="h-10 rounded-xl" />
+                <Input
+                  value={ccForm.codigo}
+                  onChange={(e) => setCcForm({ ...ccForm, codigo: e.target.value })}
+                  className="h-10 rounded-xl"
+                />
               </div>
               <div className="col-span-2 grid gap-1.5">
                 <Label>Nome *</Label>
-                <Input required value={ccForm.nome} onChange={(e) => setCcForm({ ...ccForm, nome: e.target.value })} className="h-10 rounded-xl" />
+                <Input
+                  required
+                  value={ccForm.nome}
+                  onChange={(e) => setCcForm({ ...ccForm, nome: e.target.value })}
+                  className="h-10 rounded-xl"
+                />
               </div>
             </div>
             <div className="grid gap-1.5">
               <Label>Descrição</Label>
-              <Textarea value={ccForm.descricao} onChange={(e) => setCcForm({ ...ccForm, descricao: e.target.value })} className="rounded-xl" />
+              <Textarea
+                value={ccForm.descricao}
+                onChange={(e) => setCcForm({ ...ccForm, descricao: e.target.value })}
+                className="rounded-xl"
+              />
             </div>
             <div className="grid gap-1.5">
               <Label>Status</Label>
-              <Select value={ccForm.ativo ? "1" : "0"} onValueChange={(v) => setCcForm({ ...ccForm, ativo: v === "1" })}>
-                <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
+              <Select
+                value={ccForm.ativo ? "1" : "0"}
+                onValueChange={(v) => setCcForm({ ...ccForm, ativo: v === "1" })}
+              >
+                <SelectTrigger className="h-10 rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="1">Ativo</SelectItem>
                   <SelectItem value="0">Inativo</SelectItem>
@@ -611,7 +909,11 @@ function CadastrosPage() {
               </Select>
             </div>
             <DialogFooter className="gap-2">
-              <Button type="submit" disabled={salvarCc.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+              <Button
+                type="submit"
+                disabled={salvarCc.isPending}
+                className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+              >
                 {salvarCc.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Salvar
               </Button>
             </DialogFooter>
@@ -619,7 +921,15 @@ function CadastrosPage() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!confCat} onOpenChange={(v) => { if (!v) { setConfCat(null); setExclInfo(null); } }}>
+      <AlertDialog
+        open={!!confCat}
+        onOpenChange={(v) => {
+          if (!v) {
+            setConfCat(null);
+            setExclInfo(null);
+          }
+        }}
+      >
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader className="gap-1.5">
             <AlertDialogTitle className="tracking-tight">Excluir categoria</AlertDialogTitle>
@@ -631,18 +941,27 @@ function CadastrosPage() {
             <div className="grid gap-3 rounded-2xl border bg-muted/40 p-4">
               <p className="text-xs leading-relaxed text-muted-foreground">
                 <strong className="text-foreground">{exclInfo.lanc}</strong> lançamento(s) e{" "}
-                <strong className="text-foreground">{exclInfo.filhos}</strong> subcategoria(s) usam esta categoria.
-                Escolha abaixo para onde movê-los.
+                <strong className="text-foreground">{exclInfo.filhos}</strong> subcategoria(s) usam
+                esta categoria. Escolha abaixo para onde movê-los.
               </p>
               <div className="grid gap-1.5">
                 <Label>Mover para *</Label>
                 <Select value={substituta} onValueChange={setSubstituta}>
-                  <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-10 rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {(categorias ?? [])
-                      .filter((c) => c.tipo === confCat.tipo && c.id !== confCat.id && c.parent_id !== confCat.id)
+                      .filter(
+                        (c) =>
+                          c.tipo === confCat.tipo &&
+                          c.id !== confCat.id &&
+                          c.parent_id !== confCat.id,
+                      )
                       .map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.parent_id ? `↳ ${c.nome}` : c.nome}</SelectItem>
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.parent_id ? `↳ ${c.nome}` : c.nome}
+                        </SelectItem>
                       ))}
                   </SelectContent>
                 </Select>
@@ -663,7 +982,12 @@ function CadastrosPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={!!confCc} onOpenChange={(v) => { if (!v) setConfCc(null); }}>
+      <AlertDialog
+        open={!!confCc}
+        onOpenChange={(v) => {
+          if (!v) setConfCc(null);
+        }}
+      >
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader className="gap-1.5">
             <AlertDialogTitle className="tracking-tight">Excluir centro de custo</AlertDialogTitle>
@@ -676,7 +1000,10 @@ function CadastrosPage() {
             <AlertDialogAction
               data-acao
               className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => { if (confCc) excluirCc.mutate(confCc.id); setConfCc(null); }}
+              onClick={() => {
+                if (confCc) excluirCc.mutate(confCc.id);
+                setConfCc(null);
+              }}
             >
               Excluir
             </AlertDialogAction>
@@ -691,7 +1018,7 @@ function CadastrosPage() {
         emptyText="Nenhum evento registrado ainda. Criar ou excluir gera registros aqui."
         isLoading={trilhaQuery.isLoading}
         isError={trilhaQuery.isError}
-        events={(trilhaQuery.data ?? [])}
+        events={trilhaQuery.data ?? []}
       />
     </div>
   );

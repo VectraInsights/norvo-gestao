@@ -44,11 +44,20 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { brl, dateBR } from "@/lib/format";
 import { format } from "date-fns";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/rh/adiantamentos")({
   component: AdiantamentosPage,
-  errorComponent: RouteErrorState
+  errorComponent: RouteErrorState,
 });
 
 type Adiantamento = {
@@ -119,9 +128,10 @@ function AdiantamentosPage() {
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
     if (!q) return lista ?? [];
-    return (lista ?? []).filter((a) =>
-      (a.colaboradores?.nome || "").toLowerCase().includes(q)
-      || (a.motivo || "").toLowerCase().includes(q),
+    return (lista ?? []).filter(
+      (a) =>
+        (a.colaboradores?.nome || "").toLowerCase().includes(q) ||
+        (a.motivo || "").toLowerCase().includes(q),
     );
   }, [lista, busca]);
 
@@ -385,120 +395,115 @@ function AdiantamentosPage() {
       <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={setBusca} size="xs" />
         <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95"
-              disabled={
-                gerarEmLote.isPending ||
-                !(lista ?? []).some(
-                  (a) => !a.lancamento_id && !a.recorrente && a.status !== "cancelado",
-                )
-              }
-              onClick={() => setConfLote(true)}
-            >
-              <HandCoins className="mr-1 h-3.5 w-3.5" />
-              Gerar contas a pagar
-            </Button>
-            <Dialog
-              open={open}
-              onOpenChange={(o) => {
-                if (!o) fecharDialog();
-                else setOpen(true);
-              }}
-            >
-              <DialogTrigger asChild>
-                <PrimaryButton size="sm">
-                  <Plus className="mr-1 h-3.5 w-3.5" /> Novo adiantamento
-                </PrimaryButton>
-              </DialogTrigger>
-              <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
-                <DialogHeader className="gap-1.5 pb-1">
-                  <DialogTitle className="tracking-tight">
-                    {editando ? "Editar adiantamento" : "Novo adiantamento"}
-                  </DialogTitle>
-                  {editando && (
-                    <p className="text-xs text-muted-foreground">
-                      Depois de gerado no contas a pagar, edite o valor pela tela financeira.
-                    </p>
-                  )}
-                </DialogHeader>
-                <div className="grid gap-4">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95"
+            disabled={
+              gerarEmLote.isPending ||
+              !(lista ?? []).some(
+                (a) => !a.lancamento_id && !a.recorrente && a.status !== "cancelado",
+              )
+            }
+            onClick={() => setConfLote(true)}
+          >
+            <HandCoins className="mr-1 h-3.5 w-3.5" />
+            Gerar contas a pagar
+          </Button>
+          <Dialog
+            open={open}
+            onOpenChange={(o) => {
+              if (!o) fecharDialog();
+              else setOpen(true);
+            }}
+          >
+            <DialogTrigger asChild>
+              <PrimaryButton size="sm">
+                <Plus className="mr-1 h-3.5 w-3.5" /> Novo adiantamento
+              </PrimaryButton>
+            </DialogTrigger>
+            <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
+              <DialogHeader className="gap-1.5 pb-1">
+                <DialogTitle className="tracking-tight">
+                  {editando ? "Editar adiantamento" : "Novo adiantamento"}
+                </DialogTitle>
+                {editando && (
+                  <p className="text-xs text-muted-foreground">
+                    Depois de gerado no contas a pagar, edite o valor pela tela financeira.
+                  </p>
+                )}
+              </DialogHeader>
+              <div className="grid gap-4">
+                <div className="space-y-1.5">
+                  <Label>Colaborador</Label>
+                  <Combobox
+                    value={colaborador}
+                    onChange={setColaborador}
+                    options={colabs.map((c) => ({ value: c.id, label: c.nome }))}
+
+                    emptyText="Nenhum colaborador encontrado."
+                  />
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label>Colaborador</Label>
-                    <Combobox
-                      value={colaborador}
-                      onChange={setColaborador}
-                      options={colabs.map((c) => ({ value: c.id, label: c.nome }))}
-                     
-                     
-                      emptyText="Nenhum colaborador encontrado."
-                    />
+                    <Label>Data</Label>
+                    <DateInput value={data} onChange={setData} />
                   </div>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label>Data</Label>
-                      <DateInput value={data} onChange={setData} />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Valor</Label>
-                      <MoneyInput value={valor} onChange={setValor} />
-                    </div>
-                  </div>
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={recorrente}
-                      onChange={(e) => setRecorrente(e.target.checked)}
-                    />
-                    Recorrente
-                  </label>
-                  {recorrente && (
-                    <div className="space-y-1.5">
-                      <Label>Dia do pagamento</Label>
-                      <Select value={diaRec} onValueChange={setDiaRec}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-56">
-                          {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                            <SelectItem key={d} value={String(d)}>
-                              Todo dia {d}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {Number(diaRec) >= 29 && (
-                        <p className="text-xs text-muted-foreground">
-                          Em meses sem dia {diaRec}, a conta é gerada no último dia do mês.
-                        </p>
-                      )}
-                    </div>
-                  )}
                   <div className="space-y-1.5">
-                    <Label>Motivo</Label>
-                    <Input
-                      value={motivo}
-                      onChange={(e) => setMotivo(e.target.value)}
-                     
-                    />
+                    <Label>Valor</Label>
+                    <MoneyInput value={valor} onChange={setValor} />
                   </div>
                 </div>
-                <DialogFooter className="gap-2">
-                  <Button
-                    onClick={() => (editando ? salvarEdicao.mutate() : criar.mutate())}
-                    disabled={criar.isPending || salvarEdicao.isPending}
-                    className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
-                  >
-                    {criar.isPending || salvarEdicao.isPending
-                      ? "Salvando..."
-                      : editando
-                        ? "Salvar alterações"
-                        : "Registrar"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={recorrente}
+                    onChange={(e) => setRecorrente(e.target.checked)}
+                  />
+                  Recorrente
+                </label>
+                {recorrente && (
+                  <div className="space-y-1.5">
+                    <Label>Dia do pagamento</Label>
+                    <Select value={diaRec} onValueChange={setDiaRec}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-56">
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                          <SelectItem key={d} value={String(d)}>
+                            Todo dia {d}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {Number(diaRec) >= 29 && (
+                      <p className="text-xs text-muted-foreground">
+                        Em meses sem dia {diaRec}, a conta é gerada no último dia do mês.
+                      </p>
+                    )}
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  <Label>Motivo</Label>
+                  <Input value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+                </div>
+              </div>
+              <DialogFooter className="gap-2">
+                <Button
+                  onClick={() => (editando ? salvarEdicao.mutate() : criar.mutate())}
+                  disabled={criar.isPending || salvarEdicao.isPending}
+                  className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                >
+                  {criar.isPending || salvarEdicao.isPending
+                    ? "Salvando..."
+                    : editando
+                      ? "Salvar alterações"
+                      : "Registrar"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -620,16 +625,18 @@ function AdiantamentosPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              data-acao
-              onClick={() => gerarEmLote.mutate()}
-            >
+            <AlertDialogAction data-acao onClick={() => gerarEmLote.mutate()}>
               Gerar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <AlertDialog open={!!confExcluir} onOpenChange={(v) => { if (!v) setConfExcluir(null); }}>
+      <AlertDialog
+        open={!!confExcluir}
+        onOpenChange={(v) => {
+          if (!v) setConfExcluir(null);
+        }}
+      >
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir adiantamento</AlertDialogTitle>
@@ -646,7 +653,10 @@ function AdiantamentosPage() {
             <AlertDialogAction
               data-acao
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => { if (confExcluir) excluir.mutate(confExcluir); setConfExcluir(null); }}
+              onClick={() => {
+                if (confExcluir) excluir.mutate(confExcluir);
+                setConfExcluir(null);
+              }}
             >
               Excluir
             </AlertDialogAction>

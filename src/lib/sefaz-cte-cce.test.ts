@@ -15,6 +15,8 @@ describe("CC-e", () => {
   });
   it("barra texto curto e chave inválida", () => {
     expect(() => buildCceEvento(CHAVE, "03919614000160", "curto")).toThrow();
-    expect(() => buildCceEvento("123", "03919614000160", "Texto longo o suficiente aqui")).toThrow();
+    expect(() =>
+      buildCceEvento("123", "03919614000160", "Texto longo o suficiente aqui"),
+    ).toThrow();
   });
 });

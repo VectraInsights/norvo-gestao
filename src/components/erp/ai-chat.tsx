@@ -46,7 +46,9 @@ export function AIChat() {
   // Posição arrastável (persistida) — botão e painel
   const [btnPos, setBtnPos] = useState<XY | null>(() => loadPos("norvo-ai-btn-pos"));
   const [panelPos, setPanelPos] = useState<XY | null>(() => loadPos("norvo-ai-panel-pos"));
-  const btnDrag = useRef<{ sx: number; sy: number; ox: number; oy: number; moved: boolean } | null>(null);
+  const btnDrag = useRef<{ sx: number; sy: number; ox: number; oy: number; moved: boolean } | null>(
+    null,
+  );
   const panelDrag = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
 
   useEffect(() => {
@@ -76,12 +78,15 @@ export function AIChat() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: all.map(m => ({ role: m.role, content: m.content })),
+          messages: all.map((m) => ({ role: m.role, content: m.content })),
           empresaId: empresa.id,
         }),
       });
       const data = await res.json();
-      setMessages([...all, { role: "assistant", content: data.reply || data.error || "Erro ao obter resposta." }]);
+      setMessages([
+        ...all,
+        { role: "assistant", content: data.reply || data.error || "Erro ao obter resposta." },
+      ]);
     } catch (e) {
       setMessages([...all, { role: "assistant", content: "Erro de conexão. Tente novamente." }]);
     } finally {
@@ -117,7 +122,11 @@ export function AIChat() {
           if (!d) return;
           if (d.moved) {
             setBtnPos((p) => {
-              if (p) { try { localStorage.setItem("norvo-ai-btn-pos", JSON.stringify(p)); } catch {} }
+              if (p) {
+                try {
+                  localStorage.setItem("norvo-ai-btn-pos", JSON.stringify(p));
+                } catch {}
+              }
               return p;
             });
           } else {
@@ -142,7 +151,10 @@ export function AIChat() {
     ? { left: panelPos.x, top: panelPos.y }
     : { bottom: BTN_MARGIN, right: BTN_MARGIN };
   return (
-    <Card style={panelStyle} className="fixed z-50 w-[380px] max-w-[calc(100vw-24px)] max-h-[560px] flex flex-col overflow-hidden rounded-2xl shadow-2xl border-primary/20">
+    <Card
+      style={panelStyle}
+      className="fixed z-50 w-[380px] max-w-[calc(100vw-24px)] max-h-[560px] flex flex-col overflow-hidden rounded-2xl shadow-2xl border-primary/20"
+    >
       <CardHeader
         onPointerDown={(e) => {
           (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
@@ -163,7 +175,11 @@ export function AIChat() {
         onPointerUp={() => {
           panelDrag.current = null;
           setPanelPos((p) => {
-            if (p) { try { localStorage.setItem("norvo-ai-panel-pos", JSON.stringify(p)); } catch {} }
+            if (p) {
+              try {
+                localStorage.setItem("norvo-ai-panel-pos", JSON.stringify(p));
+              } catch {}
+            }
             return p;
           });
         }}
@@ -214,7 +230,10 @@ export function AIChat() {
           )}
 
           {messages.map((m, i) => (
-            <div key={i} className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div
+              key={i}
+              className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}
+            >
               {m.role === "assistant" && (
                 <div className="h-7 w-7 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                   <Bot className="h-3.5 w-3.5 text-primary" />
@@ -253,18 +272,27 @@ export function AIChat() {
         {/* Input */}
         <div className="border-t bg-card p-4">
           <form
-            onSubmit={(e) => { e.preventDefault(); send(); }}
+            onSubmit={(e) => {
+              e.preventDefault();
+              send();
+            }}
             className="flex gap-2.5"
           >
             <Input
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-             
+
               className="h-10 rounded-xl text-[13px]"
               disabled={loading}
             />
-            <Button type="submit" size="icon" disabled={loading || !input.trim()} className="h-10 w-10 shrink-0 rounded-xl shadow-sm" aria-label="Enviar mensagem">
+            <Button
+              type="submit"
+              size="icon"
+              disabled={loading || !input.trim()}
+              className="h-10 w-10 shrink-0 rounded-xl shadow-sm"
+              aria-label="Enviar mensagem"
+            >
               <Send className="h-4 w-4" />
             </Button>
           </form>

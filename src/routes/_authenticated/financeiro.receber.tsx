@@ -82,7 +82,7 @@ import { usePerfisMap } from "@/hooks/use-perfis";
 
 export const Route = createFileRoute("/_authenticated/financeiro/receber")({
   component: () => <LancamentosPage tipo="receber" />,
-  errorComponent: RouteErrorState
+  errorComponent: RouteErrorState,
 });
 
 const brl = (n: number) =>
@@ -223,7 +223,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       return data ?? [];
     },
   });
-  const contaPadraoId = ((contasOpt ?? []) as any[]).find((c) => c.padrao)?.id as string | undefined;
+  const contaPadraoId = ((contasOpt ?? []) as any[]).find((c) => c.padrao)?.id as
+    string | undefined;
 
   const { data: categoriasOpt } = useQuery({
     enabled: !!empresa,
@@ -253,7 +254,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   // Auditoria (tabela auditoria_eventos): quem criou/editou/excluiu
   const [trilhaOpen, setTrilhaOpen] = useState(false);
   const [transfOpen, setTransfOpen] = useState(false);
-  const registrarAuditoria = async (acao: string, descricao: string, detalhes: Record<string, any> = {}) => {
+  const registrarAuditoria = async (
+    acao: string,
+    descricao: string,
+    detalhes: Record<string, any> = {},
+  ) => {
     try {
       if (!empresa) return;
       const { data: sess } = await supabase.auth.getUser();
@@ -268,13 +273,16 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         entidade: "lancamento_financeiro",
         detalhes: { ...detalhes, descricao, user_nome: nome, user_email: u.email || "", tipo },
       } as any);
-    } catch { /* trilha indisponível: não bloqueia o fluxo */ }
+    } catch {
+      /* trilha indisponível: não bloqueia o fluxo */
+    }
   };
   const trilhaQuery = useQuery({
     enabled: trilhaOpen && !!empresa,
     queryKey: ["auditoria-lancamentos", empresa?.id, tipo],
     queryFn: async () => {
-      const { data, error } = await supabase.from("auditoria_eventos" as never)
+      const { data, error } = await supabase
+        .from("auditoria_eventos" as never)
         .select("id,created_at,acao,detalhes")
         .eq("empresa_id", empresa!.id as never)
         .eq("modulo", "financeiro")
@@ -295,7 +303,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       if (!(valor > 0)) throw new Error("Valor deve ser maior que zero");
       if (!input.descricao.trim()) throw new Error("Informe a descrição");
       if (!input.data_emissao) throw new Error("Informe a competência");
-      if (!input.contato_id) throw new Error(tipo === "receber" ? "Selecione o cliente" : "Selecione o fornecedor");
+      if (!input.contato_id)
+        throw new Error(tipo === "receber" ? "Selecione o cliente" : "Selecione o fornecedor");
       if (!input.categoria_id) throw new Error("Selecione a categoria");
       const { error } = await supabase.from("lancamentos_financeiros").insert({
         empresa_id: empresa.id,
@@ -315,7 +324,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     },
     onSuccess: (_d, input) => {
       toast.success("Lançamento criado");
-      void registrarAuditoria("criar", `Lançamento "${input.descricao}" criado`, { descricao: input.descricao, valor: input.valor });
+      void registrarAuditoria("criar", `Lançamento "${input.descricao}" criado`, {
+        descricao: input.descricao,
+        valor: input.valor,
+      });
       setOpen(false);
       setForm(emptyForm());
       invalidate();
@@ -365,7 +377,14 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Delete") return;
       const t = e.target as HTMLElement;
-      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      if (
+        t &&
+        (t.tagName === "INPUT" ||
+          t.tagName === "TEXTAREA" ||
+          t.tagName === "SELECT" ||
+          t.isContentEditable)
+      )
+        return;
       if (document.querySelector('[role="dialog"]')) return;
       e.preventDefault();
       setConfLote(true);
@@ -384,17 +403,25 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const excluirLote = useMutation({
     mutationFn: async (ids: string[]) => {
       // Desvincula parcelas de notas importadas antes de excluir
-      await emLotes(ids, (lote) => supabase
-        .from("notas_importadas_parcelas" as never)
-        .update({ lancamento_id: null } as never)
-        .in("lancamento_id", lote)
-        .then((r) => { if (r.error) throw r.error; }));
+      await emLotes(ids, (lote) =>
+        supabase
+          .from("notas_importadas_parcelas" as never)
+          .update({ lancamento_id: null } as never)
+          .in("lancamento_id", lote)
+          .then((r) => {
+            if (r.error) throw r.error;
+          }),
+      );
       // Desvincula folhas vinculadas (fallback se trigger não disparar via client)
-      await emLotes(ids, (lote) => supabase
-        .from("folha_pagamento" as never)
-        .update({ status: "aberta", lancamento_id: null, data_pagamento: null } as never)
-        .in("lancamento_id", lote)
-        .then((r) => { if (r.error) throw r.error; }));
+      await emLotes(ids, (lote) =>
+        supabase
+          .from("folha_pagamento" as never)
+          .update({ status: "aberta", lancamento_id: null, data_pagamento: null } as never)
+          .in("lancamento_id", lote)
+          .then((r) => {
+            if (r.error) throw r.error;
+          }),
+      );
       // Desvincula das transações OFX antes de excluir — a transação bancária
       // volta para "aberto" (podendo ser reconciliada novamente), mas não é apagada.
       await emLotes(ids, async (lote) => {
@@ -411,7 +438,9 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     },
     onSuccess: (_d, ids) => {
       toast.success("Lançamentos excluídos");
-      void registrarAuditoria("excluir", `${ids.length} lançamento(s) excluído(s)`, { qtd: ids.length });
+      void registrarAuditoria("excluir", `${ids.length} lançamento(s) excluído(s)`, {
+        qtd: ids.length,
+      });
       clearSel();
       invalidate();
     },
@@ -431,7 +460,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           ? { status, data_pagamento: format(new Date(), "yyyy-MM-dd") }
           : { status };
       await emLotes(ids, async (lote) => {
-        const { error } = await supabase.from("lancamentos_financeiros").update(patch).in("id", lote);
+        const { error } = await supabase
+          .from("lancamentos_financeiros")
+          .update(patch)
+          .in("id", lote);
         if (error) throw error;
       });
       // Reabrir/cancelar desfaz a conciliação: o extrato volta a "aberto"
@@ -448,7 +480,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     },
     onSuccess: (_d, vars) => {
       toast.success("Status alterado");
-      void registrarAuditoria("alterar", `Status alterado para ${vars.status} (${vars.ids.length})`, { status: vars.status, qtd: vars.ids.length });
+      void registrarAuditoria(
+        "alterar",
+        `Status alterado para ${vars.status} (${vars.ids.length})`,
+        { status: vars.status, qtd: vars.ids.length },
+      );
       clearSel();
       invalidate();
     },
@@ -493,7 +529,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       if (!(valor > 0)) throw new Error("Valor deve ser maior que zero");
       if (!input.descricao.trim()) throw new Error("Informe a descrição");
       if (!input.data_emissao) throw new Error("Informe a competência");
-      if (!input.contato_id) throw new Error(tipo === "receber" ? "Selecione o cliente" : "Selecione o fornecedor");
+      if (!input.contato_id)
+        throw new Error(tipo === "receber" ? "Selecione o cliente" : "Selecione o fornecedor");
       if (!input.categoria_id) throw new Error("Selecione a categoria");
       const { error } = await supabase
         .from("lancamentos_financeiros")
@@ -514,7 +551,9 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     },
     onSuccess: (_d, input) => {
       toast.success("Lançamento atualizado");
-      void registrarAuditoria("alterar", `Lançamento "${input.descricao}" alterado`, { lancamento_id: input.id });
+      void registrarAuditoria("alterar", `Lançamento "${input.descricao}" alterado`, {
+        lancamento_id: input.id,
+      });
       setEditing(null);
       invalidate();
     },
@@ -686,11 +725,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
 
   return (
     <div className={ALTURA_PAGINA}>
-      <PageHeader
-        eyebrow="Financeiro"
-        title={titulo}
-        description={desc}
-      />
+      <PageHeader eyebrow="Financeiro" title={titulo} description={desc} />
 
       <div className="mb-4 flex shrink-0 flex-wrap items-center gap-2.5 sm:mb-6 lg:flex-nowrap">
         <div className="inline-flex max-w-full min-w-0 flex-wrap items-center gap-0.5 whitespace-nowrap rounded-xl border bg-muted/30 p-1.5 text-[13px] shadow-sm">
@@ -727,11 +762,22 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           />
         </div>
         <div className="flex shrink-0 items-center gap-2 lg:ml-auto">
-          <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setTrilhaOpen(true)}
+            className="h-9 rounded-xl px-4 active:scale-95"
+          >
             Auditoria
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setTransfOpen(true)} className="h-9 rounded-xl px-4 shadow-sm active:scale-95">
-            <ArrowLeftRight className="mr-1 h-3.5 w-3.5" />Transferir
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setTransfOpen(true)}
+            className="h-9 rounded-xl px-4 shadow-sm active:scale-95"
+          >
+            <ArrowLeftRight className="mr-1 h-3.5 w-3.5" />
+            Transferir
           </Button>
           <TransferenciaDialog open={transfOpen} onOpenChange={setTransfOpen} />
           <Dialog
@@ -739,7 +785,9 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             onOpenChange={(v) => {
               if (criar.isPending) return;
               if (v && !form.conta_bancaria_id && contaPadraoId) {
-                setForm((f) => (f.conta_bancaria_id ? f : { ...f, conta_bancaria_id: contaPadraoId }));
+                setForm((f) =>
+                  f.conta_bancaria_id ? f : { ...f, conta_bancaria_id: contaPadraoId },
+                );
               }
               setOpen(v);
             }}
@@ -804,9 +852,13 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   <Combobox
                     value={form.contato_id}
                     onChange={(v) => setForm({ ...form, contato_id: v })}
-                    options={(contatosOpt ?? []).map((c) => ({ value: c.id, label: c.nome ?? "", busca: (c as { documento?: string | null }).documento ?? "", detalhe: (c as { documento?: string | null }).documento ?? "" }))}
-                   
-                   
+                    options={(contatosOpt ?? []).map((c) => ({
+                      value: c.id,
+                      label: c.nome ?? "",
+                      busca: (c as { documento?: string | null }).documento ?? "",
+                      detalhe: (c as { documento?: string | null }).documento ?? "",
+                    }))}
+
                     emptyText="Nenhum item encontrado."
                     className="h-10"
                     footer={{ label: "Novo contato", onClick: () => abrirNovoContato("form") }}
@@ -818,9 +870,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     <Combobox
                       value={form.conta_bancaria_id}
                       onChange={(v) => setForm({ ...form, conta_bancaria_id: v })}
-                      options={(contasOpt ?? []).map((c) => ({ value: c.id, label: rotuloConta(c) }))}
-                     
-                     
+                      options={(contasOpt ?? []).map((c) => ({
+                        value: c.id,
+                        label: rotuloConta(c),
+                      }))}
+
                       emptyText="Nenhum item encontrado."
                       className="h-10"
                     />
@@ -830,9 +884,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     <Combobox
                       value={form.categoria_id}
                       onChange={(v) => setForm({ ...form, categoria_id: v })}
-                      options={(categoriasOpt ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
-                     
-                     
+                      options={(categoriasOpt ?? []).map((c) => ({
+                        value: c.id,
+                        label: c.nome ?? "",
+                      }))}
+
                       emptyText="Nenhum item encontrado."
                       className="h-10"
                     />
@@ -879,7 +935,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   />
                 </div>
                 <DialogFooter className="gap-2">
-                  <Button type="submit" disabled={criar.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+                  <Button
+                    type="submit"
+                    disabled={criar.isPending}
+                    className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                  >
                     {criar.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
                   </Button>
                 </DialogFooter>
@@ -898,7 +958,14 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         contas={contasOpt?.map((c) => ({ id: c.id, nome: c.nome ?? "" }))}
         onImported={invalidate}
         busca={
-          <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); clearSel(); }} />
+          <SearchField
+            value={busca}
+            onChange={(v) => {
+              setBusca(v);
+              setPagina(1);
+              clearSel();
+            }}
+          />
         }
       />
 
@@ -920,210 +987,219 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         <Card className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl shadow-panel">
           {/* Rolagem só dentro da lista: a página não cria barra externa. */}
           <div className="min-h-0 flex-1 overflow-y-auto [&_.erp-table-wrap]:max-h-none">
-          <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
-            {/* Cabeçalho estático e opaco: o sticky global translúcido deixava
+            <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
+              {/* Cabeçalho estático e opaco: o sticky global translúcido deixava
                 as linhas passarem por baixo aparecendo através */}
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10">
-                  <Checkbox
-                    checked={allChecked}
-                    onCheckedChange={toggleAll}
-                    aria-label="Selecionar todos"
-                  />
-                </TableHead>
-                <SortHead k="contato">{tipo === "pagar" ? "Fornecedor" : "Cliente"}</SortHead>
-                <SortHead k="descricao">Descrição</SortHead>
-                <SortHead k="data_vencimento">Vencimento</SortHead>
-                <SortHead k="valor" className="text-right">
-                  Valor
-                </SortHead>
-                <SortHead k="status">Status</SortHead>
-                <TableHead className="text-right">
-                  {selected.size > 0 && (
-                    <div className="flex items-center justify-end gap-1.5 py-0.5">
-                      <span className="mr-1 whitespace-nowrap text-xs font-medium normal-case tracking-normal text-foreground">
-                        {selected.size} selecionado(s)
-                      </span>
-                      <Select
-                        onValueChange={(v) =>
-                          alterarStatusLote.mutate({ ids: [...selected], status: v as "aberto" })
-                        }
-                      >
-                        <SelectTrigger className="h-8 w-[170px] rounded-lg text-xs shadow-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="aberto">Aberto</SelectItem>
-                          <SelectItem value="pago">Pago</SelectItem>
-                          <SelectItem value="parcial">Parcial</SelectItem>
-                          <SelectItem value="vencido">Vencido</SelectItem>
-                          <SelectItem value="cancelado">Cancelado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        disabled={excluirLote.isPending}
-                        onClick={() => setConfLote(true)}
-                        className="h-8 rounded-lg px-3 text-xs"
-                      >
-                        <Trash2 className="mr-1 h-3.5 w-3.5" />
-                        Excluir
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={clearSel} className="h-8 rounded-lg px-3 text-xs">
-                        Limpar
-                      </Button>
-                    </div>
-                  )}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {lancamentosVisiveis.map((l) => {
-                const emAndamento = marcarPago.isPending && marcarPago.variables?.id === l.id;
-                return (
-                  <TableRow key={l.id} data-state={selected.has(l.id) ? "selected" : undefined} className="transition-colors hover:bg-accent/30">
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Checkbox
-                        checked={selected.has(l.id)}
-                        onCheckedChange={() => toggle(l.id)}
-                        aria-label="Selecionar"
-                      />
-                    </TableCell>
-                    <TableCell className="text-muted-foreground font-medium">
-                      {l.contato?.nome ?? "—"}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      <div>{l.descricao}</div>
-                      {l.categoria_id &&
-                        (() => {
-                          const cat = categoriasOpt?.find((c) => c.id === l.categoria_id);
-                          return cat ? (
-                            <Badge
-                              variant="outline"
-                              className="mt-1 rounded-md px-2 py-0.5 text-[10px] font-normal shadow-sm border-muted-foreground/30 text-muted-foreground"
-                            >
-                              {cat.nome}
-                            </Badge>
-                          ) : null;
-                        })()}
-                    </TableCell>
-                    <TableCell className="text-tabular">
-                      {format(new Date(l.data_vencimento + "T00:00:00"), "dd/MM/yyyy")}
-                    </TableCell>
-                    <TableCell className="text-right text-tabular font-medium">
-                      {brl(l.valor)}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={l.status} />
-                    </TableCell>
-                    <TableCell className="px-3 py-2 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-lg active:scale-95"
-                                onClick={() => abrirEdicao(l.id)}
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Editar</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        {l.status !== "pago" && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 rounded-lg active:scale-95"
-                                  disabled={emAndamento}
-                                  onClick={() => marcarPago.mutate({ id: l.id, valor: l.valor })}
-                                >
-                                  <Check className="h-3.5 w-3.5" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Marcar como pago</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                        {l.status !== "aberto" && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 rounded-lg active:scale-95"
-                                  onClick={() =>
-                                    alterarStatusLote.mutate({ ids: [l.id], status: "aberto" })
-                                  }
-                                >
-                                  <RotateCcw className="h-3.5 w-3.5" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Reabrir</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                        {l.status !== "cancelado" && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 rounded-lg active:scale-95"
-                                  onClick={() =>
-                                    alterarStatusLote.mutate({ ids: [l.id], status: "cancelado" })
-                                  }
-                                >
-                                  <Ban className="h-3.5 w-3.5" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Cancelar (mantém histórico)</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-lg text-destructive hover:text-destructive active:scale-95"
-                                onClick={async () => {
-                                  const { data: vinculada } = await supabase
-                                    .from("notas_importadas_parcelas" as never)
-                                    .select("id")
-                                    .eq("lancamento_id", l.id)
-                                    .maybeSingle();
-                                  if (vinculada) {
-                                    setLancamentoBloqueado({ id: l.id, descricao: l.descricao });
-                                    return;
-                                  }
-                                  setConfExclusao(l.id);
-                                }}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Excluir (apaga)</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={allChecked}
+                      onCheckedChange={toggleAll}
+                      aria-label="Selecionar todos"
+                    />
+                  </TableHead>
+                  <SortHead k="contato">{tipo === "pagar" ? "Fornecedor" : "Cliente"}</SortHead>
+                  <SortHead k="descricao">Descrição</SortHead>
+                  <SortHead k="data_vencimento">Vencimento</SortHead>
+                  <SortHead k="valor" className="text-right">
+                    Valor
+                  </SortHead>
+                  <SortHead k="status">Status</SortHead>
+                  <TableHead className="text-right">
+                    {selected.size > 0 && (
+                      <div className="flex items-center justify-end gap-1.5 py-0.5">
+                        <span className="mr-1 whitespace-nowrap text-xs font-medium normal-case tracking-normal text-foreground">
+                          {selected.size} selecionado(s)
+                        </span>
+                        <Select
+                          onValueChange={(v) =>
+                            alterarStatusLote.mutate({ ids: [...selected], status: v as "aberto" })
+                          }
+                        >
+                          <SelectTrigger className="h-8 w-[170px] rounded-lg text-xs shadow-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="aberto">Aberto</SelectItem>
+                            <SelectItem value="pago">Pago</SelectItem>
+                            <SelectItem value="parcial">Parcial</SelectItem>
+                            <SelectItem value="vencido">Vencido</SelectItem>
+                            <SelectItem value="cancelado">Cancelado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={excluirLote.isPending}
+                          onClick={() => setConfLote(true)}
+                          className="h-8 rounded-lg px-3 text-xs"
+                        >
+                          <Trash2 className="mr-1 h-3.5 w-3.5" />
+                          Excluir
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={clearSel}
+                          className="h-8 rounded-lg px-3 text-xs"
+                        >
+                          Limpar
+                        </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                    )}
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {lancamentosVisiveis.map((l) => {
+                  const emAndamento = marcarPago.isPending && marcarPago.variables?.id === l.id;
+                  return (
+                    <TableRow
+                      key={l.id}
+                      data-state={selected.has(l.id) ? "selected" : undefined}
+                      className="transition-colors hover:bg-accent/30"
+                    >
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={selected.has(l.id)}
+                          onCheckedChange={() => toggle(l.id)}
+                          aria-label="Selecionar"
+                        />
+                      </TableCell>
+                      <TableCell className="text-muted-foreground font-medium">
+                        {l.contato?.nome ?? "—"}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        <div>{l.descricao}</div>
+                        {l.categoria_id &&
+                          (() => {
+                            const cat = categoriasOpt?.find((c) => c.id === l.categoria_id);
+                            return cat ? (
+                              <Badge
+                                variant="outline"
+                                className="mt-1 rounded-md px-2 py-0.5 text-[10px] font-normal shadow-sm border-muted-foreground/30 text-muted-foreground"
+                              >
+                                {cat.nome}
+                              </Badge>
+                            ) : null;
+                          })()}
+                      </TableCell>
+                      <TableCell className="text-tabular">
+                        {format(new Date(l.data_vencimento + "T00:00:00"), "dd/MM/yyyy")}
+                      </TableCell>
+                      <TableCell className="text-right text-tabular font-medium">
+                        {brl(l.valor)}
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={l.status} />
+                      </TableCell>
+                      <TableCell className="px-3 py-2 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-lg active:scale-95"
+                                  onClick={() => abrirEdicao(l.id)}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Editar</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          {l.status !== "pago" && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-lg active:scale-95"
+                                    disabled={emAndamento}
+                                    onClick={() => marcarPago.mutate({ id: l.id, valor: l.valor })}
+                                  >
+                                    <Check className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Marcar como pago</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                          {l.status !== "aberto" && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-lg active:scale-95"
+                                    onClick={() =>
+                                      alterarStatusLote.mutate({ ids: [l.id], status: "aberto" })
+                                    }
+                                  >
+                                    <RotateCcw className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Reabrir</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                          {l.status !== "cancelado" && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-lg active:scale-95"
+                                    onClick={() =>
+                                      alterarStatusLote.mutate({ ids: [l.id], status: "cancelado" })
+                                    }
+                                  >
+                                    <Ban className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Cancelar (mantém histórico)</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-lg text-destructive hover:text-destructive active:scale-95"
+                                  onClick={async () => {
+                                    const { data: vinculada } = await supabase
+                                      .from("notas_importadas_parcelas" as never)
+                                      .select("id")
+                                      .eq("lancamento_id", l.id)
+                                      .maybeSingle();
+                                    if (vinculada) {
+                                      setLancamentoBloqueado({ id: l.id, descricao: l.descricao });
+                                      return;
+                                    }
+                                    setConfExclusao(l.id);
+                                  }}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Excluir (apaga)</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
           <div className="shrink-0">
             <Pagination
@@ -1133,7 +1209,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               pageSize={pageSize}
               onPagina={setPagina}
               pageSizes={[10, 25, 50, 100]}
-              onPageSize={(n) => { setPageSize(n); setPagina(1); }}
+              onPageSize={(n) => {
+                setPageSize(n);
+                setPagina(1);
+              }}
             />
           </div>
         </Card>
@@ -1164,8 +1243,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     {editing.created_by ? (
                       <>
                         Lançado por{" "}
-                        <span className="font-medium text-foreground">{perfis[editing.created_by] ?? "—"}</span> ·{" "}
-                        {format(new Date(editing.created_at), "dd/MM/yyyy HH:mm")}
+                        <span className="font-medium text-foreground">
+                          {perfis[editing.created_by] ?? "—"}
+                        </span>{" "}
+                        · {format(new Date(editing.created_at), "dd/MM/yyyy HH:mm")}
                       </>
                     ) : (
                       "Lançado pelo sistema"
@@ -1221,9 +1302,13 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 <Combobox
                   value={editing.contato_id}
                   onChange={(v) => setEditing({ ...editing, contato_id: v })}
-                  options={(contatosOpt ?? []).map((c) => ({ value: c.id, label: c.nome ?? "", busca: (c as { documento?: string | null }).documento ?? "", detalhe: (c as { documento?: string | null }).documento ?? "" }))}
-                 
-                 
+                  options={(contatosOpt ?? []).map((c) => ({
+                    value: c.id,
+                    label: c.nome ?? "",
+                    busca: (c as { documento?: string | null }).documento ?? "",
+                    detalhe: (c as { documento?: string | null }).documento ?? "",
+                  }))}
+
                   emptyText="Nenhum item encontrado."
                   className="h-10"
                   footer={{ label: "Novo contato", onClick: () => abrirNovoContato("edit") }}
@@ -1236,8 +1321,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     value={editing.conta_bancaria_id}
                     onChange={(v) => setEditing({ ...editing, conta_bancaria_id: v })}
                     options={(contasOpt ?? []).map((c) => ({ value: c.id, label: rotuloConta(c) }))}
-                   
-                   
+
                     emptyText="Nenhum item encontrado."
                     className="h-10"
                   />
@@ -1247,9 +1331,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   <Combobox
                     value={editing.categoria_id}
                     onChange={(v) => setEditing({ ...editing, categoria_id: v })}
-                    options={(categoriasOpt ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
-                   
-                   
+                    options={(categoriasOpt ?? []).map((c) => ({
+                      value: c.id,
+                      label: c.nome ?? "",
+                    }))}
+
                     emptyText="Nenhum item encontrado."
                     className="h-10"
                   />
@@ -1296,7 +1382,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 />
               </div>
               <DialogFooter className="gap-2">
-                <Button type="submit" disabled={salvarEdicao.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+                <Button
+                  type="submit"
+                  disabled={salvarEdicao.isPending}
+                  className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                >
                   {salvarEdicao.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Salvar alterações
                 </Button>
@@ -1314,7 +1404,9 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       >
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader className="gap-1.5">
-            <AlertDialogTitle className="tracking-tight">Lançamento vinculado a nota fiscal</AlertDialogTitle>
+            <AlertDialogTitle className="tracking-tight">
+              Lançamento vinculado a nota fiscal
+            </AlertDialogTitle>
             <AlertDialogDescription className="leading-relaxed">
               Não é possível excluir este lançamento diretamente por aqui, pois ele foi gerado
               automaticamente a partir de uma nota fiscal importada. As alterações devem ser feitas
@@ -1358,12 +1450,19 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={!!confExclusao} onOpenChange={(v) => { if (!v) setConfExclusao(null); }}>
+      <AlertDialog
+        open={!!confExclusao}
+        onOpenChange={(v) => {
+          if (!v) setConfExclusao(null);
+        }}
+      >
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader className="gap-1.5">
             <AlertDialogTitle className="tracking-tight">Excluir lançamento</AlertDialogTitle>
             <AlertDialogDescription className="whitespace-pre-line leading-relaxed">
-              {'Excluir lançamento?\n\nSe estiver conciliado, a transação do extrato voltará para "em aberto" (não será apagada).'}
+              {
+                'Excluir lançamento?\n\nSe estiver conciliado, a transação do extrato voltará para "em aberto" (não será apagada).'
+              }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">
@@ -1371,7 +1470,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             <AlertDialogAction
               data-acao
               className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => { if (confExclusao) excluirLote.mutate([confExclusao]); setConfExclusao(null); }}
+              onClick={() => {
+                if (confExclusao) excluirLote.mutate([confExclusao]);
+                setConfExclusao(null);
+              }}
             >
               Excluir
             </AlertDialogAction>
@@ -1386,7 +1488,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         emptyText="Nenhum evento registrado ainda. Criar, editar, excluir ou alterar status gera registros aqui."
         isLoading={trilhaQuery.isLoading}
         isError={trilhaQuery.isError}
-        events={(trilhaQuery.data ?? [])}
+        events={trilhaQuery.data ?? []}
         showDate
       />
       <NovoContatoDialog

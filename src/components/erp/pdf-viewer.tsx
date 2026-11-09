@@ -1,11 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { FileText, Download, Printer, X, ChevronLeft, ChevronRight, Loader2, Expand } from "lucide-react";
+import {
+  FileText,
+  Download,
+  Printer,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Expand,
+} from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
 if (typeof window !== "undefined") {
-  try { pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker; } catch {}
+  try {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+  } catch {}
 }
 
 export function PdfViewer({
@@ -62,7 +73,12 @@ export function PdfViewer({
     (async () => {
       try {
         const d = await (pdfjsLib as any).getDocument({ url, verbosity: 0 }).promise;
-        if (dead) { try { d.destroy(); } catch {} return; }
+        if (dead) {
+          try {
+            d.destroy();
+          } catch {}
+          return;
+        }
         const p1 = await d.getPage(1);
         const w1 = p1.getViewport({ scale: 1 }).width;
         const cw = Math.max(320, (wrapRef.current?.clientWidth || 900) - 48);
@@ -73,10 +89,15 @@ export function PdfViewer({
           setLoading(false);
         }
       } catch {
-        if (!dead) { setErro("Não foi possível exibir o PDF aqui. Use Baixar."); setLoading(false); }
+        if (!dead) {
+          setErro("Não foi possível exibir o PDF aqui. Use Baixar.");
+          setLoading(false);
+        }
       }
     })();
-    return () => { dead = true; };
+    return () => {
+      dead = true;
+    };
   }, [url]);
 
   // Renderiza a página atual
@@ -107,7 +128,11 @@ export function PdfViewer({
         }
       }
     })();
-    return () => { try { task?.cancel(); } catch {} };
+    return () => {
+      try {
+        task?.cancel();
+      } catch {}
+    };
   }, [doc, page, zoom, fit, loading]);
 
   const baixar = () => {
@@ -135,8 +160,8 @@ export function PdfViewer({
       if (!w) return;
       w.document.write(
         `<html><head><title>${titulo}</title><style>@page{size:A4;margin:8mm}body{margin:0}img{width:100%;display:block;page-break-inside:avoid}</style></head><body>` +
-        imgs.map((s) => `<img src="${s}"/>`).join("") +
-        `<script>onload=()=>{focus();print();}</script></body></html>`,
+          imgs.map((s) => `<img src="${s}"/>`).join("") +
+          `<script>onload=()=>{focus();print();}</script></body></html>`,
       );
       w.document.close();
     } finally {
@@ -154,7 +179,9 @@ export function PdfViewer({
         </div>
         <span className="font-semibold tracking-tight">{titulo}</span>
         {subtitulo && (
-          <span className="max-w-full truncate text-xs text-primary-foreground/80">{subtitulo}</span>
+          <span className="max-w-full truncate text-xs text-primary-foreground/80">
+            {subtitulo}
+          </span>
         )}
         <div className="ml-auto flex flex-wrap items-center gap-1.5">
           <Button
@@ -218,7 +245,13 @@ export function PdfViewer({
           >
             <Download className="mr-1 h-3.5 w-3.5" /> Baixar
           </Button>
-          <Button size="sm" variant="secondary" className="h-8 rounded-xl shadow-sm" onClick={imprimir} disabled={printing || loading}>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-8 rounded-xl shadow-sm"
+            onClick={imprimir}
+            disabled={printing || loading}
+          >
             <Printer className="mr-1 h-3.5 w-3.5" /> {printing ? "Gerando..." : "Imprimir"}
           </Button>
           {acoes}
@@ -233,7 +266,10 @@ export function PdfViewer({
           </Button>
         </div>
       </div>
-      <div ref={wrapRef} className="flex flex-1 items-start justify-center overflow-auto bg-muted/40 p-6">
+      <div
+        ref={wrapRef}
+        className="flex flex-1 items-start justify-center overflow-auto bg-muted/40 p-6"
+      >
         {loading && (
           <div className="erp-surface mt-20 flex items-center gap-2.5 rounded-2xl px-6 py-4 text-sm text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" /> Carregando documento...
@@ -242,7 +278,12 @@ export function PdfViewer({
         {!loading && erro && (
           <div className="erp-surface mt-20 rounded-2xl p-8 text-center text-sm text-muted-foreground">
             <p className="leading-relaxed">{erro}</p>
-            <Button size="sm" variant="outline" className="mt-4 h-9 rounded-xl px-5 shadow-sm" onClick={baixar}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="mt-4 h-9 rounded-xl px-5 shadow-sm"
+              onClick={baixar}
+            >
               <Download className="mr-1 h-3.5 w-3.5" /> Baixar PDF
             </Button>
           </div>

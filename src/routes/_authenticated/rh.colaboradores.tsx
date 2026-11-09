@@ -61,7 +61,7 @@ import { brl, dateBR, maskDoc } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/rh/colaboradores")({
   component: ColaboradoresPage,
-  errorComponent: RouteErrorState
+  errorComponent: RouteErrorState,
 });
 
 type Colab = {
@@ -107,8 +107,33 @@ const STATUS: Record<string, string> = {
 const soDigitos = (s: string) => s.replace(/\D/g, "");
 
 const UFS = [
-  "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT",
-  "PA", "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO",
+  "AC",
+  "AL",
+  "AM",
+  "AP",
+  "BA",
+  "CE",
+  "DF",
+  "ES",
+  "GO",
+  "MA",
+  "MG",
+  "MS",
+  "MT",
+  "PA",
+  "PB",
+  "PE",
+  "PI",
+  "PR",
+  "RJ",
+  "RN",
+  "RO",
+  "RR",
+  "RS",
+  "SC",
+  "SE",
+  "SP",
+  "TO",
 ];
 
 // Máscara progressiva de telefone; vários números separados por ;
@@ -264,13 +289,45 @@ function ColaboradoresPage() {
   // "MENTAÇÃO" — na frente do nome). Sufixos com 5+ letras p/ não colidir
   // com nomes reais; terminações TACAO/DUCAO não existem em nome próprio.
   const ROTULOS_CNH = [
-    "HABILITAÇÃO", "HABILITACAO", "CONDUCCIÓN", "CONDUCAO", "CARTEIRA", "NACIONAL",
-    "SOBRENOME", "REGISTRO", "VALIDADE", "EMISSAO", "EMISSÃO", "NASCIMENTO",
-    "PERMISO", "LICENSE", "DRIVER", "REPUBLICA", "REPÚBLICA", "FEDERATIVA", "BRASIL",
-    "IDENTIDADE", "CATEGORIA", "TRANSPORTES", "TRANSITO", "SENATRAN", "SECRETARIA",
-    "INFRAESTRUTURA", "MINISTERIO", "DOCUMENTO", "ASSINATURA", "PORTADOR",
-    "FILIAÇÃO", "FILIACAO", "OBSERVAÇÕES", "LOCAL", "GOVERNO", "SERPRO",
-    "BR", "QR", "CODE",
+    "HABILITAÇÃO",
+    "HABILITACAO",
+    "CONDUCCIÓN",
+    "CONDUCAO",
+    "CARTEIRA",
+    "NACIONAL",
+    "SOBRENOME",
+    "REGISTRO",
+    "VALIDADE",
+    "EMISSAO",
+    "EMISSÃO",
+    "NASCIMENTO",
+    "PERMISO",
+    "LICENSE",
+    "DRIVER",
+    "REPUBLICA",
+    "REPÚBLICA",
+    "FEDERATIVA",
+    "BRASIL",
+    "IDENTIDADE",
+    "CATEGORIA",
+    "TRANSPORTES",
+    "TRANSITO",
+    "SENATRAN",
+    "SECRETARIA",
+    "INFRAESTRUTURA",
+    "MINISTERIO",
+    "DOCUMENTO",
+    "ASSINATURA",
+    "PORTADOR",
+    "FILIAÇÃO",
+    "FILIACAO",
+    "OBSERVAÇÕES",
+    "LOCAL",
+    "GOVERNO",
+    "SERPRO",
+    "BR",
+    "QR",
+    "CODE",
   ];
   const FRAG_INICIO = new Set<string>();
   for (const w of ROTULOS_CNH) {
@@ -305,7 +362,8 @@ function ColaboradoresPage() {
     };
     return dv(9) === Number(dig11[9]) && dv(10) === Number(dig11[10]);
   }
-  const formatarCpf = (dig11: string) => dig11.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+  const formatarCpf = (dig11: string) =>
+    dig11.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
   // Todas as correções de 1 dígito com DV válido (vazio ou ambíguo = sem reparo).
   function repararCpf(dig11: string): string[] {
     const out = new Set<string>();
@@ -342,12 +400,24 @@ function ColaboradoresPage() {
     if (rotulo === mrz) return { nome: rotulo, fonte: "rotulo" };
     const a = rotulo.split(" ");
     const b = mrz.split(" ");
-    if (a.length === b.length && a.every((w, i) => w === b[i] || w.startsWith(b[i]) || b[i].startsWith(w))) {
-      return { nome: a.map((w, i) => (w.length >= b[i].length ? w : b[i])).join(" "), fonte: "mrz-completo" };
+    if (
+      a.length === b.length &&
+      a.every((w, i) => w === b[i] || w.startsWith(b[i]) || b[i].startsWith(w))
+    ) {
+      return {
+        nome: a.map((w, i) => (w.length >= b[i].length ? w : b[i])).join(" "),
+        fonte: "mrz-completo",
+      };
     }
     return { nome: mrz, fonte: "mrz" };
   }
-  type PassCnh = { campos: CnhCampos; fontes: Record<string, string>; cpfs: string[]; regs: { v: string; s: number }[]; tag: string };
+  type PassCnh = {
+    campos: CnhCampos;
+    fontes: Record<string, string>;
+    cpfs: string[];
+    regs: { v: string; s: number }[];
+    tag: string;
+  };
   function limparNome(bruto: string): string {
     const toks = bruto.split(/\s+/).filter(Boolean);
     let ini = 0;
@@ -406,7 +476,13 @@ function ColaboradoresPage() {
   //     <CPF> <nº registro> <categoria>; validade = maior data do documento
   //  3) Fallback: maior sequência em maiúsculas fora do cabeçalho
   // Cobre o modelo digital antigo e o novo (gov.br + QR-CODE + MRZ).
-  function extrairCamposCnh(texto: string): { achados: string[]; campos: CnhCampos; fontes: Record<string, string>; cpfs: string[]; regs: { v: string; s: number }[] } {
+  function extrairCamposCnh(texto: string): {
+    achados: string[];
+    campos: CnhCampos;
+    fontes: Record<string, string>;
+    cpfs: string[];
+    regs: { v: string; s: number }[];
+  } {
     const campos = CAMPOS_VAZIOS();
     // Qual estratégia venceu cada campo (só nomes — nenhum dado pessoal vai p/ log).
     const fontes: Record<string, string> = {};
@@ -432,7 +508,11 @@ function ColaboradoresPage() {
       };
       if (datas) {
         if (!campos.data_nascimento) {
-          campos.data_nascimento = convNasc(datas[1].slice(0, 2), datas[1].slice(2, 4), datas[1].slice(4, 6));
+          campos.data_nascimento = convNasc(
+            datas[1].slice(0, 2),
+            datas[1].slice(2, 4),
+            datas[1].slice(4, 6),
+          );
           fontes.data_nascimento = "mrz";
         }
         if (!campos.cnh_validade) {
@@ -444,7 +524,7 @@ function ColaboradoresPage() {
       if (!lnome) {
         // OCR comeu os <: a L3 vira a linha após a L2 (só letras maiúsculas)
         const i2 = linhas.findIndex((l) => /\d{6}\d?[MF<]?\d{6}/.test(l));
-        const cand = i2 >= 0 ? linhas[i2 + 1] ?? "" : "";
+        const cand = i2 >= 0 ? (linhas[i2 + 1] ?? "") : "";
         if (/^[A-ZÀ-Ú ]{6,60}$/.test(cand)) lnome = cand;
       }
       if (lnome) {
@@ -475,17 +555,29 @@ function ColaboradoresPage() {
       const m = T.match(rotulo);
       if (!m || m.index === undefined) return "";
       const ini = m.index + m[0].length;
-      return T.slice(ini, ini + janela).match(captura)?.[1]?.trim() ?? "";
+      return (
+        T.slice(ini, ini + janela)
+          .match(captura)?.[1]
+          ?.trim() ?? ""
+      );
     };
     // 1) NOME por rótulo (tolerante a OCR: "NOMEESOBRENOME", "N0ME", caixa mista)
     if (!campos.nome) {
       // 1º) Linha seguinte ao rótulo NOME (layout do documento — o mais confiável no OCR)
       const idx = linhas.findIndex(
-        (l) => /N[O0]ME(\s*E?\s*S[O0]BREN[O0]ME)?\b/i.test(l) && l.replace(/N[O0]ME|S[O0]BREN[O0]ME/gi, "").replace(/[\dªº]/g, "").replace(/\be\b/gi, "").trim().length < 6,
+        (l) =>
+          /N[O0]ME(\s*E?\s*S[O0]BREN[O0]ME)?\b/i.test(l) &&
+          l
+            .replace(/N[O0]ME|S[O0]BREN[O0]ME/gi, "")
+            .replace(/[\dªº]/g, "")
+            .replace(/\be\b/gi, "")
+            .trim().length < 6,
       );
       if (idx >= 0) {
         // Mesmo rótulo + valor na mesma linha ("NOME E SOBRENOME ROBERTO DE SOUZA")
-        const mesma = linhas[idx].replace(/^\s*\d*\s*(e\s+)?\d*\s*N[O0]ME(\s*E?\s*S[O0]BREN[O0]ME)?/i, " ").trim();
+        const mesma = linhas[idx]
+          .replace(/^\s*\d*\s*(e\s+)?\d*\s*N[O0]ME(\s*E?\s*S[O0]BREN[O0]ME)?/i, " ")
+          .trim();
         if (mesma.length > 3) campos.nome = limparNome(mesma.toUpperCase());
         for (let j = idx + 1; j < linhas.length && j < idx + 4 && !campos.nome; j++) {
           console.log("[CNH-OCR] nome linha?", JSON.stringify(linhas[j]));
@@ -494,27 +586,34 @@ function ColaboradoresPage() {
       }
       // 1b) Modelo novo: "NOME E SOBRENOME <nome> 1ª HABILITAÇÃO/data" tudo na mesma linha
       if (!campos.nome) {
-        const m = T.match(/N[O0]ME(\s*E?\s*S[O0]BREN[O0]ME)?\s+([A-Za-zÀ-ú ]{3,80}?)(?=\s*(?:\d|1[ªa]|D[O0]C\b|CPF\b|CNH\b|DATA\b|CATEG|VALID|HABIL|FILIAC|NACIONALIDADE|NATURALIDADE|ASS\b|LOCAL\b|OBS\b|MINAS|GERAIS|BRASIL))/i);
+        const m = T.match(
+          /N[O0]ME(\s*E?\s*S[O0]BREN[O0]ME)?\s+([A-Za-zÀ-ú ]{3,80}?)(?=\s*(?:\d|1[ªa]|D[O0]C\b|CPF\b|CNH\b|DATA\b|CATEG|VALID|HABIL|FILIAC|NACIONALIDADE|NATURALIDADE|ASS\b|LOCAL\b|OBS\b|MINAS|GERAIS|BRASIL))/i,
+        );
         if (m) campos.nome = limparNome(m[2].toUpperCase());
       }
       // 2º) Rótulo+valor adjacentes (modelo antigo)
       if (!campos.nome) {
-        campos.nome =
-          limparNome(
-            (
-              T.match(/NOME\s+([A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]{6,60}?)(?=\s+(?:DOC|CPF|RG|CNH|DATA|CATEG|VALID|HABIL|FILIAC|NACIONALIDADE|NATURALIDADE|ASS|LOCAL|OBS))/)?.[1]?.trim() ?? ""
-            ).toUpperCase(),
-          );
+        campos.nome = limparNome(
+          (
+            T.match(
+              /NOME\s+([A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]{6,60}?)(?=\s+(?:DOC|CPF|RG|CNH|DATA|CATEG|VALID|HABIL|FILIAC|NACIONALIDADE|NATURALIDADE|ASS|LOCAL|OBS))/,
+            )?.[1]?.trim() ?? ""
+          ).toUpperCase(),
+        );
       }
       // 3º) Fallback: remove palavras-rótulo e pega a 1ª sequência longa em maiúsculas
       // (cabeçalho REPÚBLICA/MINISTÉRIO nunca vale como nome)
       if (!campos.nome) {
         const limpo = apos(/NOME/, /(.{10,200})/, 200)
           .toUpperCase()
-          .replace(/\b(NOME|DOC|IDENTIDADE|ORG|ORGAO|EMISSOR|UF|CPF|DATA|NASCIMENTO|FILIA[CÇ][AÃ]O|CATEGORIA|CAT|HAB|VALIDADE|PERMISSAO|ACC|REGISTRO|RENACH|HABILITA[CÇ][AÃ]O|OBSERVA[CÇ][OÕ]ES|LOCAL|EMISSAO)\b\.?/gi, " ")
+          .replace(
+            /\b(NOME|DOC|IDENTIDADE|ORG|ORGAO|EMISSOR|UF|CPF|DATA|NASCIMENTO|FILIA[CÇ][AÃ]O|CATEGORIA|CAT|HAB|VALIDADE|PERMISSAO|ACC|REGISTRO|RENACH|HABILITA[CÇ][AÃ]O|OBSERVA[CÇ][OÕ]ES|LOCAL|EMISSAO)\b\.?/gi,
+            " ",
+          )
           .replace(/[^A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]/g, " ");
         const cands = limpo.match(/[A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]{6,60}/g) ?? [];
-        const STOP = /REPUBLICA|FEDERATIVA|BRASIL|MINISTERIO|TRANSPORTES|TRANSITO|SENATRAN|CARTEIRA|HABILITACAO|HABILITA|PERMISO|CONDUCCION|CONDUCAO|DRIVER|LICENSE|SOBRENOME/;
+        const STOP =
+          /REPUBLICA|FEDERATIVA|BRASIL|MINISTERIO|TRANSPORTES|TRANSITO|SENATRAN|CARTEIRA|HABILITACAO|HABILITA|PERMISO|CONDUCCION|CONDUCAO|DRIVER|LICENSE|SOBRENOME/;
         campos.nome =
           cands.map((c) => limparNome(c.trim())).find((c) => c && !STOP.test(semAcento(c))) ?? "";
       }
@@ -609,8 +708,12 @@ function ColaboradoresPage() {
         ? `${nascIso.slice(8, 10)}/${nascIso.slice(5, 7)}/${nascIso.slice(0, 4)}`
         : "";
       const plausivel = (dd: string, mm: string, yy: string) =>
-        Number(dd) >= 1 && Number(dd) <= 31 && Number(mm) >= 1 && Number(mm) <= 12 &&
-        Number(yy) >= 1990 && Number(yy) <= 2100;
+        Number(dd) >= 1 &&
+        Number(dd) <= 31 &&
+        Number(mm) >= 1 &&
+        Number(mm) <= 12 &&
+        Number(yy) >= 1990 &&
+        Number(yy) <= 2100;
       const kept: string[] = [];
       let fimAnt = 0;
       for (const m of T.matchAll(/(\d{2})\/(\d{2})\/(\d{4})/g)) {
@@ -695,7 +798,11 @@ function ColaboradoresPage() {
           c.height,
         );
         const { data } = await worker.recognize(c);
-        console.log("[CNH-OCR] recorte", r, `${(data?.text ?? "").replace(/\s/g, "").length} chars`);
+        console.log(
+          "[CNH-OCR] recorte",
+          r,
+          `${(data?.text ?? "").replace(/\s/g, "").length} chars`,
+        );
         if ((data?.text ?? "").replace(/\s/g, "").length > 30) textos.push(data.text);
       }
       return { textos };
@@ -769,9 +876,7 @@ function ColaboradoresPage() {
             if (/^\d{9,12}$/.test(dig)) return dig;
           }
           // Nº quebrado em 2 pedaços pelo OCR: junta vizinhos (sem / entre eles)
-          const onlyDig = toks
-            .map((tk) => tk.replace(/\D/g, ""))
-            .filter((d) => /^\d+$/.test(d));
+          const onlyDig = toks.map((tk) => tk.replace(/\D/g, "")).filter((d) => /^\d+$/.test(d));
           for (let i = 0; i < onlyDig.length - 1; i++) {
             const m = onlyDig[i] + onlyDig[i + 1];
             if (/^\d{9,12}$/.test(m)) return m;
@@ -841,7 +946,12 @@ function ColaboradoresPage() {
           });
           const { data } = await worker.recognize(c);
           const t = (data?.text ?? "").toUpperCase().replace(/[^A-E]/g, "");
-          console.log("[CNH-OCR] caixa-cat", JSON.stringify(r), "psm" + psm, JSON.stringify(t.slice(0, 20)));
+          console.log(
+            "[CNH-OCR] caixa-cat",
+            JSON.stringify(r),
+            "psm" + psm,
+            JSON.stringify(t.slice(0, 20)),
+          );
           if ((CATS_VALIDAS as readonly string[]).includes(t)) return t;
         }
       }
@@ -864,7 +974,9 @@ function ColaboradoresPage() {
       for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
         const page = await pdf.getPage(i);
         const tc = await page.getTextContent();
-        const items = (tc.items as any[]).filter((it) => typeof it?.str === "string" && it.str.trim());
+        const items = (tc.items as any[]).filter(
+          (it) => typeof it?.str === "string" && it.str.trim(),
+        );
         // Agrupa por linha (coord Y do transform) p/ preservar "rótulo numa linha,
         // valor na seguinte" — o modelo novo traz tudo em caixas separadas.
         try {
@@ -876,7 +988,9 @@ function ColaboradoresPage() {
           }
           const ys = [...rows.keys()].sort((a, b) => b - a);
           for (const y of ys) {
-            const row = rows.get(y)!.sort((a, b) => Number(a.transform?.[4] ?? 0) - Number(b.transform?.[4] ?? 0));
+            const row = rows
+              .get(y)!
+              .sort((a, b) => Number(a.transform?.[4] ?? 0) - Number(b.transform?.[4] ?? 0));
             texto += row.map((it) => it.str.trim()).join(" ") + "\n";
           }
         } catch {
@@ -887,17 +1001,29 @@ function ColaboradoresPage() {
       const passes: PassCnh[] = [];
       if (texto.replace(/\s/g, "").length >= 50) {
         const r = extrairCamposCnh(texto);
-        passes.push({ campos: r.campos, fontes: r.fontes, cpfs: r.cpfs, regs: r.regs, tag: "texto" });
+        passes.push({
+          campos: r.campos,
+          fontes: r.fontes,
+          cpfs: r.cpfs,
+          regs: r.regs,
+          tag: "texto",
+        });
         console.info("[CNH] passada texto:", JSON.stringify(r.fontes));
       }
       const temPass = (k: keyof CnhCampos) => passes.some((p) => p.campos[k]);
       // 2) OCR complementa: roda quando um campo central falta na camada de texto.
-      if (!((CNH_CORE as readonly string[]).every((k) => temPass(k as keyof CnhCampos)))) {
+      if (!(CNH_CORE as readonly string[]).every((k) => temPass(k as keyof CnhCampos))) {
         toast.info("IMPORTANDO DADOS", { id: TOAST_ID });
         const ocr = await ocrCnh(pdf);
         ocr.textos.forEach((tx, i) => {
           const r = extrairCamposCnh(tx);
-          passes.push({ campos: r.campos, fontes: r.fontes, cpfs: r.cpfs, regs: r.regs, tag: `ocr${i + 1}` });
+          passes.push({
+            campos: r.campos,
+            fontes: r.fontes,
+            cpfs: r.cpfs,
+            regs: r.regs,
+            tag: `ocr${i + 1}`,
+          });
         });
         console.info(
           "[CNH] passes:",
@@ -922,7 +1048,9 @@ function ColaboradoresPage() {
           for (const c of pool) freq.set(c.v, (freq.get(c.v) ?? 0) + 1);
           const sMax = Math.max(...pool.map((c) => c.s));
           const top = pool.filter((c) => c.s === sMax);
-          top.sort((a, b) => (freq.get(b.v) ?? 0) - (freq.get(a.v) ?? 0) || b.v.length - a.v.length);
+          top.sort(
+            (a, b) => (freq.get(b.v) ?? 0) - (freq.get(a.v) ?? 0) || b.v.length - a.v.length,
+          );
           const win = top[0];
           total.cnh_numero = win.v;
           fontesTotal.cnh_numero = `${win.tag}:score${win.s}`;
@@ -963,7 +1091,10 @@ function ColaboradoresPage() {
       }
       // Validade: MAIOR entre passadas (ISO ordena cronológico).
       {
-        const vals = passes.map((p) => p.campos.cnh_validade).filter(Boolean).sort();
+        const vals = passes
+          .map((p) => p.campos.cnh_validade)
+          .filter(Boolean)
+          .sort();
         if (vals.length > 0) {
           total.cnh_validade = vals[vals.length - 1];
           const p = passes.find((x) => x.campos.cnh_validade === total.cnh_validade);
@@ -1000,7 +1131,8 @@ function ColaboradoresPage() {
       const faltaram = chaves.filter((k) => !total[k]).map((k) => ROTULO_CAMPO[k]);
       if (lidos.length === 0)
         toast.warning("Nada reconhecido no PDF. Preencha manualmente.", { id: TOAST_ID });
-      else if (faltaram.length === 0) toast.success("DADOS IMPORTADOS COM SUCESSO", { id: TOAST_ID });
+      else if (faltaram.length === 0)
+        toast.success("DADOS IMPORTADOS COM SUCESSO", { id: TOAST_ID });
       else
         toast.warning("Importação parcial da CNH", {
           id: TOAST_ID,
@@ -1016,20 +1148,20 @@ function ColaboradoresPage() {
     queryKey: ["colaboradores", empresa?.id],
     staleTime: 60_000,
     gcTime: 10 * 60_000,
-      queryFn: async () => {
-        const comNovas = await temColunasNovas();
-        const { data, error } = await supabase
-          .from("colaboradores" as never)
-          .select(
-            "id,codigo,nome,cpf,cargo,email,telefone,salario_base,data_admissao,data_demissao,status,pix,banco,agencia,conta,observacoes,cnh_numero,cnh_categoria,cnh_validade,toxico_exame,optante_vt" +
-              (comNovas ? ",data_nascimento,logradouro,numero,complemento,bairro,cidade,uf,cep" : ""),
-          )
-          .eq("empresa_id", empresa!.id)
-          .order("nome")
-          .limit(500);
-        if (error) throw error;
-        return (data ?? []) as unknown as Colab[];
-      },
+    queryFn: async () => {
+      const comNovas = await temColunasNovas();
+      const { data, error } = await supabase
+        .from("colaboradores" as never)
+        .select(
+          "id,codigo,nome,cpf,cargo,email,telefone,salario_base,data_admissao,data_demissao,status,pix,banco,agencia,conta,observacoes,cnh_numero,cnh_categoria,cnh_validade,toxico_exame,optante_vt" +
+            (comNovas ? ",data_nascimento,logradouro,numero,complemento,bairro,cidade,uf,cep" : ""),
+        )
+        .eq("empresa_id", empresa!.id)
+        .order("nome")
+        .limit(500);
+      if (error) throw error;
+      return (data ?? []) as unknown as Colab[];
+    },
   });
 
   const pageSize = 25;
@@ -1042,11 +1174,12 @@ function ColaboradoresPage() {
     const q = busca.trim().toLowerCase();
     if (!q) return colabs ?? [];
     const qDig = q.replace(/\D/g, "");
-    return (colabs ?? []).filter((c) =>
-      (c.nome || "").toLowerCase().includes(q)
-      || (qDig && (c.cpf ?? "").replace(/\D/g, "").includes(qDig))
-      || (c.cargo || "").toLowerCase().includes(q)
-      || ((c as any).cidade || "").toLowerCase().includes(q),
+    return (colabs ?? []).filter(
+      (c) =>
+        (c.nome || "").toLowerCase().includes(q) ||
+        (qDig && (c.cpf ?? "").replace(/\D/g, "").includes(qDig)) ||
+        (c.cargo || "").toLowerCase().includes(q) ||
+        ((c as any).cidade || "").toLowerCase().includes(q),
     );
   }, [colabs, busca]);
   const colabsOrdenados = useMemo(() => {
@@ -1071,7 +1204,10 @@ function ColaboradoresPage() {
   }, [filtrados, ordem]);
   const totalPaginas = Math.max(1, Math.ceil(colabsOrdenados.length / pageSize));
   const paginaAtual = Math.min(pagina, totalPaginas);
-  const colabsVisiveis = colabsOrdenados.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
+  const colabsVisiveis = colabsOrdenados.slice(
+    (paginaAtual - 1) * pageSize,
+    paginaAtual * pageSize,
+  );
   const alternarOrdem = (key: typeof ordem.key) => {
     setOrdem((o) => (o.key === key ? { key, dir: o.dir === 1 ? -1 : 1 } : { key, dir: 1 }));
     setPagina(1);
@@ -1353,7 +1489,10 @@ function ColaboradoresPage() {
         return tbl.insert(p);
       };
       let { error } = await gravar(payload);
-      if (error && /data_nascimento|logradouro|complemento|column|PGRST204/i.test(error.message ?? "")) {
+      if (
+        error &&
+        /data_nascimento|logradouro|complemento|column|PGRST204/i.test(error.message ?? "")
+      ) {
         // Migration ainda não aplicada no banco: salva sem os campos novos
         cacheColabNovos = false;
         ({ error } = await gravar(semNovas(payload)));
@@ -1396,513 +1535,529 @@ function ColaboradoresPage() {
         description="Cadastro de funcionários, cargos e dados de pagamento."
       />
       <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
-        <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} size="xs" />
+        <SearchField
+          value={busca}
+          onChange={(v) => {
+            setBusca(v);
+            setPagina(1);
+          }}
+          size="xs"
+        />
         <div className="flex items-center gap-2">
-            <Dialog open={cargosOpen} onOpenChange={setCargosOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" variant="outline" className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95">
-                  Cargos
+          <Dialog open={cargosOpen} onOpenChange={setCargosOpen}>
+            <DialogTrigger asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95"
+              >
+                Cargos
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
+              <DialogHeader>
+                <DialogTitle>Cargos</DialogTitle>
+              </DialogHeader>
+              <div className="flex items-end gap-2">
+                <div className="flex-1 space-y-1">
+                  <Label>Novo cargo</Label>
+                  <Input
+                    value={novoCargo}
+                    onChange={(e) => setNovoCargo(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && novoCargo.trim()) {
+                        e.preventDefault();
+                        criarCargo.mutate();
+                      }
+                    }}
+                  />
+                </div>
+                <Button onClick={() => criarCargo.mutate()} disabled={criarCargo.isPending}>
+                  {criarCargo.isPending ? "Criando…" : "Criar"}
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
-                <DialogHeader>
-                  <DialogTitle>Cargos</DialogTitle>
-                </DialogHeader>
-                <div className="flex items-end gap-2">
-                  <div className="flex-1 space-y-1">
-                    <Label>Novo cargo</Label>
-                    <Input
-                     
-                      value={novoCargo}
-                      onChange={(e) => setNovoCargo(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && novoCargo.trim()) {
-                          e.preventDefault();
-                          criarCargo.mutate();
-                        }
+              </div>
+              <div className="max-h-64 overflow-y-auto rounded-md border">
+                {!cargosFiltrados.length && !novoCargo.trim() ? (
+                  <p className="p-3 text-sm text-muted-foreground">Nenhum cargo cadastrado.</p>
+                ) : (
+                  <ul className="divide-y text-sm">
+                    {cargosFiltrados.map((c) => {
+                      const usos = usoCargo(c.nome);
+                      const emEdicao = cargoEditId === c.id;
+                      return (
+                        <li
+                          key={c.id}
+                          className="flex items-center justify-between gap-2 px-3 py-2"
+                        >
+                          {emEdicao ? (
+                            <form
+                              className="flex flex-1 items-center gap-2"
+                              onSubmit={(e) => {
+                                e.preventDefault();
+                                renomearCargo.mutate({ id: c.id, nome: cargoEditNome });
+                              }}
+                            >
+                              <Input
+                                autoFocus
+                                value={cargoEditNome}
+                                onChange={(e) => setCargoEditNome(e.target.value)}
+                                onBlur={() => setCargoEditId(null)}
+                              />
+                              <Button type="submit" size="sm" disabled={renomearCargo.isPending}>
+                                Salvar
+                              </Button>
+                            </form>
+                          ) : (
+                            <>
+                              <span>
+                                {c.nome}
+                                {usos > 0 && (
+                                  <span className="ml-2 text-xs text-muted-foreground">
+                                    {usos} funcionário{usos > 1 ? "s" : ""}
+                                  </span>
+                                )}
+                              </span>
+                              <span className="flex shrink-0 gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  aria-label="Renomear"
+                                  onClick={() => {
+                                    setCargoEditId(c.id);
+                                    setCargoEditNome(c.nome);
+                                  }}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  aria-label="Excluir"
+                                  title={
+                                    usos > 0
+                                      ? "Vinculado a funcionário(s) — não pode ser excluído"
+                                      : "Excluir"
+                                  }
+                                  disabled={usos > 0}
+                                  onClick={() => excluirCargo.mutate(c.id)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </span>
+                            </>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Crie, renomeie e exclua qualquer cargo. Só não é possível excluir um cargo vinculado
+                ao cadastro de algum funcionário. Viagens consideram motoristas todos os
+                colaboradores com cargo contendo "Motorista".
+              </p>
+            </DialogContent>
+          </Dialog>
+          <Dialog
+            open={open}
+            onOpenChange={(o) => {
+              setOpen(o);
+              if (!o) reset();
+            }}
+          >
+            <DialogTrigger asChild>
+              <PrimaryButton size="sm">
+                <Plus className="mr-1 h-3.5 w-3.5" />
+                Novo colaborador
+              </PrimaryButton>
+            </DialogTrigger>
+            <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
+              <DialogHeader className="shrink-0 gap-1.5 pb-1">
+                <div className="flex items-center justify-between gap-2 pr-8">
+                  <DialogTitle className="tracking-tight">
+                    {editing ? "Editar colaborador" : "Novo colaborador"}
+                  </DialogTitle>
+                  <label className="flex h-8 cursor-pointer items-center gap-1.5 rounded-md border bg-background px-2 py-1 text-xs font-medium hover:bg-muted">
+                    <FileUp className="h-3.5 w-3.5" /> Importar PDF da CNH
+                    <input
+                      type="file"
+                      accept=".pdf,application/pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) importarCnhPdf(e.target.files[0]);
+                        e.currentTarget.value = "";
                       }}
                     />
-                  </div>
-                  <Button onClick={() => criarCargo.mutate()} disabled={criarCargo.isPending}>
-                    {criarCargo.isPending ? "Criando…" : "Criar"}
-                  </Button>
+                  </label>
                 </div>
-                <div className="max-h-64 overflow-y-auto rounded-md border">
-                  {!cargosFiltrados.length && !novoCargo.trim() ? (
-                    <p className="p-3 text-sm text-muted-foreground">Nenhum cargo cadastrado.</p>
-                  ) : (
-                    <ul className="divide-y text-sm">
-                      {cargosFiltrados.map((c) => {
-                        const usos = usoCargo(c.nome);
-                        const emEdicao = cargoEditId === c.id;
-                        return (
-                          <li
-                            key={c.id}
-                            className="flex items-center justify-between gap-2 px-3 py-2"
-                          >
-                            {emEdicao ? (
-                              <form
-                                className="flex flex-1 items-center gap-2"
-                                onSubmit={(e) => {
-                                  e.preventDefault();
-                                  renomearCargo.mutate({ id: c.id, nome: cargoEditNome });
-                                }}
-                              >
-                                <Input
-                                  autoFocus
-                                  value={cargoEditNome}
-                                  onChange={(e) => setCargoEditNome(e.target.value)}
-                                  onBlur={() => setCargoEditId(null)}
-                                />
-                                <Button type="submit" size="sm" disabled={renomearCargo.isPending}>
-                                  Salvar
-                                </Button>
-                              </form>
-                            ) : (
-                              <>
-                                <span>
-                                  {c.nome}
-                                  {usos > 0 && (
-                                    <span className="ml-2 text-xs text-muted-foreground">
-                                      {usos} funcionário{usos > 1 ? "s" : ""}
-                                    </span>
-                                  )}
-                                </span>
-                                <span className="flex shrink-0 gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    aria-label="Renomear"
-                                    onClick={() => {
-                                      setCargoEditId(c.id);
-                                      setCargoEditNome(c.nome);
-                                    }}
-                                  >
-                                    <Pencil className="h-3.5 w-3.5" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    aria-label="Excluir"
-                                    title={
-                                      usos > 0
-                                        ? "Vinculado a funcionário(s) — não pode ser excluído"
-                                        : "Excluir"
-                                    }
-                                    disabled={usos > 0}
-                                    onClick={() => excluirCargo.mutate(c.id)}
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                </span>
-                              </>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Crie, renomeie e exclua qualquer cargo. Só não é possível excluir um cargo
-                  vinculado ao cadastro de algum funcionário. Viagens consideram motoristas todos os
-                  colaboradores com cargo contendo "Motorista".
-                </p>
-              </DialogContent>
-            </Dialog>
-            <Dialog
-              open={open}
-              onOpenChange={(o) => {
-                setOpen(o);
-                if (!o) reset();
-              }}
-            >
-              <DialogTrigger asChild>
-                <PrimaryButton size="sm">
-                  <Plus className="mr-1 h-3.5 w-3.5" />
-                  Novo colaborador
-                </PrimaryButton>
-              </DialogTrigger>
-              <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
-                <DialogHeader className="shrink-0 gap-1.5 pb-1">
-                  <div className="flex items-center justify-between gap-2 pr-8">
-                    <DialogTitle className="tracking-tight">
-                      {editing ? "Editar colaborador" : "Novo colaborador"}
-                    </DialogTitle>
-                    <label className="flex h-8 cursor-pointer items-center gap-1.5 rounded-md border bg-background px-2 py-1 text-xs font-medium hover:bg-muted">
-                      <FileUp className="h-3.5 w-3.5" /> Importar PDF da CNH
-                      <input
-                        type="file"
-                        accept=".pdf,application/pdf"
-                        className="hidden"
-                        onChange={(e) => {
-                          if (e.target.files?.[0]) importarCnhPdf(e.target.files[0]);
-                          e.currentTarget.value = "";
-                        }}
-                      />
-                    </label>
-                  </div>
-                </DialogHeader>
-                <div className="flex-1 min-h-0 overflow-y-auto p-1">
-                  <div className="border rounded bg-background overflow-hidden [&_input]:h-8 [&_button]:h-8">
-                    <div className="p-2 space-y-2">
-                      <div className="grid grid-cols-2 gap-3 md:grid-cols-12">
-                        <div className="space-y-1 md:col-span-4">
-                          <Label>Nome *</Label>
-                          <Input value={form.nome} onChange={(e) => set("nome", e.target.value.toUpperCase())} className="uppercase" />
-                        </div>
-                        <div className="space-y-1 md:col-span-2">
-                          <Label>CPF *</Label>
-                          <Input
-                           
-                            value={form.cpf}
-                            onChange={(e) => set("cpf", maskDoc(e.target.value))}
-                          />
-                        </div>
-                        <div className="space-y-1 md:col-span-2">
-                          <Label>Data de nascimento</Label>
-                          <DateInput
-                            className="w-full"
-                            value={form.data_nascimento}
-                            onChange={(v) => set("data_nascimento", v)}
-                          />
-                        </div>
-                        <div className="space-y-1 md:col-span-2">
-                          <Label>Telefone(s) *</Label>
-                          <Input
-                           
-                            value={form.telefone}
-                            onChange={(e) => set("telefone", mascaraTelefones(e.target.value))}
-                          />
-                        </div>
-                        <div className="space-y-1 md:col-span-2">
-                          <Label>E-mail</Label>
-                          <Input
-                            type="email"
-                            value={form.email}
-                            onChange={(e) => set("email", e.target.value)}
-                          />
-                        </div>
+              </DialogHeader>
+              <div className="flex-1 min-h-0 overflow-y-auto p-1">
+                <div className="border rounded bg-background overflow-hidden [&_input]:h-8 [&_button]:h-8">
+                  <div className="p-2 space-y-2">
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-12">
+                      <div className="space-y-1 md:col-span-4">
+                        <Label>Nome *</Label>
+                        <Input
+                          value={form.nome}
+                          onChange={(e) => set("nome", e.target.value.toUpperCase())}
+                          className="uppercase"
+                        />
+                      </div>
+                      <div className="space-y-1 md:col-span-2">
+                        <Label>CPF *</Label>
+                        <Input
+                          value={form.cpf}
+                          onChange={(e) => set("cpf", maskDoc(e.target.value))}
+                        />
+                      </div>
+                      <div className="space-y-1 md:col-span-2">
+                        <Label>Data de nascimento</Label>
+                        <DateInput
+                          className="w-full"
+                          value={form.data_nascimento}
+                          onChange={(v) => set("data_nascimento", v)}
+                        />
+                      </div>
+                      <div className="space-y-1 md:col-span-2">
+                        <Label>Telefone(s) *</Label>
+                        <Input
+                          value={form.telefone}
+                          onChange={(e) => set("telefone", mascaraTelefones(e.target.value))}
+                        />
+                      </div>
+                      <div className="space-y-1 md:col-span-2">
+                        <Label>E-mail</Label>
+                        <Input
+                          type="email"
+                          value={form.email}
+                          onChange={(e) => set("email", e.target.value)}
+                        />
                       </div>
                     </div>
-                    <div className="bg-primary/8 text-primary/80 border-y border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide">
-                      Endereço
-                    </div>
-                    <div className="p-2 space-y-2">
-                      <div className="grid grid-cols-2 gap-3 md:grid-cols-12">
-                        <div className="space-y-1 md:col-span-3">
-                          <Label>Rua / Av.</Label>
+                  </div>
+                  <div className="bg-primary/8 text-primary/80 border-y border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide">
+                    Endereço
+                  </div>
+                  <div className="p-2 space-y-2">
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-12">
+                      <div className="space-y-1 md:col-span-3">
+                        <Label>Rua / Av.</Label>
+                        <Input
+                          value={form.logradouro}
+                          onChange={(e) => set("logradouro", e.target.value.toUpperCase())}
+                        />
+                      </div>
+                      <div className="space-y-1 md:col-span-1">
+                        <Label>Número</Label>
+                        <Input
+                          value={form.numero}
+                          onChange={(e) => set("numero", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1 md:col-span-2">
+                        <Label>Complemento</Label>
+                        <Input
+                          value={form.complemento}
+                          onChange={(e) => set("complemento", e.target.value.toUpperCase())}
+                        />
+                      </div>
+                      <div className="space-y-1 md:col-span-2">
+                        <Label>Bairro</Label>
+                        <Input
+                          value={form.bairro}
+                          onChange={(e) => set("bairro", e.target.value.toUpperCase())}
+                        />
+                      </div>
+                      <div className="space-y-1 md:col-span-2">
+                        <Label>Cidade</Label>
+                        <div className="relative">
                           <Input
-                            value={form.logradouro}
-                            onChange={(e) => set("logradouro", e.target.value.toUpperCase())}
+                            value={form.cidade}
+                            onChange={(e) => set("cidade", e.target.value.toUpperCase())}
+                            onFocus={() => setCidadeFoco(true)}
+                            onBlur={() => setTimeout(() => setCidadeFoco(false), 200)}
+                            autoComplete="off"
                           />
-                        </div>
-                        <div className="space-y-1 md:col-span-1">
-                          <Label>Número</Label>
-                          <Input
-                            value={form.numero}
-                            onChange={(e) => set("numero", e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-1 md:col-span-2">
-                          <Label>Complemento</Label>
-                          <Input
-                            value={form.complemento}
-                            onChange={(e) => set("complemento", e.target.value.toUpperCase())}
-                          />
-                        </div>
-                        <div className="space-y-1 md:col-span-2">
-                          <Label>Bairro</Label>
-                          <Input
-                            value={form.bairro}
-                            onChange={(e) => set("bairro", e.target.value.toUpperCase())}
-                          />
-                        </div>
-                        <div className="space-y-1 md:col-span-2">
-                          <Label>Cidade</Label>
-                          <div className="relative">
-                            <Input
-                             
-                              value={form.cidade}
-                              onChange={(e) => set("cidade", e.target.value.toUpperCase())}
-                              onFocus={() => setCidadeFoco(true)}
-                              onBlur={() => setTimeout(() => setCidadeFoco(false), 200)}
-                              autoComplete="off"
-                            />
-                            {cidadeFoco && cidadeSugestoes.length > 0 && (
-                              <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-md border bg-popover shadow-md">
-                                {cidadeSugestoes.map((m) => (
-                                  <button
-                                    type="button"
-                                    key={m.uf + m.nome}
-                                    className="w-full px-3 py-2 text-left text-sm hover:bg-muted"
-                                    onMouseDown={(e) => {
-                                      e.preventDefault();
-                                      set("cidade", m.nome.toUpperCase());
-                                      if (m.uf) set("uf", m.uf);
-                                      setCidadeFoco(false);
-                                    }}
-                                  >
-                                    {m.nome} — {m.uf}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="space-y-1 md:col-span-1">
-                          <Label>UF</Label>
-                          <Select
-                            value={form.uf || undefined}
-                            onValueChange={(v) => set("uf", v === "__limpar" ? "" : v)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="__limpar">Limpar</SelectItem>
-                              {UFS.map((u) => (
-                                <SelectItem key={u} value={u}>
-                                  {u}
-                                </SelectItem>
+                          {cidadeFoco && cidadeSugestoes.length > 0 && (
+                            <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-md border bg-popover shadow-md">
+                              {cidadeSugestoes.map((m) => (
+                                <button
+                                  type="button"
+                                  key={m.uf + m.nome}
+                                  className="w-full px-3 py-2 text-left text-sm hover:bg-muted"
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    set("cidade", m.nome.toUpperCase());
+                                    if (m.uf) set("uf", m.uf);
+                                    setCidadeFoco(false);
+                                  }}
+                                >
+                                  {m.nome} — {m.uf}
+                                </button>
                               ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1 md:col-span-1">
-                          <Label>CEP</Label>
-                          <Input
-                           
-                            value={form.cep}
-                            onChange={(e) =>
-                              set(
-                                "cep",
-                                e.target.value
-                                  .replace(/\D/g, "")
-                                  .slice(0, 8)
-                                  .replace(/(\d{5})(\d)/, "$1-$2"),
-                              )
-                            }
-                            onBlur={() => buscarCep()}
-                          />
+                            </div>
+                          )}
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-3 md:grid-cols-12">
-                        <div className="space-y-1 md:col-span-1">
-                          <Label>ID</Label>
-                          <Input value={editing ? String(editing.codigo ?? "") : "Auto"} readOnly title="Código do funcionário por ordem de cadastro" />
-                        </div>
-                        <div className="space-y-1 md:col-span-3">
-                          <Label>Cargo *</Label>
-                          <div className="relative">
-                            <Input
-                             
-                              value={form.cargo}
-                              onChange={(e) => set("cargo", e.target.value.toUpperCase())}
-                              onFocus={() => setCargoFoco(true)}
-                              onBlur={() => setTimeout(() => setCargoFoco(false), 200)}
-                              autoComplete="off"
-                            />
-                            {cargoFoco && cargoSugestoes.length > 0 && (
-                              <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-md border bg-popover shadow-md">
-                                {cargoSugestoes.map((nome) => (
-                                  <button
-                                    type="button"
-                                    key={nome}
-                                    className="w-full px-3 py-2 text-left text-sm hover:bg-muted"
+                      <div className="space-y-1 md:col-span-1">
+                        <Label>UF</Label>
+                        <Select
+                          value={form.uf || undefined}
+                          onValueChange={(v) => set("uf", v === "__limpar" ? "" : v)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__limpar">Limpar</SelectItem>
+                            {UFS.map((u) => (
+                              <SelectItem key={u} value={u}>
+                                {u}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1 md:col-span-1">
+                        <Label>CEP</Label>
+                        <Input
+                          value={form.cep}
+                          onChange={(e) =>
+                            set(
+                              "cep",
+                              e.target.value
+                                .replace(/\D/g, "")
+                                .slice(0, 8)
+                                .replace(/(\d{5})(\d)/, "$1-$2"),
+                            )
+                          }
+                          onBlur={() => buscarCep()}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-12">
+                      <div className="space-y-1 md:col-span-1">
+                        <Label>ID</Label>
+                        <Input
+                          value={editing ? String(editing.codigo ?? "") : "Auto"}
+                          readOnly
+                          title="Código do funcionário por ordem de cadastro"
+                        />
+                      </div>
+                      <div className="space-y-1 md:col-span-3">
+                        <Label>Cargo *</Label>
+                        <div className="relative">
+                          <Input
+                            value={form.cargo}
+                            onChange={(e) => set("cargo", e.target.value.toUpperCase())}
+                            onFocus={() => setCargoFoco(true)}
+                            onBlur={() => setTimeout(() => setCargoFoco(false), 200)}
+                            autoComplete="off"
+                          />
+                          {cargoFoco && cargoSugestoes.length > 0 && (
+                            <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-md border bg-popover shadow-md">
+                              {cargoSugestoes.map((nome) => (
+                                <button
+                                  type="button"
+                                  key={nome}
+                                  className="w-full px-3 py-2 text-left text-sm hover:bg-muted"
                                   onMouseDown={(e) => {
                                     e.preventDefault();
                                     set("cargo", nome.toUpperCase());
                                     setCargoFoco(false);
                                   }}
-                                  >
-                                    {nome}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="space-y-1 md:col-span-2">
-                          <Label>Status</Label>
-                          <Select value={form.status} onValueChange={(v) => set("status", v)}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Object.entries(STATUS).map(([k, v]) => (
-                                <SelectItem key={k} value={k}>
-                                  {v}
-                                </SelectItem>
+                                >
+                                  {nome}
+                                </button>
                               ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1 md:col-span-2">
-                          <Label>Data de admissão *</Label>
-                          <DateInput
-                            className="w-full"
-                            value={form.data_admissao}
-                            onChange={(v) => set("data_admissao", v)}
-                          />
-                        </div>
-                        <div className="space-y-1 md:col-span-2">
-                          <Label>Data de demissão</Label>
-                          <DateInput
-                            className="w-full"
-                            value={form.data_demissao}
-                            onChange={(v) => set("data_demissao", v)}
-                          />
-                        </div>
-                        <div className="space-y-1 md:col-span-2">
-                          <Label>Salário base</Label>
-                          <MoneyInput
-                            value={form.salario_base}
-                            onChange={(v) => set("salario_base", v)}
-                          />
-                          <label className="flex items-center gap-1.5 text-xs pt-1 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={form.optante_vt}
-                              onChange={(e) => set("optante_vt", e.target.checked)}
-                            />
-                            Vale-transporte (6%)
-                          </label>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                    <div className="bg-primary/8 text-primary/80 border-y border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide">
-                      CNH
-                    </div>
-                    <div className="p-2 space-y-2">
-                      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-                        <div className="space-y-1">
-                          <Label>
-                            Nº da CNH {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
-                          </Label>
-                          <Input
-                            value={form.cnh_numero}
-                            onChange={(e) => set("cnh_numero", e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label>
-                            Categoria {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
-                          </Label>
-                          <Select
-                            value={form.cnh_categoria || ""}
-                            onValueChange={(v) => set("cnh_categoria", v)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {["A", "B", "AB", "C", "D", "E", "AC", "AD", "AE"].map((c) => (
-                                <SelectItem key={c} value={c}>
-                                  {c}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1">
-                          <Label>Validade</Label>
-                          <DateInput
-                            value={form.cnh_validade}
-                            onChange={(v) => set("cnh_validade", v)}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label>
-                            Último exame toxicológico{" "}
-                            {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
-                          </Label>
-                          <Input
-                            type="date"
-                            value={form.toxico_exame}
-                            onChange={(e) =>
-                              setForm((f) => ({
-                                ...f,
-                                toxico_exame: e.target.value,
-                                toxico_validade: e.target.value ? soma30meses(e.target.value) : "",
-                              }))
-                            }
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label>Validade do toxicológico</Label>
-                          <Input
-                            value={form.toxico_validade ? dateBR(form.toxico_validade) : ""}
-                            readOnly
-                          />
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {form.toxico_exame
-                              ? "2 anos e 6 meses após o exame (CTB art. 148-A)"
-                              : form.cargo.toLowerCase().includes("motorist")
-                                ? "Obrigatório para motoristas de categoria C/D/E"
-                                : "Exame obrigatório apenas para categorias C/D/E"}
-                          </p>
-                        </div>
+                      <div className="space-y-1 md:col-span-2">
+                        <Label>Status</Label>
+                        <Select value={form.status} onValueChange={(v) => set("status", v)}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(STATUS).map(([k, v]) => (
+                              <SelectItem key={k} value={k}>
+                                {v}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                      {avisoToxico(form.toxico_validade) && (
-                        <p className="mt-2 text-xs text-warning-foreground">
-                          ⚠ {avisoToxico(form.toxico_validade)}
-                        </p>
-                      )}
-                    </div>
-                    <div className="bg-primary/8 text-primary/80 border-y border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide">
-                      Dados da conta
-                    </div>
-                    <div className="p-2">
-                      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                        <div className="space-y-1">
-                          <Label>PIX</Label>
-                          <Input value={form.pix} onChange={(e) => set("pix", e.target.value)} />
-                        </div>
-                        <div className="space-y-1">
-                          <Label>Banco</Label>
-                          <Input value={form.banco} onChange={(e) => set("banco", e.target.value.toUpperCase())} />
-                        </div>
-                        <div className="space-y-1">
-                          <Label>Agência</Label>
-                          <Input
-                            value={form.agencia}
-                            onChange={(e) => set("agencia", e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label>Conta</Label>
-                          <Input value={form.conta} onChange={(e) => set("conta", e.target.value)} />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="bg-primary/8 text-primary/80 border-y border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide">
-                      Adicionais
-                    </div>
-                    <div className="p-2 space-y-2">
-                      <div className="space-y-1">
-                        <Label>Observações</Label>
-                        <Textarea
-                          rows={2}
-                          value={form.observacoes}
-                          onChange={(e) => set("observacoes", e.target.value.toUpperCase())}
+                      <div className="space-y-1 md:col-span-2">
+                        <Label>Data de admissão *</Label>
+                        <DateInput
+                          className="w-full"
+                          value={form.data_admissao}
+                          onChange={(v) => set("data_admissao", v)}
                         />
+                      </div>
+                      <div className="space-y-1 md:col-span-2">
+                        <Label>Data de demissão</Label>
+                        <DateInput
+                          className="w-full"
+                          value={form.data_demissao}
+                          onChange={(v) => set("data_demissao", v)}
+                        />
+                      </div>
+                      <div className="space-y-1 md:col-span-2">
+                        <Label>Salário base</Label>
+                        <MoneyInput
+                          value={form.salario_base}
+                          onChange={(v) => set("salario_base", v)}
+                        />
+                        <label className="flex items-center gap-1.5 text-xs pt-1 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={form.optante_vt}
+                            onChange={(e) => set("optante_vt", e.target.checked)}
+                          />
+                          Vale-transporte (6%)
+                        </label>
                       </div>
                     </div>
                   </div>
+                  <div className="bg-primary/8 text-primary/80 border-y border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide">
+                    CNH
+                  </div>
+                  <div className="p-2 space-y-2">
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+                      <div className="space-y-1">
+                        <Label>
+                          Nº da CNH {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
+                        </Label>
+                        <Input
+                          value={form.cnh_numero}
+                          onChange={(e) => set("cnh_numero", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>
+                          Categoria {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
+                        </Label>
+                        <Select
+                          value={form.cnh_categoria || ""}
+                          onValueChange={(v) => set("cnh_categoria", v)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {["A", "B", "AB", "C", "D", "E", "AC", "AD", "AE"].map((c) => (
+                              <SelectItem key={c} value={c}>
+                                {c}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Validade</Label>
+                        <DateInput
+                          value={form.cnh_validade}
+                          onChange={(v) => set("cnh_validade", v)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>
+                          Último exame toxicológico{" "}
+                          {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
+                        </Label>
+                        <Input
+                          type="date"
+                          value={form.toxico_exame}
+                          onChange={(e) =>
+                            setForm((f) => ({
+                              ...f,
+                              toxico_exame: e.target.value,
+                              toxico_validade: e.target.value ? soma30meses(e.target.value) : "",
+                            }))
+                          }
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Validade do toxicológico</Label>
+                        <Input
+                          value={form.toxico_validade ? dateBR(form.toxico_validade) : ""}
+                          readOnly
+                        />
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {form.toxico_exame
+                            ? "2 anos e 6 meses após o exame (CTB art. 148-A)"
+                            : form.cargo.toLowerCase().includes("motorist")
+                              ? "Obrigatório para motoristas de categoria C/D/E"
+                              : "Exame obrigatório apenas para categorias C/D/E"}
+                        </p>
+                      </div>
+                    </div>
+                    {avisoToxico(form.toxico_validade) && (
+                      <p className="mt-2 text-xs text-warning-foreground">
+                        ⚠ {avisoToxico(form.toxico_validade)}
+                      </p>
+                    )}
+                  </div>
+                  <div className="bg-primary/8 text-primary/80 border-y border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide">
+                    Dados da conta
+                  </div>
+                  <div className="p-2">
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                      <div className="space-y-1">
+                        <Label>PIX</Label>
+                        <Input value={form.pix} onChange={(e) => set("pix", e.target.value)} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Banco</Label>
+                        <Input
+                          value={form.banco}
+                          onChange={(e) => set("banco", e.target.value.toUpperCase())}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Agência</Label>
+                        <Input
+                          value={form.agencia}
+                          onChange={(e) => set("agencia", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Conta</Label>
+                        <Input value={form.conta} onChange={(e) => set("conta", e.target.value)} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-primary/8 text-primary/80 border-y border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide">
+                    Adicionais
+                  </div>
+                  <div className="p-2 space-y-2">
+                    <div className="space-y-1">
+                      <Label>Observações</Label>
+                      <Textarea
+                        rows={2}
+                        value={form.observacoes}
+                        onChange={(e) => set("observacoes", e.target.value.toUpperCase())}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <DialogFooter className="shrink-0 border-t pt-3">
-                  <Button variant="outline" onClick={() => setOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={() => save.mutate()} disabled={save.isPending}>
-                    Salvar
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+              </div>
+              <DialogFooter className="shrink-0 border-t pt-3">
+                <Button variant="outline" onClick={() => setOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={() => save.mutate()} disabled={save.isPending}>
+                  Salvar
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -1930,12 +2085,48 @@ function ColaboradoresPage() {
             <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("codigo")} title="Ordenar por ID">ID{setaOrdem("codigo")}</TableHead>
-                  <TableHead className="cursor-pointer select-none" onClick={() => alternarOrdem("nome")} title="Ordenar por nome">Nome{setaOrdem("nome")}</TableHead>
-                  <TableHead className="cursor-pointer select-none" onClick={() => alternarOrdem("cargo")} title="Ordenar por cargo">Cargo{setaOrdem("cargo")}</TableHead>
-                  <TableHead className="cursor-pointer select-none" onClick={() => alternarOrdem("status")} title="Ordenar por status">Status{setaOrdem("status")}</TableHead>
-                  <TableHead className="cursor-pointer select-none" onClick={() => alternarOrdem("data_admissao")} title="Ordenar por admissão">Admissão{setaOrdem("data_admissao")}</TableHead>
-                  <TableHead className="text-right cursor-pointer select-none" onClick={() => alternarOrdem("salario_base")} title="Ordenar por salário">Salário{setaOrdem("salario_base")}</TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none whitespace-nowrap"
+                    onClick={() => alternarOrdem("codigo")}
+                    title="Ordenar por ID"
+                  >
+                    ID{setaOrdem("codigo")}
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none"
+                    onClick={() => alternarOrdem("nome")}
+                    title="Ordenar por nome"
+                  >
+                    Nome{setaOrdem("nome")}
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none"
+                    onClick={() => alternarOrdem("cargo")}
+                    title="Ordenar por cargo"
+                  >
+                    Cargo{setaOrdem("cargo")}
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none"
+                    onClick={() => alternarOrdem("status")}
+                    title="Ordenar por status"
+                  >
+                    Status{setaOrdem("status")}
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none"
+                    onClick={() => alternarOrdem("data_admissao")}
+                    title="Ordenar por admissão"
+                  >
+                    Admissão{setaOrdem("data_admissao")}
+                  </TableHead>
+                  <TableHead
+                    className="text-right cursor-pointer select-none"
+                    onClick={() => alternarOrdem("salario_base")}
+                    title="Ordenar por salário"
+                  >
+                    Salário{setaOrdem("salario_base")}
+                  </TableHead>
                   <TableHead className="w-10"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -1965,7 +2156,12 @@ function ColaboradoresPage() {
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10" title="Excluir">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10"
+                              title="Excluir"
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </AlertDialogTrigger>
@@ -1978,7 +2174,11 @@ function ColaboradoresPage() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction data-acao className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => del.mutate(c.id)}>
+                              <AlertDialogAction
+                                data-acao
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                onClick={() => del.mutate(c.id)}
+                              >
                                 Excluir
                               </AlertDialogAction>
                             </AlertDialogFooter>

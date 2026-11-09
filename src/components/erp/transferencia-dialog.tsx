@@ -5,7 +5,13 @@ import { Label } from "@/components/ui/label";
 import { MoneyInput } from "@/components/erp/money-input";
 import { DateInput } from "@/components/erp/date-input";
 import { Combobox } from "@/components/erp/combobox";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -39,8 +45,12 @@ export function TransferenciaDialog({
     enabled: !!empresa,
     queryKey: ["contas-transf", empresa?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("contas_bancarias")
-        .select("id,nome,banco,saldo_atual").eq("empresa_id", empresa!.id).eq("ativo", true).order("nome");
+      const { data, error } = await supabase
+        .from("contas_bancarias")
+        .select("id,nome,banco,saldo_atual")
+        .eq("empresa_id", empresa!.id)
+        .eq("ativo", true)
+        .order("nome");
       if (error) throw error;
       return (data ?? []) as Conta[];
     },
@@ -48,12 +58,16 @@ export function TransferenciaDialog({
 
   const nomeConta = (id: string) => {
     const c = contas.find((x) => x.id === id);
-    return c ? (c.nome || c.banco || "Conta") : "—";
+    return c ? c.nome || c.banco || "Conta" : "—";
   };
 
   const reset = () => {
-    setOrigem(origemInicial); setDestino(""); setValor("0"); setObs("");
-    setDescricao("Transferência entre contas"); setData(format(new Date(), "yyyy-MM-dd"));
+    setOrigem(origemInicial);
+    setDestino("");
+    setValor("0");
+    setObs("");
+    setDescricao("Transferência entre contas");
+    setData(format(new Date(), "yyyy-MM-dd"));
   };
 
   const criar = useMutation({
@@ -65,20 +79,43 @@ export function TransferenciaDialog({
       if (v <= 0) throw new Error("Informe um valor maior que zero");
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: tr, error } = await (supabase.from("transferencias_contas" as never) as any).insert({
-        empresa_id: empresa.id, data, conta_origem_id: origem, conta_destino_id: destino,
-        valor: v, descricao: descricao || "Transferência entre contas", observacoes: obs || null,
-      }).select("id").single();
+      const { data: tr, error } = await (supabase.from("transferencias_contas" as never) as any)
+        .insert({
+          empresa_id: empresa.id,
+          data,
+          conta_origem_id: origem,
+          conta_destino_id: destino,
+          valor: v,
+          descricao: descricao || "Transferência entre contas",
+          observacoes: obs || null,
+        })
+        .select("id")
+        .single();
       if (error) throw error;
 
       const base = {
-        empresa_id: empresa.id, data_emissao: data, data_vencimento: data,
-        status: "aberto", valor: v, valor_pago: 0, transferencia_id: tr.id,
+        empresa_id: empresa.id,
+        data_emissao: data,
+        data_vencimento: data,
+        status: "aberto",
+        valor: v,
+        valor_pago: 0,
+        transferencia_id: tr.id,
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: e2 } = await (supabase.from("lancamentos_financeiros") as any).insert([
-        { ...base, tipo: "pagar", conta_bancaria_id: origem, descricao: `${descricao} → ${nomeConta(destino)}` },
-        { ...base, tipo: "receber", conta_bancaria_id: destino, descricao: `${descricao} ← ${nomeConta(origem)}` },
+        {
+          ...base,
+          tipo: "pagar",
+          conta_bancaria_id: origem,
+          descricao: `${descricao} → ${nomeConta(destino)}`,
+        },
+        {
+          ...base,
+          tipo: "receber",
+          conta_bancaria_id: destino,
+          descricao: `${descricao} ← ${nomeConta(origem)}`,
+        },
       ]);
       if (e2) throw e2;
     },
@@ -95,9 +132,17 @@ export function TransferenciaDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        onOpenChange(o);
+        if (!o) reset();
+      }}
+    >
       <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
-        <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Nova transferência</DialogTitle></DialogHeader>
+        <DialogHeader className="gap-1.5 pb-1">
+          <DialogTitle className="tracking-tight">Nova transferência</DialogTitle>
+        </DialogHeader>
         <div className="grid gap-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="grid gap-1.5">
@@ -112,24 +157,56 @@ export function TransferenciaDialog({
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="grid gap-1.5">
               <Label>Conta de origem</Label>
-              <Combobox value={origem} onChange={setOrigem} options={contas.map((c) => ({ value: c.id, label: `${c.nome || c.banco} · ${brl(c.saldo_atual)}` }))} emptyText="Nenhum item encontrado." className="h-10" />
+              <Combobox
+                value={origem}
+                onChange={setOrigem}
+                options={contas.map((c) => ({
+                  value: c.id,
+                  label: `${c.nome || c.banco} · ${brl(c.saldo_atual)}`,
+                }))}
+                emptyText="Nenhum item encontrado."
+                className="h-10"
+              />
             </div>
             <div className="grid gap-1.5">
               <Label>Conta de destino</Label>
-              <Combobox value={destino} onChange={setDestino} options={contas.filter((c) => c.id !== origem).map((c) => ({ value: c.id, label: `${c.nome || c.banco} · ${brl(c.saldo_atual)}` }))} emptyText="Nenhum item encontrado." className="h-10" />
+              <Combobox
+                value={destino}
+                onChange={setDestino}
+                options={contas
+                  .filter((c) => c.id !== origem)
+                  .map((c) => ({
+                    value: c.id,
+                    label: `${c.nome || c.banco} · ${brl(c.saldo_atual)}`,
+                  }))}
+                emptyText="Nenhum item encontrado."
+                className="h-10"
+              />
             </div>
           </div>
           <div className="grid gap-1.5">
             <Label>Descrição</Label>
-            <Input value={descricao} onChange={(e) => setDescricao(e.target.value)} className="h-10 rounded-xl" />
+            <Input
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              className="h-10 rounded-xl"
+            />
           </div>
           <div className="grid gap-1.5">
             <Label>Observações</Label>
-            <Input value={obs} onChange={(e) => setObs(e.target.value)} className="h-10 rounded-xl" />
+            <Input
+              value={obs}
+              onChange={(e) => setObs(e.target.value)}
+              className="h-10 rounded-xl"
+            />
           </div>
         </div>
         <DialogFooter className="gap-2">
-          <Button onClick={() => criar.mutate()} disabled={criar.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+          <Button
+            onClick={() => criar.mutate()}
+            disabled={criar.isPending}
+            className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+          >
             {criar.isPending ? "Salvando..." : "Transferir"}
           </Button>
         </DialogFooter>

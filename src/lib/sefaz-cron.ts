@@ -62,7 +62,12 @@ export async function handleSefazCron(): Promise<Response> {
       }
 
       const result = await consultarDestinatario(
-        cert.pfx, cert.senha, cert.cnpj, cert.uf, ambiente, startNsu,
+        cert.pfx,
+        cert.senha,
+        cert.cnpj,
+        cert.uf,
+        ambiente,
+        startNsu,
       );
 
       // Salvar cursor + timestamp em sucesso (138/137) e também em 656 (para avançar cursor e respeitar 1h)
@@ -76,14 +81,19 @@ export async function handleSefazCron(): Promise<Response> {
       } else if (result.debug?.cStat === "656") {
         // Consumo Indevido: SEFAZ manda esperar 1h e usar o ultNSU retornado
         const now = new Date().toISOString();
-        const ult = (result as any).ultNSU || (result as any).maxNsuObtido || (result.debug as any).ultNSU;
+        const ult =
+          (result as any).ultNSU || (result as any).maxNsuObtido || (result.debug as any).ultNSU;
         const update: Record<string, unknown> = { last_query_at: now };
         if (ult) update.last_nsu = ult;
         await supabase.from("nfe_config").update(update).eq("empresa_id", empresaId);
-        console.log(`[sefaz-cron] ${empresaId}: 656 - cursor atualizado para ${ult || "(mantido)"} e cooldown 1h`);
+        console.log(
+          `[sefaz-cron] ${empresaId}: 656 - cursor atualizado para ${ult || "(mantido)"} e cooldown 1h`,
+        );
       }
 
-      console.log(`[sefaz-cron] ${empresaId}: ${result.notas.length} notas, cStat: ${result.debug?.cStat}`);
+      console.log(
+        `[sefaz-cron] ${empresaId}: ${result.notas.length} notas, cStat: ${result.debug?.cStat}`,
+      );
       processed++;
 
       await new Promise((r) => setTimeout(r, 2000));

@@ -15,7 +15,18 @@ type Props = Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChan
  * Emits the raw decimal string (e.g. "1234.56" or "-1234.56") via onChange.
  */
 export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInput(
-  { value, onChange, allowNegative = false, prefix = "R$", decimals = 2, className, onFocus, onClick, onDoubleClick, ...rest },
+  {
+    value,
+    onChange,
+    allowNegative = false,
+    prefix = "R$",
+    decimals = 2,
+    className,
+    onFocus,
+    onClick,
+    onDoubleClick,
+    ...rest
+  },
   ref,
 ) {
   const raw = value === null || value === undefined ? "" : String(value);
@@ -25,7 +36,10 @@ export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInpu
     if (raw === "" || raw === "-") return raw;
     const n = Number(raw);
     if (isNaN(n)) return "";
-    return n.toLocaleString("pt-BR", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    return n.toLocaleString("pt-BR", {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
   })();
 
   const moveCaretToEnd = (el: HTMLInputElement | null) => {
@@ -33,7 +47,9 @@ export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInpu
     const len = el.value.length;
     // Defer para após o browser posicionar o caret
     requestAnimationFrame(() => {
-      try { el.setSelectionRange(len, len); } catch {}
+      try {
+        el.setSelectionRange(len, len);
+      } catch {}
     });
   };
   // Leva o caret p/ o fim SOMENTE se não houver seleção ativa — sem isso
@@ -43,7 +59,8 @@ export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInpu
     // Defer para após o browser posicionar o caret / aplicar a seleção
     requestAnimationFrame(() => {
       try {
-        if (el.selectionStart === el.selectionEnd) el.setSelectionRange(el.value.length, el.value.length);
+        if (el.selectionStart === el.selectionEnd)
+          el.setSelectionRange(el.value.length, el.value.length);
       } catch {}
     });
   };
@@ -59,7 +76,10 @@ export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInpu
         ref={ref}
         type="text"
         inputMode="decimal"
-        className={cn(`${prefix ? "pl-10" : ""} h-10 rounded-xl text-right text-tabular shadow-sm transition-shadow focus-visible:shadow-md`, className)}
+        className={cn(
+          `${prefix ? "pl-10" : ""} h-10 rounded-xl text-right text-tabular shadow-sm transition-shadow focus-visible:shadow-md`,
+          className,
+        )}
         value={display}
         onFocus={(e) => {
           keepOrEnd(e.currentTarget);
@@ -71,7 +91,9 @@ export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInpu
         }}
         onDoubleClick={(e) => {
           // Duplo-clique seleciona o valor inteiro
-          try { e.currentTarget.setSelectionRange(0, e.currentTarget.value.length); } catch {}
+          try {
+            e.currentTarget.setSelectionRange(0, e.currentTarget.value.length);
+          } catch {}
           (onDoubleClick as any)?.(e);
         }}
         onKeyDown={(e) => {
@@ -104,8 +126,9 @@ export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInpu
               onChange(allowNegative && negative ? `-${val}` : val);
             } else if (e.key === "Backspace") {
               const digits = display.replace(/\D/g, "").slice(0, -1);
-              if (!digits) { onChange(allowNegative && negative ? "-" : ""); }
-              else {
+              if (!digits) {
+                onChange(allowNegative && negative ? "-" : "");
+              } else {
                 const val = (Number(digits) / f).toFixed(decimals);
                 onChange(allowNegative && negative ? `-${val}` : val);
               }
@@ -121,7 +144,10 @@ export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInpu
         }}
         onChange={(e) => {
           const digits = e.target.value.replace(/\D/g, "");
-          if (!digits) { onChange(allowNegative && negative ? "-" : ""); return; }
+          if (!digits) {
+            onChange(allowNegative && negative ? "-" : "");
+            return;
+          }
           const val = (Number(digits) / f).toFixed(decimals);
           onChange(allowNegative && negative ? `-${val}` : val);
           // Após formatar, garante caret no fim

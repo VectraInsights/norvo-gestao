@@ -81,7 +81,12 @@ export function NotificationsBell() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-xl transition-all hover:-translate-y-px" aria-label="Notificações">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative h-9 w-9 rounded-xl transition-all hover:-translate-y-px"
+          aria-label="Notificações"
+        >
           <Bell className="h-4 w-4" />
           {naoLidos > 0 && (
             <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground shadow-sm ring-2 ring-background">
@@ -90,7 +95,10 @@ export function NotificationsBell() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[calc(100vw-2rem)] max-w-96 overflow-hidden rounded-2xl p-0 shadow-xl">
+      <PopoverContent
+        align="end"
+        className="w-[calc(100vw-2rem)] max-w-96 overflow-hidden rounded-2xl p-0 shadow-xl"
+      >
         <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
           <div className="text-sm font-semibold tracking-tight">Notificações</div>
           {naoLidos > 0 && (
@@ -124,7 +132,10 @@ export function NotificationsBell() {
                 return (
                   <li
                     key={a.id}
-                    className={"flex gap-3 px-4 py-3.5 transition-colors hover:bg-accent/40 " + (a.lido ? "opacity-60" : "bg-accent/30")}
+                    className={
+                      "flex gap-3 px-4 py-3.5 transition-colors hover:bg-accent/40 " +
+                      (a.lido ? "opacity-60" : "bg-accent/30")
+                    }
                   >
                     <Icon
                       className={

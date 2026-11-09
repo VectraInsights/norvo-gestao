@@ -24,7 +24,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -47,7 +56,7 @@ import { ALTURA_PAGINA } from "@/lib/layout";
 
 export const Route = createFileRoute("/_authenticated/rh/folha")({
   component: FolhaPage,
-  errorComponent: RouteErrorState
+  errorComponent: RouteErrorState,
 });
 
 type Folha = {
@@ -432,9 +441,7 @@ function FolhaPage() {
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
     if (!q) return folhas ?? [];
-    return (folhas ?? []).filter((f) =>
-      (f.colaboradores?.nome || "").toLowerCase().includes(q),
-    );
+    return (folhas ?? []).filter((f) => (f.colaboradores?.nome || "").toLowerCase().includes(q));
   }, [folhas, busca]);
 
   const total = folhas?.reduce((s, f) => s + Number(f.liquido || 0), 0) ?? 0;
@@ -449,164 +456,162 @@ function FolhaPage() {
       <div className="mb-4 flex shrink-0 flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={setBusca} size="xs" />
         <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95"
-              disabled={
-                gerarEmLote.isPending ||
-                !(folhas ?? []).some((f) => f.status === "aberta" && !f.lancamento_id)
-              }
-              onClick={() => setConfLote(true)}
-            >
-              <HandCoins className="mr-1 h-3.5 w-3.5" />
-              Gerar contas a pagar
-            </Button>
-            <Dialog
-              open={open}
-              onOpenChange={(o) => {
-                setOpen(o);
-                if (!o) reset();
-              }}
-            >
-              <DialogTrigger asChild>
-                <PrimaryButton size="sm">
-                  <Plus className="mr-1 h-3.5 w-3.5" />
-                  Novo lançamento
-                </PrimaryButton>
-              </DialogTrigger>
-              <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
-                <DialogHeader className="gap-1.5 pb-1">
-                  <DialogTitle className="tracking-tight">
-                    {editing ? "Editar lançamento" : "Novo lançamento de folha"}
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-3">
-                  <div>
-                    <Label>Colaborador</Label>
-                    <Combobox
-                      value={colaborador}
-                      onChange={(v) => {
-                        setColaborador(v);
-                        const c = colabs.find((x) => x.id === v);
-                        if (c && !editing) {
-                          setSalario(String(c.salario_base ?? 0));
-                          // auto-adiciona VT se optante
-                          setDescontosItens((prev) => {
-                            const semVT = prev.filter((d) => d.nome !== "Vale-Transporte");
-                            if (c.optante_vt && c.salario_base > 0) {
-                              const vt = Math.round(c.salario_base * 0.06 * 100) / 100;
-                              return [...semVT, { nome: "Vale-Transporte", valor: vt }];
-                            }
-                            return semVT;
-                          });
-                        }
-                      }}
-                      options={colabs.map((c) => ({
-                        value: c.id,
-                        label: c.nome + (c.optante_vt ? " (VT)" : ""),
-                      }))}
-                     
-                     
-                      emptyText="Nenhum item encontrado."
-                    />
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="space-y-1">
-                      <Label>Salário</Label>
-                      <MoneyInput value={salario} onChange={setSalario} />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Horas extras</Label>
-                      <MoneyInput value={extras} onChange={setExtras} />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Benefícios</Label>
-                      <MoneyInput value={beneficios} onChange={setBeneficios} />
-                    </div>
-                  </div>
-
-                  {/* INSS / IRRF calculados automaticamente */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm">
-                      <span className="text-muted-foreground">INSS</span>
-                      <span className="float-right font-semibold text-tabular">
-                        {brl(inssCalc)}
-                      </span>
-                    </div>
-                    <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm">
-                      <span className="text-muted-foreground">IRRF</span>
-                      <span className="float-right font-semibold text-tabular">
-                        {brl(irrfCalc)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Descontos itemizados */}
-                  <div>
-                    <Label>Descontos</Label>
-                    {descontosItens.length > 0 && (
-                      <div className="mt-1 space-y-1">
-                        {descontosItens.map((d, i) => (
-                          <div
-                            key={i}
-                            className="flex items-center justify-between rounded-md border px-3 py-1.5 text-sm"
-                          >
-                            <span>{d.nome}</span>
-                            <span className="flex items-center gap-2">
-                              <span className="text-tabular">{brl(d.valor)}</span>
-                              <button
-                                type="button"
-                                className="text-muted-foreground hover:text-destructive"
-                                onClick={() => removerDesconto(i)}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <div className="mt-2 flex gap-2">
-                      <Input
-                       
-                        value={novoDescNome}
-                        onChange={(e) => setNovoDescNome(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            adicionarDesconto();
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95"
+            disabled={
+              gerarEmLote.isPending ||
+              !(folhas ?? []).some((f) => f.status === "aberta" && !f.lancamento_id)
+            }
+            onClick={() => setConfLote(true)}
+          >
+            <HandCoins className="mr-1 h-3.5 w-3.5" />
+            Gerar contas a pagar
+          </Button>
+          <Dialog
+            open={open}
+            onOpenChange={(o) => {
+              setOpen(o);
+              if (!o) reset();
+            }}
+          >
+            <DialogTrigger asChild>
+              <PrimaryButton size="sm">
+                <Plus className="mr-1 h-3.5 w-3.5" />
+                Novo lançamento
+              </PrimaryButton>
+            </DialogTrigger>
+            <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
+              <DialogHeader className="gap-1.5 pb-1">
+                <DialogTitle className="tracking-tight">
+                  {editing ? "Editar lançamento" : "Novo lançamento de folha"}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-3">
+                <div>
+                  <Label>Colaborador</Label>
+                  <Combobox
+                    value={colaborador}
+                    onChange={(v) => {
+                      setColaborador(v);
+                      const c = colabs.find((x) => x.id === v);
+                      if (c && !editing) {
+                        setSalario(String(c.salario_base ?? 0));
+                        // auto-adiciona VT se optante
+                        setDescontosItens((prev) => {
+                          const semVT = prev.filter((d) => d.nome !== "Vale-Transporte");
+                          if (c.optante_vt && c.salario_base > 0) {
+                            const vt = Math.round(c.salario_base * 0.06 * 100) / 100;
+                            return [...semVT, { nome: "Vale-Transporte", valor: vt }];
                           }
-                        }}
-                      />
-                      <div className="w-32">
-                        <MoneyInput value={novoDescValor} onChange={setNovoDescValor} />
-                      </div>
-                      <Button type="button" variant="outline" size="sm" onClick={adicionarDesconto}>
-                        +
-                      </Button>
-                    </div>
-                  </div>
+                          return semVT;
+                        });
+                      }
+                    }}
+                    options={colabs.map((c) => ({
+                      value: c.id,
+                      label: c.nome + (c.optante_vt ? " (VT)" : ""),
+                    }))}
 
-                  <div className="flex justify-between rounded-md border bg-muted/40 px-3 py-2 text-sm">
-                    <span className="text-muted-foreground">Líquido</span>
-                    <span className="font-semibold text-tabular">{brl(liquido)}</span>
+                    emptyText="Nenhum item encontrado."
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label>Salário</Label>
+                    <MoneyInput value={salario} onChange={setSalario} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Horas extras</Label>
+                    <MoneyInput value={extras} onChange={setExtras} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Benefícios</Label>
+                    <MoneyInput value={beneficios} onChange={setBeneficios} />
                   </div>
                 </div>
-                <DialogFooter className="gap-2">
-                  <Button variant="outline" onClick={() => setOpen(false)} className="h-10 rounded-xl px-6">
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={() => createOrUpdate.mutate()}
-                    disabled={createOrUpdate.isPending}
-                    className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
-                  >
-                    {editing ? "Salvar" : "Lançar"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+
+                {/* INSS / IRRF calculados automaticamente */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm">
+                    <span className="text-muted-foreground">INSS</span>
+                    <span className="float-right font-semibold text-tabular">{brl(inssCalc)}</span>
+                  </div>
+                  <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm">
+                    <span className="text-muted-foreground">IRRF</span>
+                    <span className="float-right font-semibold text-tabular">{brl(irrfCalc)}</span>
+                  </div>
+                </div>
+
+                {/* Descontos itemizados */}
+                <div>
+                  <Label>Descontos</Label>
+                  {descontosItens.length > 0 && (
+                    <div className="mt-1 space-y-1">
+                      {descontosItens.map((d, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between rounded-md border px-3 py-1.5 text-sm"
+                        >
+                          <span>{d.nome}</span>
+                          <span className="flex items-center gap-2">
+                            <span className="text-tabular">{brl(d.valor)}</span>
+                            <button
+                              type="button"
+                              className="text-muted-foreground hover:text-destructive"
+                              onClick={() => removerDesconto(i)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="mt-2 flex gap-2">
+                    <Input
+                      value={novoDescNome}
+                      onChange={(e) => setNovoDescNome(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          adicionarDesconto();
+                        }
+                      }}
+                    />
+                    <div className="w-32">
+                      <MoneyInput value={novoDescValor} onChange={setNovoDescValor} />
+                    </div>
+                    <Button type="button" variant="outline" size="sm" onClick={adicionarDesconto}>
+                      +
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex justify-between rounded-md border bg-muted/40 px-3 py-2 text-sm">
+                  <span className="text-muted-foreground">Líquido</span>
+                  <span className="font-semibold text-tabular">{brl(liquido)}</span>
+                </div>
+              </div>
+              <DialogFooter className="gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  className="h-10 rounded-xl px-6"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={() => createOrUpdate.mutate()}
+                  disabled={createOrUpdate.isPending}
+                  className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                >
+                  {editing ? "Salvar" : "Lançar"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -665,83 +670,86 @@ function FolhaPage() {
           </div>
         ) : (
           <div className="min-h-0 flex-1 overflow-y-auto [&_.erp-table-wrap]:max-h-none">
-          <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Colaborador</TableHead>
-                <TableHead className="text-right">Salário</TableHead>
-                <TableHead className="text-right">Extras/Benef.</TableHead>
-                <TableHead className="text-right">Descontos</TableHead>
-                <TableHead className="text-right">Líquido</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-32"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtrados.map((f) => (
-                <TableRow key={f.id}>
-                  <TableCell className="font-medium">{f.colaboradores?.nome ?? "—"}</TableCell>
-                  <TableCell className="text-right text-tabular">{brl(f.salario)}</TableCell>
-                  <TableCell className="text-right text-tabular">
-                    {brl(Number(f.horas_extras) + Number(f.beneficios))}
-                  </TableCell>
-                  <TableCell className="text-right text-tabular">
-                    {brl(Number(f.descontos) + Number(f.inss) + Number(f.irrf))}
-                  </TableCell>
-                  <TableCell className="text-right text-tabular font-semibold">
-                    {brl(f.liquido)}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={f.status === "lançada" ? "lancada" : f.status} label={f.status} />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      {f.status !== "cancelada" && (
-                        <>
-                          {f.status !== "paga" && f.status !== "lançada" && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 rounded-lg"
-                                  onClick={() => pay.mutate(f.id)}
-                                  disabled={pay.isPending}
-                                >
-                                  <HandCoins className="h-3.5 w-3.5" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Gerar conta a pagar</TooltipContent>
-                            </Tooltip>
-                          )}
-                          {f.status !== "paga" && f.status !== "lançada" && (
+            <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Colaborador</TableHead>
+                  <TableHead className="text-right">Salário</TableHead>
+                  <TableHead className="text-right">Extras/Benef.</TableHead>
+                  <TableHead className="text-right">Descontos</TableHead>
+                  <TableHead className="text-right">Líquido</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-32"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtrados.map((f) => (
+                  <TableRow key={f.id}>
+                    <TableCell className="font-medium">{f.colaboradores?.nome ?? "—"}</TableCell>
+                    <TableCell className="text-right text-tabular">{brl(f.salario)}</TableCell>
+                    <TableCell className="text-right text-tabular">
+                      {brl(Number(f.horas_extras) + Number(f.beneficios))}
+                    </TableCell>
+                    <TableCell className="text-right text-tabular">
+                      {brl(Number(f.descontos) + Number(f.inss) + Number(f.irrf))}
+                    </TableCell>
+                    <TableCell className="text-right text-tabular font-semibold">
+                      {brl(f.liquido)}
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge
+                        status={f.status === "lançada" ? "lancada" : f.status}
+                        label={f.status}
+                      />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {f.status !== "cancelada" && (
+                          <>
+                            {f.status !== "paga" && f.status !== "lançada" && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-lg"
+                                    onClick={() => pay.mutate(f.id)}
+                                    disabled={pay.isPending}
+                                  >
+                                    <HandCoins className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Gerar conta a pagar</TooltipContent>
+                              </Tooltip>
+                            )}
+                            {f.status !== "paga" && f.status !== "lançada" && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-lg"
+                                title="Editar"
+                                onClick={() => abrirEdicao(f)}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 rounded-lg"
-                              title="Editar"
-                              onClick={() => abrirEdicao(f)}
+                              className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10"
+                              title="Excluir"
+                              onClick={() => setConfExcluir(f)}
                             >
-                              <Pencil className="h-3.5 w-3.5" />
+                              <Trash2 className="h-3.5 w-3.5" />
                             </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10"
-                            title="Excluir"
-                            onClick={() => setConfExcluir(f)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         )}
       </Card>
@@ -755,16 +763,18 @@ function FolhaPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              data-acao
-              onClick={() => gerarEmLote.mutate(0)}
-            >
+            <AlertDialogAction data-acao onClick={() => gerarEmLote.mutate(0)}>
               Gerar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <AlertDialog open={!!confExcluir} onOpenChange={(v) => { if (!v) setConfExcluir(null); }}>
+      <AlertDialog
+        open={!!confExcluir}
+        onOpenChange={(v) => {
+          if (!v) setConfExcluir(null);
+        }}
+      >
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir lançamento</AlertDialogTitle>
@@ -779,7 +789,10 @@ function FolhaPage() {
             <AlertDialogAction
               data-acao
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => { if (confExcluir) excluir.mutate(confExcluir); setConfExcluir(null); }}
+              onClick={() => {
+                if (confExcluir) excluir.mutate(confExcluir);
+                setConfExcluir(null);
+              }}
             >
               Excluir
             </AlertDialogAction>

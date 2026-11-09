@@ -38,13 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertTriangle,
-  Package,
-  Plus,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+import { AlertTriangle, Package, Plus, Pencil, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -115,7 +109,11 @@ function Produtos() {
 
   // Auditoria (tabela auditoria_eventos): quem criou/editou/excluiu
   const [trilhaOpen, setTrilhaOpen] = useState(false);
-  const registrarAuditoria = async (acao: string, descricao: string, detalhes: Record<string, any> = {}) => {
+  const registrarAuditoria = async (
+    acao: string,
+    descricao: string,
+    detalhes: Record<string, any> = {},
+  ) => {
     try {
       if (!empresa) return;
       const { data: sess } = await supabase.auth.getUser();
@@ -130,13 +128,16 @@ function Produtos() {
         entidade: "produto",
         detalhes: { ...detalhes, descricao, user_nome: nome, user_email: u.email || "" },
       } as any);
-    } catch { /* trilha indisponível: não bloqueia o fluxo */ }
+    } catch {
+      /* trilha indisponível: não bloqueia o fluxo */
+    }
   };
   const trilhaQuery = useQuery({
     enabled: trilhaOpen && !!empresa,
     queryKey: ["auditoria-produtos", empresa?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("auditoria_eventos" as never)
+      const { data, error } = await supabase
+        .from("auditoria_eventos" as never)
         .select("id,created_at,acao,detalhes")
         .eq("empresa_id", empresa!.id as never)
         .eq("modulo", "estoque")
@@ -190,17 +191,17 @@ function Produtos() {
         .order("codigo")
         .limit(20000);
       if (error) throw error;
-      return ((data ?? []) as unknown) as { codigo: string; descricao: string }[];
+      return (data ?? []) as unknown as { codigo: string; descricao: string }[];
     },
   });
 
   const ncmOpts = useMemo(
     () => [
       { value: "__none__", label: "Sem NCM" },
-      ...((ncms ?? []).map((n) => ({
+      ...(ncms ?? []).map((n) => ({
         value: n.codigo,
         label: `${fmtNcm(n.codigo)} — ${n.descricao.slice(0, 70)}`,
-      }))),
+      })),
     ],
     [ncms],
   );
@@ -232,7 +233,9 @@ function Produtos() {
     },
     onSuccess: () => {
       toast.success("Produto criado");
-      void registrarAuditoria("criar", `Produto "${form.nome.trim()}" criado`, { nome: form.nome.trim() });
+      void registrarAuditoria("criar", `Produto "${form.nome.trim()}" criado`, {
+        nome: form.nome.trim(),
+      });
       setOpen(false);
       setForm(EMPTY_FORM);
       qc.invalidateQueries({ queryKey: ["produtos"] });
@@ -270,7 +273,9 @@ function Produtos() {
     },
     onSuccess: () => {
       toast.success("Produto atualizado");
-      void registrarAuditoria("alterar", `Produto "${form.nome.trim()}" alterado`, { nome: form.nome.trim() });
+      void registrarAuditoria("alterar", `Produto "${form.nome.trim()}" alterado`, {
+        nome: form.nome.trim(),
+      });
       setOpen(false);
       setEditing(null);
       setForm(EMPTY_FORM);
@@ -312,7 +317,13 @@ function Produtos() {
       // Pesquisa por preço: "25,00" acha 25.00 (a partir de 2 dígitos)
       if (qDig.length >= 2) {
         for (const v of [p.preco_venda, p.preco_custo]) {
-          if (Number(v || 0).toFixed(2).replace(/\D/g, "").includes(qDig)) return true;
+          if (
+            Number(v || 0)
+              .toFixed(2)
+              .replace(/\D/g, "")
+              .includes(qDig)
+          )
+            return true;
         }
       }
       return false;
@@ -364,7 +375,13 @@ function Produtos() {
       />
 
       <div className="mb-4 flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
-        <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} />
+        <SearchField
+          value={busca}
+          onChange={(v) => {
+            setBusca(v);
+            setPagina(1);
+          }}
+        />
         <div className="w-48">
           <Combobox
             value={filtroCat}
@@ -372,142 +389,147 @@ function Produtos() {
               setFiltroCat(value);
               setPagina(1);
             }}
-            options={[{ value: "todas", label: "Todas as categorias" }, ...categorias.map((c) => ({ value: c, label: c }))]}
-           
-           
+            options={[
+              { value: "todas", label: "Todas as categorias" },
+              ...categorias.map((c) => ({ value: c, label: c })),
+            ]}
+
             emptyText="Nenhum item encontrado."
           />
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setTrilhaOpen(true)}
+            className="h-9 rounded-xl px-4 active:scale-95"
+          >
             Auditoria
           </Button>
-            <Dialog
-              open={open}
-              onOpenChange={(v) => {
-                if (!criarMut.isPending && !editarMut.isPending) {
-                  setOpen(v);
-                  if (!v) {
-                    setEditing(null);
-                    setForm(EMPTY_FORM);
-                  }
+          <Dialog
+            open={open}
+            onOpenChange={(v) => {
+              if (!criarMut.isPending && !editarMut.isPending) {
+                setOpen(v);
+                if (!v) {
+                  setEditing(null);
+                  setForm(EMPTY_FORM);
                 }
-              }}
-            >
-              <DialogTrigger asChild>
-                <PrimaryButton size="sm" onClick={openCreate}>
-                  <Plus className="mr-1 h-4 w-4" />
-                  Novo produto
-                </PrimaryButton>
-              </DialogTrigger>
-              <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
-                <DialogHeader>
-                  <DialogTitle>{editing ? "Editar produto" : "Novo produto"}</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={submit} className="space-y-3">
-                  <div className="grid grid-cols-[1fr_2fr] gap-3">
-                    <div>
-                      <Label>Código</Label>
-                      <Input
-                        value={form.codigo}
-                        onChange={(e) => setForm({ ...form, codigo: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label>Nome</Label>
-                      <Input
-                        required
-                        value={form.nome}
-                        onChange={(e) => setForm({ ...form, nome: e.target.value })}
-                      />
-                    </div>
-                  </div>
+              }
+            }}
+          >
+            <DialogTrigger asChild>
+              <PrimaryButton size="sm" onClick={openCreate}>
+                <Plus className="mr-1 h-4 w-4" />
+                Novo produto
+              </PrimaryButton>
+            </DialogTrigger>
+            <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
+              <DialogHeader>
+                <DialogTitle>{editing ? "Editar produto" : "Novo produto"}</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={submit} className="space-y-3">
+                <div className="grid grid-cols-[1fr_2fr] gap-3">
                   <div>
-                    <Label>Categoria</Label>
-                    <Combobox
-                      value={form.categoria || "__none__"}
-                      onChange={(v) =>
-                        setForm({ ...form, categoria: v === "__none__" ? "" : v })
-                      }
-                      options={[{ value: "__none__", label: "Sem categoria" }, ...categorias.map((c) => ({ value: c, label: c }))]}
-                      
-                      
-                      emptyText="Nenhum item encontrado."
+                    <Label>Código</Label>
+                    <Input
+                      value={form.codigo}
+                      onChange={(e) => setForm({ ...form, codigo: e.target.value })}
                     />
                   </div>
                   <div>
-                    <Label>NCM</Label>
-                    {(ncms?.length ?? 0) > 0 ? (
-                      <Combobox
-                        value={form.ncm.replace(/\D/g, "") || "__none__"}
-                        onChange={(v) =>
-                          setForm({ ...form, ncm: v === "__none__" ? "" : v })
-                        }
-                        options={ncmOpts}
-                        emptyText="Nenhum item encontrado."
-                      />
-                    ) : (
-                      <Input
-                        value={fmtNcm(form.ncm)}
-                        onChange={(e) =>
-                          setForm({ ...form, ncm: e.target.value.replace(/\D/g, "").slice(0, 8) })
-                        }
-                      />
-                    )}
+                    <Label>Nome</Label>
+                    <Input
+                      required
+                      value={form.nome}
+                      onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                    />
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <Label>Unidade</Label>
-                      <Input
-                        value={form.unidade}
-                        onChange={(e) => setForm({ ...form, unidade: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label>Preço custo</Label>
-                      <MoneyInput
-                        value={form.preco_custo}
-                        onChange={(v) => setForm({ ...form, preco_custo: v })}
-                        prefix=""
-                      />
-                    </div>
-                    <div>
-                      <Label>Preço venda</Label>
-                      <MoneyInput
-                        value={form.preco_venda}
-                        onChange={(v) => setForm({ ...form, preco_venda: v })}
-                        prefix=""
-                      />
-                    </div>
+                </div>
+                <div>
+                  <Label>Categoria</Label>
+                  <Combobox
+                    value={form.categoria || "__none__"}
+                    onChange={(v) => setForm({ ...form, categoria: v === "__none__" ? "" : v })}
+                    options={[
+                      { value: "__none__", label: "Sem categoria" },
+                      ...categorias.map((c) => ({ value: c, label: c })),
+                    ]}
+
+                    emptyText="Nenhum item encontrado."
+                  />
+                </div>
+                <div>
+                  <Label>NCM</Label>
+                  {(ncms?.length ?? 0) > 0 ? (
+                    <Combobox
+                      value={form.ncm.replace(/\D/g, "") || "__none__"}
+                      onChange={(v) => setForm({ ...form, ncm: v === "__none__" ? "" : v })}
+                      options={ncmOpts}
+                      emptyText="Nenhum item encontrado."
+                    />
+                  ) : (
+                    <Input
+                      value={fmtNcm(form.ncm)}
+                      onChange={(e) =>
+                        setForm({ ...form, ncm: e.target.value.replace(/\D/g, "").slice(0, 8) })
+                      }
+                    />
+                  )}
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <Label>Unidade</Label>
+                    <Input
+                      value={form.unidade}
+                      onChange={(e) => setForm({ ...form, unidade: e.target.value })}
+                    />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>Estoque inicial</Label>
-                      <MoneyInput
-                        prefix=""
-                        decimals={3}
-                        value={form.estoque_atual}
-                        onChange={(v) => setForm({ ...form, estoque_atual: v })}
-                      />
-                    </div>
-                    <div>
-                      <Label>Estoque mínimo</Label>
-                      <MoneyInput
-                        prefix=""
-                        decimals={3}
-                        value={form.estoque_minimo}
-                        onChange={(v) => setForm({ ...form, estoque_minimo: v })}
-                      />
-                    </div>
+                  <div>
+                    <Label>Preço custo</Label>
+                    <MoneyInput
+                      value={form.preco_custo}
+                      onChange={(v) => setForm({ ...form, preco_custo: v })}
+                      prefix=""
+                    />
                   </div>
-                  <DialogFooter>
-                    <Button type="submit" disabled={criarMut.isPending || editarMut.isPending}>
-                      {criarMut.isPending || editarMut.isPending ? "Salvando…" : "Salvar"}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
+                  <div>
+                    <Label>Preço venda</Label>
+                    <MoneyInput
+                      value={form.preco_venda}
+                      onChange={(v) => setForm({ ...form, preco_venda: v })}
+                      prefix=""
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Estoque inicial</Label>
+                    <MoneyInput
+                      prefix=""
+                      decimals={3}
+                      value={form.estoque_atual}
+                      onChange={(v) => setForm({ ...form, estoque_atual: v })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Estoque mínimo</Label>
+                    <MoneyInput
+                      prefix=""
+                      decimals={3}
+                      value={form.estoque_minimo}
+                      onChange={(v) => setForm({ ...form, estoque_minimo: v })}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="submit" disabled={criarMut.isPending || editarMut.isPending}>
+                    {criarMut.isPending || editarMut.isPending ? "Salvando…" : "Salvar"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -536,97 +558,97 @@ function Produtos() {
           {/* Rolagem só dentro da lista: a página não cria barra externa. */}
           <div className="min-h-0 flex-1 overflow-y-auto [&_.erp-table-wrap]:max-h-none">
             <Table className="[&_td]:px-3 [&_th]:px-3">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Código</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead>UN</TableHead>
-                <TableHead className="text-right">Estoque</TableHead>
-                <TableHead className="text-right">Custo</TableHead>
-                <TableHead className="text-right">Venda</TableHead>
-                <TableHead className="w-20" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {produtosVisiveis.map((p) => {
-                const atual = Number(p.estoque_atual ?? 0);
-                const min = Number(p.estoque_minimo ?? 0);
-                const baixo = min > 0 && atual <= min;
-                return (
-                  <TableRow key={p.id}>
-                    <TableCell className="text-tabular text-muted-foreground">
-                      {p.codigo ?? "—"}
-                    </TableCell>
-                    <TableCell className="font-medium">{p.nome}</TableCell>
-                    <TableCell>
-                      {p.categoria ? (
-                        <Badge variant="secondary" className="bg-primary/10 text-primary">
-                          {p.categoria}
-                        </Badge>
-                      ) : (
-                        "—"
-                      )}
-                    </TableCell>
-                    <TableCell>{p.unidade ?? "—"}</TableCell>
-                    <TableCell className="text-right text-tabular">
-                      <div className="inline-flex items-center gap-2">
-                        {baixo && (
-                          <StatusBadge
-                            status="baixo"
-                            label="baixo"
-                            tone="bg-warning/20 text-warning-foreground"
-                            icon={<AlertTriangle className="mr-1 h-3 w-3" />}
-                          />
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Categoria</TableHead>
+                  <TableHead>UN</TableHead>
+                  <TableHead className="text-right">Estoque</TableHead>
+                  <TableHead className="text-right">Custo</TableHead>
+                  <TableHead className="text-right">Venda</TableHead>
+                  <TableHead className="w-20" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {produtosVisiveis.map((p) => {
+                  const atual = Number(p.estoque_atual ?? 0);
+                  const min = Number(p.estoque_minimo ?? 0);
+                  const baixo = min > 0 && atual <= min;
+                  return (
+                    <TableRow key={p.id}>
+                      <TableCell className="text-tabular text-muted-foreground">
+                        {p.codigo ?? "—"}
+                      </TableCell>
+                      <TableCell className="font-medium">{p.nome}</TableCell>
+                      <TableCell>
+                        {p.categoria ? (
+                          <Badge variant="secondary" className="bg-primary/10 text-primary">
+                            {p.categoria}
+                          </Badge>
+                        ) : (
+                          "—"
                         )}
-                        {num(atual)}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right text-tabular">
-                      {brl(p.preco_custo ?? 0)}
-                    </TableCell>
-                    <TableCell className="text-right text-tabular font-medium">
-                      {brl(p.preco_venda ?? 0)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-7 w-7 p-0"
-                                onClick={() => openEdit(p)}
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Editar</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
-                                onClick={() => setDeleting(p)}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Excluir</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                      </TableCell>
+                      <TableCell>{p.unidade ?? "—"}</TableCell>
+                      <TableCell className="text-right text-tabular">
+                        <div className="inline-flex items-center gap-2">
+                          {baixo && (
+                            <StatusBadge
+                              status="baixo"
+                              label="baixo"
+                              tone="bg-warning/20 text-warning-foreground"
+                              icon={<AlertTriangle className="mr-1 h-3 w-3" />}
+                            />
+                          )}
+                          {num(atual)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right text-tabular">
+                        {brl(p.preco_custo ?? 0)}
+                      </TableCell>
+                      <TableCell className="text-right text-tabular font-medium">
+                        {brl(p.preco_venda ?? 0)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => openEdit(p)}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Editar</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
+                                  onClick={() => setDeleting(p)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Excluir</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
           <div className="shrink-0">
             <Pagination
@@ -674,7 +696,7 @@ function Produtos() {
         emptyText="Nenhum evento registrado ainda. Criar, editar ou excluir gera registros aqui."
         isLoading={trilhaQuery.isLoading}
         isError={trilhaQuery.isError}
-        events={(trilhaQuery.data ?? [])}
+        events={trilhaQuery.data ?? []}
       />
     </div>
   );
