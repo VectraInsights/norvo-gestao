@@ -48,16 +48,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  Truck,
-  Plus,
-  Pencil,
-  Trash2,
-  ChevronsUpDown,
-  Check,
-  Upload,
-  FileText,
-} from "lucide-react";
+import { Truck, Plus, Pencil, Trash2, ChevronsUpDown, Check, Upload, FileText } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -88,7 +79,6 @@ export const Route = createFileRoute("/_authenticated/frota/veiculos")({
     <RouteErrorState {...props} title="Não foi possível carregar os veículos" />
   ),
 });
-
 
 type Veiculo = {
   id: string;
@@ -447,12 +437,12 @@ function Veiculos() {
       // Marca: após "***" e antes de palavra-chave de espécie
       let marcaVal = "";
       const marcaSec = dadosBloco.match(
-        /\*\*\*\s+([A-Z0-9][A-Z0-9 \/\.\-]+?)\s+(?:TRACAO|TRAC.AO|CARGA|SEMI-REBOQUE|CAMINH.AO|TRATOR|PASSEIO|UTILIT.ARIO)/i,
+        /\*\*\*\s+([A-Z0-9][A-Z0-9 /.-]+?)\s+(?:TRACAO|TRAC.AO|CARGA|SEMI-REBOQUE|CAMINH.AO|TRATOR|PASSEIO|UTILIT.ARIO)/i,
       );
       if (marcaSec) marcaVal = clean(marcaSec[1]);
       else {
         const m2 = upper.match(
-          /MARCA\s*\/\s*MODELO\s*\/\s*VERS[ÃA]O\s+([A-Z0-9][A-Z0-9 \/\.\-]+?)\s+ESP[ÉE]CIE/,
+          /MARCA\s*\/\s*MODELO\s*\/\s*VERS[ÃA]O\s+([A-Z0-9][A-Z0-9 /.-]+?)\s+ESP[ÉE]CIE/,
         );
         if (m2) marcaVal = clean(m2[1].split("PLACA ANTERIOR")[0]);
       }
@@ -460,19 +450,19 @@ function Veiculos() {
       // Padrão 1: CARROCERIA FECHADA + nome + sufixo jurídico (LTDA/EPP/MEI/EIRELI/SA/etc)
       // O sufixo entra no nome (captura própria) — antes o "EPP" ficava de fora.
       const propSec = dadosBloco.match(
-        /CARROCERIA\s+FECHADA\s+([A-Z][A-Z0-9 \.\-\/&]+?)\s+(LTDA|EPP|MEI|EIRELI|S\.?A\.?)/i,
+        /CARROCERIA\s+FECHADA\s+([A-Z][A-Z0-9 /.&-]+?)\s+(LTDA|EPP|MEI|EIRELI|S\.?A\.?)/i,
       );
       if (propSec) propVal = clean(`${propSec[1]} ${propSec[2]}`);
       else {
         // Padrão 2: após "0XP" + 2 palavras, nome + CNPJ (formato BTB3808 etc)
         const p2 = dadosBloco.match(
-          /0\dP\s+\S+\s+\S+\s+([A-Z][A-Z0-9 \.\-\/&]+?)\s+\d{2}\.\d{3}\.\d{3}/,
+          /0\dP\s+\S+\s+\S+\s+([A-Z][A-Z0-9 /.&-]+?)\s+\d{2}\.\d{3}\.\d{3}/,
         );
         if (p2) propVal = clean(p2[1]);
         else {
           // Padrão 3: após "0XP" + 1 palavra, nome + sufixo jurídico + CNPJ
           const p3 = dadosBloco.match(
-            /0\dP\s+\S+\s+([A-Z][A-Z0-9 \.\-\/&]+?)\s+(EPP|LTDA|MEI|EIRELI|S\.?A\.?)\s+\d/,
+            /0\dP\s+\S+\s+([A-Z][A-Z0-9 /.&-]+?)\s+(EPP|LTDA|MEI|EIRELI|S\.?A\.?)\s+\d/,
           );
           if (p3) propVal = clean(`${p3[1]} ${p3[2]}`);
           else {
@@ -528,7 +518,9 @@ function Veiculos() {
         // Placa: a regex (formato que já funciona) e, na falta, a leitura pelo rótulo.
         if (placaMatch) updates.placa = placaMatch[1].replace(/[^A-Z0-9]/g, "").toUpperCase();
         else {
-          const pRot = valorSobRotulo(itens, "PLACA").replace(/[^A-Z0-9]/g, "").toUpperCase();
+          const pRot = valorSobRotulo(itens, "PLACA")
+            .replace(/[^A-Z0-9]/g, "")
+            .toUpperCase();
           if (pRot.length === 7) updates.placa = pRot;
         }
         if (renavamMatch) updates.renavam = renavamMatch[1];
@@ -544,7 +536,9 @@ function Veiculos() {
         // leitura pelo rótulo — neste CRLV o chassi tem 14 caracteres e a regex não pega.
         if (chassiMatch && chassiMatch[1].length === 17) updates.chassi = chassiMatch[1];
         else {
-          const cRot = valorSobRotulo(itens, "CHASSI").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+          const cRot = valorSobRotulo(itens, "CHASSI")
+            .replace(/[^A-Za-z0-9]/g, "")
+            .toUpperCase();
           if (cRot.length >= 8) updates.chassi = cRot;
         }
         // CPF/CNPJ do proprietário: vem pelo rótulo (o CRLV traz, a regex não pegava).
@@ -587,15 +581,12 @@ function Veiculos() {
         return;
       }
       if (!updates.placa) {
-        toast.error(
-          veioDeOcr ? "O OCR não achou a placa" : "Não consegui ler a placa deste CRLV",
-          {
-            description: veioDeOcr
-              ? "O PDF é uma impressão e a leitura ficou ruim. Preencha os dados manualmente."
-              : "Verifique se é o CRLV digital.",
-            duration: 9000,
-          },
-        );
+        toast.error(veioDeOcr ? "O OCR não achou a placa" : "Não consegui ler a placa deste CRLV", {
+          description: veioDeOcr
+            ? "O PDF é uma impressão e a leitura ficou ruim. Preencha os dados manualmente."
+            : "Verifique se é o CRLV digital.",
+          duration: 9000,
+        });
         return;
       }
       setForm((f) => ({ ...f, ...updates }));
@@ -637,7 +628,10 @@ function Veiculos() {
 
   // Placa duplicada: o aviso aparece na hora (digitando a placa ou importando o CRLV),
   // sem esperar o salvar. A lista em memória tem todos os veículos da empresa.
-  const normalizePlaca = (p: string) => String(p || "").replace(/[^A-Z0-9]/gi, "").toUpperCase();
+  const normalizePlaca = (p: string) =>
+    String(p || "")
+      .replace(/[^A-Z0-9]/gi, "")
+      .toUpperCase();
   const veiculoComMesmaPlaca = (placa: string) => {
     const alvo = normalizePlaca(placa);
     if (!alvo) return null;
@@ -655,7 +649,9 @@ function Veiculos() {
   };
 
   const formatarPlaca = (p: string) => {
-    const s = String(p ?? "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    const s = String(p ?? "")
+      .replace(/[^A-Za-z0-9]/g, "")
+      .toUpperCase();
     return s.length > 3 ? s.slice(0, 3) + "-" + s.slice(3) : s;
   };
 
@@ -782,20 +778,24 @@ function Veiculos() {
     if (!busca.trim()) return true;
     const s = busca.toLowerCase();
     const sDig = s.replace(/\D/g, "");
-    if ([
-      v.placa,
-      v.marca_modelo,
-      v.tipo,
-      v.rntrc,
-      (v as any).proprietario,
-      (v as any).proprietario_doc,
-      (v as any).categoria,
-      (v as any).chassi,
-    ].some((x) => (x ?? "").toLowerCase().includes(s))) return true;
+    if (
+      [
+        v.placa,
+        v.marca_modelo,
+        v.tipo,
+        v.rntrc,
+        (v as any).proprietario,
+        (v as any).proprietario_doc,
+        (v as any).categoria,
+        (v as any).chassi,
+      ].some((x) => (x ?? "").toLowerCase().includes(s))
+    )
+      return true;
     // Pesquisa por ano/eixos: dígitos casam o número exato
     if (sDig.length >= 2) {
       if (v.ano != null && String(v.ano).includes(sDig)) return true;
-      if ((v as any).quantidade_eixos != null && String((v as any).quantidade_eixos).includes(sDig)) return true;
+      if ((v as any).quantidade_eixos != null && String((v as any).quantidade_eixos).includes(sDig))
+        return true;
     }
     return false;
   });
@@ -821,7 +821,14 @@ function Veiculos() {
         }}
       >
         <div className="mb-4 flex shrink-0 items-center gap-2">
-          <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} className="max-w-sm" />
+          <SearchField
+            value={busca}
+            onChange={(v) => {
+              setBusca(v);
+              setPagina(1);
+            }}
+            className="max-w-sm"
+          />
           <DialogTrigger asChild>
             <PrimaryButton
               onClick={() => {
@@ -836,7 +843,9 @@ function Veiculos() {
         </div>
         <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3 rounded-2xl sm:p-6 overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editing ? `Editar ${formatarPlaca(editing.placa)}` : "Novo veículo"}</DialogTitle>
+            <DialogTitle>
+              {editing ? `Editar ${formatarPlaca(editing.placa)}` : "Novo veículo"}
+            </DialogTitle>
           </DialogHeader>
           <div className="grid gap-1.5">
             <div className="flex gap-2">
@@ -917,97 +926,93 @@ function Veiculos() {
                   </div>
                   <div className="w-44">
                     <Label className="text-[10px] text-muted-foreground">Tipo *</Label>
-                <Popover open={tipoOpen} onOpenChange={setTipoOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={tipoOpen}
-                      className="h-7 w-full justify-between font-normal text-xs"
-                    >
-                      <span>{form.tipo || "Selecione"}</span>
-                      <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className="w-[320px] p-0 max-h-[52vh] overflow-y-auto"
-                    align="start"
-                  >
-                    <Command shouldFilter={false}>
-                      <CommandInput
-                       
-                        value={tipoQuery}
-                        onValueChange={setTipoQuery}
-                      />
-                      <CommandList>
-                        <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
-                        <CommandGroup>
-                          {tipos
-                            .filter(
-                              (t) =>
-                                !tipoQuery || t.toLowerCase().includes(tipoQuery.toLowerCase()),
-                            )
-                            .map((t) => (
-                              <CommandItem
-                                key={t}
-                                value={t}
-                                onSelect={() => {
-                                  set("tipo", t);
-                                  setTipoOpen(false);
-                                  setTipoQuery("");
-                                }}
-                              >
-                                <Check
-                                  className={
-                                    "mr-2 h-4 w-4 " +
-                                    (form.tipo === t ? "opacity-100" : "opacity-0")
-                                  }
-                                />
-                                {t}
-                              </CommandItem>
-                            ))}
-                          {tipoQuery &&
-                            !tipos.some((t) => t.toLowerCase() === tipoQuery.toLowerCase()) && (
-                              <CommandItem
-                                value={tipoQuery}
-                                onSelect={() => {
-                                  set("tipo", tipoQuery);
-                                  setTipoOpen(false);
-                                  setTipoQuery("");
-                                }}
-                              >
-                                Usar &quot;{tipoQuery}&quot;
-                              </CommandItem>
-                            )}
-                        </CommandGroup>
-                      </CommandList>
-                      <div className="border-t p-1">
+                    <Popover open={tipoOpen} onOpenChange={setTipoOpen}>
+                      <PopoverTrigger asChild>
                         <Button
-                          variant="ghost"
-                          size="sm"
-                          className="w-full justify-start text-xs"
-                          onClick={() => {
-                            setTipoOpen(false);
-                            setTiposOpen(true);
-                          }}
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={tipoOpen}
+                          className="h-7 w-full justify-between font-normal text-xs"
                         >
-                          <Plus className="mr-1 h-3 w-3" /> Gerenciar tipos
+                          <span>{form.tipo || "Selecione"}</span>
+                          <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                         </Button>
-                      </div>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div>
-                <Label className="text-[10px] text-muted-foreground">Eixos *</Label>
-                <MoneyInput
-                  prefix=""
-                  decimals={0}
-                  value={form.quantidade_eixos}
-                  onChange={(v) => set("quantidade_eixos", v)}
-                  className="w-16 h-7 text-xs text-left"
-                />
-              </div>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-[320px] p-0 max-h-[52vh] overflow-y-auto"
+                        align="start"
+                      >
+                        <Command shouldFilter={false}>
+                          <CommandInput value={tipoQuery} onValueChange={setTipoQuery} />
+                          <CommandList>
+                            <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
+                            <CommandGroup>
+                              {tipos
+                                .filter(
+                                  (t) =>
+                                    !tipoQuery || t.toLowerCase().includes(tipoQuery.toLowerCase()),
+                                )
+                                .map((t) => (
+                                  <CommandItem
+                                    key={t}
+                                    value={t}
+                                    onSelect={() => {
+                                      set("tipo", t);
+                                      setTipoOpen(false);
+                                      setTipoQuery("");
+                                    }}
+                                  >
+                                    <Check
+                                      className={
+                                        "mr-2 h-4 w-4 " +
+                                        (form.tipo === t ? "opacity-100" : "opacity-0")
+                                      }
+                                    />
+                                    {t}
+                                  </CommandItem>
+                                ))}
+                              {tipoQuery &&
+                                !tipos.some((t) => t.toLowerCase() === tipoQuery.toLowerCase()) && (
+                                  <CommandItem
+                                    value={tipoQuery}
+                                    onSelect={() => {
+                                      set("tipo", tipoQuery);
+                                      setTipoOpen(false);
+                                      setTipoQuery("");
+                                    }}
+                                  >
+                                    Usar &quot;{tipoQuery}&quot;
+                                  </CommandItem>
+                                )}
+                            </CommandGroup>
+                          </CommandList>
+                          <div className="border-t p-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs"
+                              onClick={() => {
+                                setTipoOpen(false);
+                                setTiposOpen(true);
+                              }}
+                            >
+                              <Plus className="mr-1 h-3 w-3" /> Gerenciar tipos
+                            </Button>
+                          </div>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Eixos *</Label>
+                    <MoneyInput
+                      prefix=""
+                      decimals={0}
+                      value={form.quantidade_eixos}
+                      onChange={(v) => set("quantidade_eixos", v)}
+                      className="w-16 h-7 text-xs text-left"
+                    />
+                  </div>
                 </div>
               </div>
             </Card>
@@ -1046,121 +1051,125 @@ function Veiculos() {
                 <div className="space-y-1">
                   <div>
                     <Label className="text-[10px] text-muted-foreground">RNTRC</Label>
-                <Popover
-                  open={rntrcOpen}
-                    onOpenChange={(v) => {
-                      setRntrcOpen(v);
-                      if (v) {
-                        rntrcSelRef.current = false;
-                        setRntrcBusca("");
-                        setNovoRntrcCnpj("");
-                      } else {
-                        if (!rntrcSelRef.current && rntrcBusca.trim())
-                          set("rntrc", rntrcBusca.trim().toUpperCase());
-                        rntrcSelRef.current = false;
-                        setRntrcBusca("");
-                        setNovoRntrcCnpj("");
-                      }
-                    }}
-                >
-                  <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        className="h-7 w-full justify-between font-normal text-xs"
+                    <Popover
+                      open={rntrcOpen}
+                      onOpenChange={(v) => {
+                        setRntrcOpen(v);
+                        if (v) {
+                          rntrcSelRef.current = false;
+                          setRntrcBusca("");
+                          setNovoRntrcCnpj("");
+                        } else {
+                          if (!rntrcSelRef.current && rntrcBusca.trim())
+                            set("rntrc", rntrcBusca.trim().toUpperCase());
+                          rntrcSelRef.current = false;
+                          setRntrcBusca("");
+                          setNovoRntrcCnpj("");
+                        }
+                      }}
+                    >
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className="h-7 w-full justify-between font-normal text-xs"
+                        >
+                          <span className="truncate font-mono">
+                            {form.rntrc
+                              ? `${form.rntrc.padStart(9, "0")}${rntrcDisponiveis.find((r) => r.rntrc === form.rntrc)?.nome ? ` — ${rntrcDisponiveis.find((r) => r.rntrc === form.rntrc)?.nome}` : ""}`
+                              : "Selecione ou digite"}
+                          </span>
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-max min-w-[350px] max-w-[90vw] p-0"
+                        align="start"
                       >
-                      <span className="truncate font-mono">
-                        {form.rntrc
-                          ? `${form.rntrc.padStart(9, "0")}${rntrcDisponiveis.find((r) => r.rntrc === form.rntrc)?.nome ? ` — ${rntrcDisponiveis.find((r) => r.rntrc === form.rntrc)?.nome}` : ""}`
-                          : "Selecione ou digite"}
-                      </span>
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-max min-w-[350px] max-w-[90vw] p-0" align="start">
-                    <Command>
-                      <CommandInput
-                       
-                        value={rntrcBusca}
-                        onValueChange={(v) => setRntrcBusca(v.toUpperCase())}
-                      />
-                      <CommandList>
-                        <CommandEmpty>
-                          <div className="p-2 space-y-1.5">
-                            <div className="text-xs font-medium">
-                              Novo RNTRC &quot;{rntrcBusca}&quot; — informe o CNPJ do dono
-                            </div>
-                            <Input
-                              className="h-7 text-xs font-mono text-left"
-                              value={novoRntrcCnpj}
-                              onChange={(e) => setNovoRntrcCnpj(maskDoc(e.target.value))}
-                            />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-full justify-start text-xs"
-                              disabled={criarRntrc.isPending}
-                              onClick={() => {
-                                if (!rntrcBusca.trim()) return;
-                                criarRntrc.mutate(
-                                  { rntrc: rntrcBusca.trim(), cnpj: novoRntrcCnpj },
-                                  {
-                                    onSuccess: () => {
-                                      set("rntrc", rntrcBusca.trim().toUpperCase());
-                                      set("proprietario_doc", maskDoc(novoRntrcCnpj));
-                                      rntrcSelRef.current = true;
-                                      setRntrcBusca("");
-                                      setNovoRntrcCnpj("");
-                                      setRntrcOpen(false);
-                                    },
-                                  },
-                                );
-                              }}
-                            >
-                              <Plus className="mr-1 h-3 w-3" /> Salvar RNTRC com CNPJ
-                            </Button>
-                          </div>
-                        </CommandEmpty>
-                        <CommandGroup>
-                          {rntrcDisponiveis.map((r) => (
-                            <CommandItem
-                              key={r.rntrc}
-                              value={`${r.rntrc} ${r.nome}`}
-                              onSelect={() => {
-                                set("rntrc", r.rntrc);
-                                // O RNTRC é a fonte do dono: o proprietário passa a ser
-                                // EXATAMENTE o nome cadastrado no RNTRC (e o CNPJ/CPF
-                                // junto, quando houver).
-                                if (r.nome) set("proprietario", r.nome);
-                                if (r.cnpj) set("proprietario_doc", maskDoc(r.cnpj));
-                                rntrcSelRef.current = true;
-                                setRntrcBusca("");
-                                setRntrcOpen(false);
-                              }}
-                              className="whitespace-nowrap"
-                            >
-                              <Check
-                                className={
-                                  "mr-2 h-4 w-4 shrink-0 " +
-                                  (form.rntrc === r.rntrc ? "opacity-100" : "opacity-0")
-                                }
-                              />
-                              <span className="w-[9ch] shrink-0 font-mono tabular-nums">
-                                {r.rntrc.padStart(9, "0")}
-                              </span>
-                              <span className="shrink-0 text-muted-foreground">—</span>
-                              {r.nome && (
-                                <span className="ml-2 truncate text-muted-foreground">{r.nome}</span>
-                              )}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
+                        <Command>
+                          <CommandInput
+                            value={rntrcBusca}
+                            onValueChange={(v) => setRntrcBusca(v.toUpperCase())}
+                          />
+                          <CommandList>
+                            <CommandEmpty>
+                              <div className="p-2 space-y-1.5">
+                                <div className="text-xs font-medium">
+                                  Novo RNTRC &quot;{rntrcBusca}&quot; — informe o CNPJ do dono
+                                </div>
+                                <Input
+                                  className="h-7 text-xs font-mono text-left"
+                                  value={novoRntrcCnpj}
+                                  onChange={(e) => setNovoRntrcCnpj(maskDoc(e.target.value))}
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full justify-start text-xs"
+                                  disabled={criarRntrc.isPending}
+                                  onClick={() => {
+                                    if (!rntrcBusca.trim()) return;
+                                    criarRntrc.mutate(
+                                      { rntrc: rntrcBusca.trim(), cnpj: novoRntrcCnpj },
+                                      {
+                                        onSuccess: () => {
+                                          set("rntrc", rntrcBusca.trim().toUpperCase());
+                                          set("proprietario_doc", maskDoc(novoRntrcCnpj));
+                                          rntrcSelRef.current = true;
+                                          setRntrcBusca("");
+                                          setNovoRntrcCnpj("");
+                                          setRntrcOpen(false);
+                                        },
+                                      },
+                                    );
+                                  }}
+                                >
+                                  <Plus className="mr-1 h-3 w-3" /> Salvar RNTRC com CNPJ
+                                </Button>
+                              </div>
+                            </CommandEmpty>
+                            <CommandGroup>
+                              {rntrcDisponiveis.map((r) => (
+                                <CommandItem
+                                  key={r.rntrc}
+                                  value={`${r.rntrc} ${r.nome}`}
+                                  onSelect={() => {
+                                    set("rntrc", r.rntrc);
+                                    // O RNTRC é a fonte do dono: o proprietário passa a ser
+                                    // EXATAMENTE o nome cadastrado no RNTRC (e o CNPJ/CPF
+                                    // junto, quando houver).
+                                    if (r.nome) set("proprietario", r.nome);
+                                    if (r.cnpj) set("proprietario_doc", maskDoc(r.cnpj));
+                                    rntrcSelRef.current = true;
+                                    setRntrcBusca("");
+                                    setRntrcOpen(false);
+                                  }}
+                                  className="whitespace-nowrap"
+                                >
+                                  <Check
+                                    className={
+                                      "mr-2 h-4 w-4 shrink-0 " +
+                                      (form.rntrc === r.rntrc ? "opacity-100" : "opacity-0")
+                                    }
+                                  />
+                                  <span className="w-[9ch] shrink-0 font-mono tabular-nums">
+                                    {r.rntrc.padStart(9, "0")}
+                                  </span>
+                                  <span className="shrink-0 text-muted-foreground">—</span>
+                                  {r.nome && (
+                                    <span className="ml-2 truncate text-muted-foreground">
+                                      {r.nome}
+                                    </span>
+                                  )}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
               </div>
             </Card>
             <Card className="p-1.5">
@@ -1178,7 +1187,9 @@ function Veiculos() {
                     />
                   </div>
                   <div>
-                    <Label className="text-[10px] text-muted-foreground">CNPJ/CPF Proprietário</Label>
+                    <Label className="text-[10px] text-muted-foreground">
+                      CNPJ/CPF Proprietário
+                    </Label>
                     <Input
                       value={form.proprietario_doc}
                       onChange={(e) => set("proprietario_doc", maskDoc(e.target.value))}
@@ -1201,7 +1212,7 @@ function Veiculos() {
                         ))}
                       </SelectContent>
                     </Select>
-              </div>
+                  </div>
                 </div>
               </div>
             </Card>
@@ -1298,82 +1309,89 @@ function Veiculos() {
               página não cria barra de rolagem fora. */}
           <div className="min-h-0 flex-1 overflow-y-auto [&_.erp-table-wrap]:max-h-none">
             <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Placa</TableHead>
-                <TableHead>Modelo</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Ano</TableHead>
-                <TableHead>Proprietário</TableHead>
-                <TableHead>CNPJ/CPF</TableHead>
-                <TableHead className="text-center">Eixos</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead>Chassi</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {veiculosVisiveis.map((v) => (
-                <TableRow key={v.id}>
-                  <TableCell className="font-mono font-medium">{formatarPlaca(v.placa)}</TableCell>
-                  <TableCell>{v.marca_modelo ?? "—"}</TableCell>
-                  <TableCell>{v.tipo ?? "—"}</TableCell>
-                  <TableCell>{v.ano ?? "—"}</TableCell>
-                  <TableCell className="truncate max-w-[140px]">
-                    {(v as any).proprietario ?? "—"}
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {(v as any).proprietario_doc ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {(v as any).quantidade_eixos ?? "—"}
-                  </TableCell>
-                  <TableCell className="capitalize">{(v as any).categoria ?? "—"}</TableCell>
-                  <TableCell className="font-mono text-xs">{(v as any).chassi ?? "—"}</TableCell>
-                  <TableCell>
-                    <StatusBadge status={v.status} label={v.status === "manutencao" ? "manutenção" : v.status} />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => openEdit(v)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Excluir veículo {formatarPlaca(v.placa)}?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Viagens existentes permanecem no histórico (sem vínculo ao veículo).
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              data-acao
-                              className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              onClick={() => excluir.mutate(v.id)}
-                            >
-                              Excluir
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Placa</TableHead>
+                  <TableHead>Modelo</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Ano</TableHead>
+                  <TableHead>Proprietário</TableHead>
+                  <TableHead>CNPJ/CPF</TableHead>
+                  <TableHead className="text-center">Eixos</TableHead>
+                  <TableHead>Categoria</TableHead>
+                  <TableHead>Chassi</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
+              </TableHeader>
+              <TableBody>
+                {veiculosVisiveis.map((v) => (
+                  <TableRow key={v.id}>
+                    <TableCell className="font-mono font-medium">
+                      {formatarPlaca(v.placa)}
+                    </TableCell>
+                    <TableCell>{v.marca_modelo ?? "—"}</TableCell>
+                    <TableCell>{v.tipo ?? "—"}</TableCell>
+                    <TableCell>{v.ano ?? "—"}</TableCell>
+                    <TableCell className="truncate max-w-[140px]">
+                      {(v as any).proprietario ?? "—"}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {(v as any).proprietario_doc ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {(v as any).quantidade_eixos ?? "—"}
+                    </TableCell>
+                    <TableCell className="capitalize">{(v as any).categoria ?? "—"}</TableCell>
+                    <TableCell className="font-mono text-xs">{(v as any).chassi ?? "—"}</TableCell>
+                    <TableCell>
+                      <StatusBadge
+                        status={v.status}
+                        label={v.status === "manutencao" ? "manutenção" : v.status}
+                      />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => openEdit(v)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Excluir veículo {formatarPlaca(v.placa)}?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Viagens existentes permanecem no histórico (sem vínculo ao veículo).
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                data-acao
+                                className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                onClick={() => excluir.mutate(v.id)}
+                              >
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
             </Table>
           </div>
           <div className="shrink-0">

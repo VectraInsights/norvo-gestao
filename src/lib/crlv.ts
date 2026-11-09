@@ -31,11 +31,7 @@ export function valorSobRotulo(itens: ItemTexto[], rotulo: string): string {
   for (const lbl of itens.filter((it) => normRotulo(it.s) === alvo)) {
     const abaixo = itens
       .filter(
-        (it) =>
-          it.s.trim() &&
-          it.y < lbl.y - 4 &&
-          it.y > lbl.y - 34 &&
-          Math.abs(it.x - lbl.x) < 16,
+        (it) => it.s.trim() && it.y < lbl.y - 4 && it.y > lbl.y - 34 && Math.abs(it.x - lbl.x) < 16,
       )
       .sort((a, b) => b.y - a.y);
     if (abaixo.length) return abaixo[0].s.trim();
@@ -95,11 +91,7 @@ export function tipoPeloModelo(marca: string): string {
  * `marca` (marca/modelo) só entra quando a espécie é genérica — é o que separa uma
  * picape (Caminhonete) de um caminhão.
  */
-export function tipoVeiculoDoCrlv(
-  especie: string,
-  carroceria = "",
-  marca = "",
-): string {
+export function tipoVeiculoDoCrlv(especie: string, carroceria = "", marca = ""): string {
   const t = normTipo(especie);
   const c = normTipo(carroceria);
   if (!t) return tipoPeloModelo(marca);
@@ -118,8 +110,7 @@ export function tipoVeiculoDoCrlv(
   if (t.includes("ONIBUS")) return "Onibus";
   if (t.includes("MOTOCICLETA")) return "Motocicleta";
   if (t.includes("PASSAGEIRO")) return "Automóvel";
-  if (t.includes("VAN") || t.includes("UTILITARIO") || t.includes("FURGAO"))
-    return "Van/Furgão";
+  if (t.includes("VAN") || t.includes("UTILITARIO") || t.includes("FURGAO")) return "Van/Furgão";
   // Espécie genérica: o modelo (marca) desempata, senão a carroceria decide.
   const porModelo = tipoPeloModelo(marca);
   if (porModelo) return porModelo;
@@ -154,28 +145,22 @@ export function extrairDoTextoOcr(texto: string) {
     chassi: (up.match(/\b([A-Z0-9]{17})\b/) || [])[1] || "",
     ano: anos[1] || anos[0] || "",
     nome:
-      (
-        up.match(
-          /([A-Z][A-Z0-9 .&\-]{3,60}?\s(?:LTDA|EPP|MEI|EIRELI)(?:\s*-\s*(?:EPP|MEI))?)\b/,
-        ) || []
-      )[1] || "",
+      (up.match(/([A-Z][A-Z0-9 .&-]{3,60}?\s(?:LTDA|EPP|MEI|EIRELI)(?:\s*-\s*(?:EPP|MEI))?)\b/) ||
+        [])[1] || "",
     cpf: (up.match(/(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})/) || [])[1] || "",
     especie:
-      (
-        up.match(
-          /(CARGA SEMI-REBOQUE|TRACAO CAMINHAO TRATOR|CARGA CAMINHONETE|CARGA CAMINHAO|CARGA SECA|CARGA FRIA|PASSAGEIRO [A-Z]+|ESPECIAL CAMINHAO|CAMINHAO)/,
-        ) || []
-      )[1] || "",
+      (up.match(
+        /(CARGA SEMI-REBOQUE|TRACAO CAMINHAO TRATOR|CARGA CAMINHONETE|CARGA CAMINHAO|CARGA SECA|CARGA FRIA|PASSAGEIRO [A-Z]+|ESPECIAL CAMINHAO|CAMINHAO)/,
+      ) || [])[1] || "",
     carroceria:
-      (
-        up.match(
-          /(CARROCERIA FECHADA|CARROCERIA ABERTA|CAR\.?FECH[^ ]*|FECHADA\/[A-Z ]*|FECHADA\/MEC[^ ]*)/,
-        ) || []
-      )[1] || "",
+      (up.match(
+        /(CARROCERIA FECHADA|CARROCERIA ABERTA|CAR\.?FECH[^ ]*|FECHADA\/[A-Z ]*|FECHADA\/MEC[^ ]*)/,
+      ) || [])[1] || "",
     // A marca no CRLV vem em dois formatos: "M.BENZ/L 1620" (com ponto) ou
     // "I/TOYOTA HILUX CS4X2" (sem ponto).
     marca:
-      (up.match(/(?:^|\s)([A-Z]\.[A-Z]+\/[A-Z]?\s?[A-Z0-9]{2,8}(?:\s+[A-Z0-9]{2,8}){0,3})/) || [])[1] ||
+      (up.match(/(?:^|\s)([A-Z]\.[A-Z]+\/[A-Z]?\s?[A-Z0-9]{2,8}(?:\s+[A-Z0-9]{2,8}){0,3})/) ||
+        [])[1] ||
       (up.match(/(?:^|\s)([A-Z]{1,2}\/[A-Z][A-Z0-9]*(?:\s+[A-Z0-9]{2,8}){0,3})/) || [])[1] ||
       "",
     eixos: (up.match(/(\d)\s+0\dP/) || [])[1] || "",
@@ -243,10 +228,7 @@ const ROTULOS_CRLV = [
  * valor é procurado logo abaixo dela.
  */
 export function acharRotulo(palavras: PalavraOcr[], frase: string): Caixa | null {
-  const alvo = frase
-    .split(/\s+/)
-    .map(normRotulo)
-    .filter(Boolean);
+  const alvo = frase.split(/\s+/).map(normRotulo).filter(Boolean);
   if (!alvo.length) return null;
   for (const w of palavras) {
     if (!alvo.includes(normRotulo(w.s))) continue;
@@ -316,11 +298,9 @@ async function lerTrecho(
  */
 export function placaDoDocumento(nomeArquivo?: string, tituloPdf?: string): string {
   const pega = (s?: string) =>
-    (
-      String(s || "")
-        .toUpperCase()
-        .match(/(?:^|[^A-Z0-9])([A-Z]{3}[0-9][A-Z0-9][0-9]{2})(?![A-Z0-9])/) || []
-    )[1] || "";
+    (String(s || "")
+      .toUpperCase()
+      .match(/(?:^|[^A-Z0-9])([A-Z]{3}[0-9][A-Z0-9][0-9]{2})(?![A-Z0-9])/) || [])[1] || "";
   return pega(tituloPdf) || pega(nomeArquivo);
 }
 
@@ -410,16 +390,7 @@ export async function lerCrlvImpresso(
     ) => {
       const f = faixa(nome);
       if (!f) return "";
-      return lerTrecho(
-        worker,
-        canvas,
-        f.rotulo,
-        larguraPt,
-        alturaPt,
-        escala,
-        whitelist,
-        f.proximo,
-      );
+      return lerTrecho(worker, canvas, f.rotulo, larguraPt, alturaPt, escala, whitelist, f.proximo);
     };
 
     const renavamTxt = await recorte("CÓDIGO RENAVAM", 95, 18, "0123456789");
@@ -429,24 +400,14 @@ export async function lerCrlvImpresso(
       18,
       "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
     );
-    const chassiTxt = await recorte(
-      "CHASSI",
-      120,
-      26,
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-    );
+    const chassiTxt = await recorte("CHASSI", 120, 26, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
     const marcaTxt = await recorte(
       "MARCA / MODELO / VERSÃO",
       135,
       26,
       "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/ .-&",
     );
-    const especieTxt = await recorte(
-      "ESPÉCIE / TIPO",
-      120,
-      26,
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ ",
-    );
+    const especieTxt = await recorte("ESPÉCIE / TIPO", 120, 26, "ABCDEFGHIJKLMNOPQRSTUVWXYZ ");
     const anoTxt = await recorte("ANO FABRICAÇÃO", 90, 20, "0123456789");
     const eixosTxt = await recorte("EIXOS", 30, 18, "0123456789");
 

@@ -33,7 +33,7 @@ describe("regras do MDF-e", () => {
   });
 
   it("não permite conteúdo XML injetado em campos fiscais", () => {
-    const xml = montarProdPredXml({ tpCarga: "01", xProd: '\"/><evil>1</evil>', ncm: "12345678" });
+    const xml = montarProdPredXml({ tpCarga: "01", xProd: '"/><evil>1</evil>', ncm: "12345678" });
 
     expect(xml).not.toContain("<evil>");
     expect(xml).toContain("&lt;evil&gt;");

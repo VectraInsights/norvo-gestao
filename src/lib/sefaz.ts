@@ -1,12 +1,12 @@
 /**
  * Serviço de integração com SEFAZ (NFe)
- * 
+ *
  * Fluxo:
  * 1. Busca certificado do Supabase Storage + tabela certificados_digitais (via service role)
  * 2. Parse do PKCS#12 (.pfx/.p12) com node-forge (fallback: crypto nativo Node.js)
  * 3. Assinatura do XML com chave privada + cadeia de certificados
  * 4. Envio SOAP ao webservice da SEFAZ
- * 
+ *
  * Endereços por UF (homologação): https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=tW+YMYc/50s=
  */
 
@@ -14,7 +14,11 @@ import forge from "node-forge";
 import https from "node:https";
 import crypto from "node:crypto";
 import { DOMParser } from "@xmldom/xmldom";
-import { canonicalizeMdfInfMdfInclusive, getMdfReferenceNode, XML_INCLUSIVE_C14N } from "./mdf-c14n";
+import {
+  canonicalizeMdfInfMdfInclusive,
+  getMdfReferenceNode,
+  XML_INCLUSIVE_C14N,
+} from "./mdf-c14n";
 import { gunzipSync } from "zlib";
 import {
   SEFAZ_AMBIENTE,
@@ -42,11 +46,7 @@ const XMLDSIG_NAMESPACE = "http://www.w3.org/2000/09/xmldsig#";
 const XMLNS_NAMESPACE = "http://www.w3.org/2000/xmlns/";
 
 function escapeC14nTextSignedInfo(value: string): string {
-  return value
-    .replace(/\r\n?/g, "\n")
-    .replace(/&/g, "&")
-    .replace(/</g, "<")
-    .replace(/>/g, ">");
+  return value.replace(/\r\n?/g, "\n").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
 }
 
 function escapeC14nAttrSignedInfo(value: string): string {
@@ -64,7 +64,8 @@ function escapeC14nAttrSignedInfo(value: string): string {
 function canonicalizeSignedInfoStrict(signedInfo: string): string {
   const doc = new DOMParser().parseFromString(signedInfo, "application/xml");
   const root = doc.documentElement;
-  if (!root || root.nodeName !== "SignedInfo") throw new Error("SignedInfo ausente para C14N estrita");
+  if (!root || root.nodeName !== "SignedInfo")
+    throw new Error("SignedInfo ausente para C14N estrita");
   const render = (current: Element | Text | CDATASection | Comment, isRoot: boolean): string => {
     const nodeType = current.nodeType;
     if (nodeType === 3 || nodeType === 4) {
@@ -77,7 +78,10 @@ function canonicalizeSignedInfoStrict(signedInfo: string): string {
       throw new Error("SignedInfo com namespace inesperado para C14N estrita");
     }
     const attrs = Array.from(element.attributes);
-    const explicitXmlns = attrs.filter((attr) => attr.name === "xmlns" || attr.prefix === "xmlns" || attr.namespaceURI === XMLNS_NAMESPACE);
+    const explicitXmlns = attrs.filter(
+      (attr) =>
+        attr.name === "xmlns" || attr.prefix === "xmlns" || attr.namespaceURI === XMLNS_NAMESPACE,
+    );
     if (explicitXmlns.some((attr) => attr.name !== "xmlns")) {
       throw new Error("SignedInfo com namespace prefixado para C14N estrita");
     }
@@ -85,13 +89,18 @@ function canonicalizeSignedInfoStrict(signedInfo: string): string {
     if (explicitDefault && explicitDefault !== XMLDSIG_NAMESPACE) {
       throw new Error("SignedInfo com default namespace divergente para C14N estrita");
     }
-    const regular = attrs.filter((attr) => attr.name !== "xmlns" && attr.prefix !== "xmlns" && attr.namespaceURI !== XMLNS_NAMESPACE);
+    const regular = attrs.filter(
+      (attr) =>
+        attr.name !== "xmlns" && attr.prefix !== "xmlns" && attr.namespaceURI !== XMLNS_NAMESPACE,
+    );
     if (regular.some((attr) => attr.prefix || (attr.namespaceURI || "") !== "")) {
       throw new Error("SignedInfo com atributo namespaced para C14N estrita");
     }
-    regular.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+    regular.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
     const rootNs = isRoot ? ` xmlns="${XMLDSIG_NAMESPACE}"` : "";
-    const rendered = regular.map((attr) => ` ${attr.name}="${escapeC14nAttrSignedInfo(attr.value)}"`).join("");
+    const rendered = regular
+      .map((attr) => ` ${attr.name}="${escapeC14nAttrSignedInfo(attr.value)}"`)
+      .join("");
     const preserved = !isRoot && explicitDefault ? ` xmlns="${explicitDefault}"` : "";
     const children = Array.from(element.childNodes)
       .map((child) => render(child as Element | Text | CDATASection | Comment, false))
@@ -104,7 +113,9 @@ function canonicalizeSignedInfoStrict(signedInfo: string): string {
 function assertStrictC14nSignedInfo(signedInfo: string): void {
   const canonical = canonicalizeSignedInfoStrict(signedInfo);
   if (canonical !== signedInfo) {
-    throw new Error(`SignedInfo fora da C14N 1.0 estrita: recebido=${signedInfo} esperado=${canonical}`);
+    throw new Error(
+      `SignedInfo fora da C14N 1.0 estrita: recebido=${signedInfo} esperado=${canonical}`,
+    );
   }
 }
 
@@ -140,13 +151,22 @@ const NACIONAL = {
     receptEventos: "https://hom.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx",
   },
   producao: {
-    nfeDistribuicaoDFe: "https://www1.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
+    nfeDistribuicaoDFe:
+      "https://www1.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
     receptEventos: "https://www.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx",
   },
 };
 
 // Endereços por UF — NF-e 4.00 (endereços estaduais são iguais em hom/prod)
-const SEFAZ_ENDPOINTS: Record<string, { nfeAutorizacao: string; nfeRetAutorizacao: string; nfeStatusServico: string; receptEventos: string }> = {
+const SEFAZ_ENDPOINTS: Record<
+  string,
+  {
+    nfeAutorizacao: string;
+    nfeRetAutorizacao: string;
+    nfeStatusServico: string;
+    receptEventos: string;
+  }
+> = {
   // Estados com SEFAZ própria (autorizadoras)
   SP: {
     nfeAutorizacao: "https://nfe.fazenda.sp.gov.br/ws/nfeautorizacao4.asmx",
@@ -180,14 +200,18 @@ const SEFAZ_ENDPOINTS: Record<string, { nfeAutorizacao: string; nfeRetAutorizaca
   },
   BA: {
     nfeAutorizacao: "https://nfe.sefaz.ba.gov.br/webservices/NFeAutorizacao4/NFeAutorizacao4.asmx",
-    nfeRetAutorizacao: "https://nfe.sefaz.ba.gov.br/webservices/NFeRetAutorizacao4/NFeRetAutorizacao4.asmx",
-    nfeStatusServico: "https://nfe.sefaz.ba.gov.br/webservices/NFeStatusServico4/NFeStatusServico4.asmx",
+    nfeRetAutorizacao:
+      "https://nfe.sefaz.ba.gov.br/webservices/NFeRetAutorizacao4/NFeRetAutorizacao4.asmx",
+    nfeStatusServico:
+      "https://nfe.sefaz.ba.gov.br/webservices/NFeStatusServico4/NFeStatusServico4.asmx",
     receptEventos: NACIONAL.homologacao.receptEventos,
   },
   CE: {
     nfeAutorizacao: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
-    nfeRetAutorizacao: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeRetAutorizacao/NFeRetAutorizacao4.asmx",
-    nfeStatusServico: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeStatusServico/NfeStatusServico4.asmx",
+    nfeRetAutorizacao:
+      "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeRetAutorizacao/NFeRetAutorizacao4.asmx",
+    nfeStatusServico:
+      "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeStatusServico/NfeStatusServico4.asmx",
     receptEventos: NACIONAL.homologacao.receptEventos,
   },
   PE: {
@@ -198,8 +222,10 @@ const SEFAZ_ENDPOINTS: Record<string, { nfeAutorizacao: string; nfeRetAutorizaca
   },
   RS: {
     nfeAutorizacao: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
-    nfeRetAutorizacao: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeRetAutorizacao/NFeRetAutorizacao4.asmx",
-    nfeStatusServico: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeStatusServico/NfeStatusServico4.asmx",
+    nfeRetAutorizacao:
+      "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeRetAutorizacao/NFeRetAutorizacao4.asmx",
+    nfeStatusServico:
+      "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeStatusServico/NfeStatusServico4.asmx",
     receptEventos: NACIONAL.homologacao.receptEventos,
   },
   MS: {
@@ -217,8 +243,10 @@ const SEFAZ_ENDPOINTS: Record<string, { nfeAutorizacao: string; nfeRetAutorizaca
   // Padrão nacional (fallback) — SVRS
   DEFAULT: {
     nfeAutorizacao: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
-    nfeRetAutorizacao: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeRetAutorizacao/NFeRetAutorizacao4.asmx",
-    nfeStatusServico: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeStatusServico/NfeStatusServico4.asmx",
+    nfeRetAutorizacao:
+      "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeRetAutorizacao/NFeRetAutorizacao4.asmx",
+    nfeStatusServico:
+      "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeStatusServico/NfeStatusServico4.asmx",
     receptEventos: NACIONAL.homologacao.receptEventos,
   },
 };
@@ -239,18 +267,42 @@ function getEndpoints(uf: string, ambiente: "homologacao" | "producao" = SEFAZ_A
     "www.nfe.fazenda.gov.br",
   ]);
   if (urls.some((value) => productionHosts.has(new URL(value).hostname.toLowerCase()))) {
-    throw new Error(`Endpoint NF-e de produção bloqueado no ambiente de testes: ${urls.join(", ")}`);
+    throw new Error(
+      `Endpoint NF-e de produção bloqueado no ambiente de testes: ${urls.join(", ")}`,
+    );
   }
   return endpoints;
 }
 
 // Código da UF IBGE (obrigatório no distDFeInt)
 const UF_CODIGO: Record<string, string> = {
-  AC: "12", AL: "27", AM: "13", AP: "16", BA: "29", CE: "23",
-  DF: "53", ES: "32", GO: "52", MA: "21", MG: "31", MS: "50",
-  MT: "51", PA: "15", PB: "25", PE: "26", PI: "22", PR: "41",
-  RJ: "33", RN: "24", RO: "11", RR: "14", RS: "43", SC: "42",
-  SE: "28", SP: "35", TO: "17",
+  AC: "12",
+  AL: "27",
+  AM: "13",
+  AP: "16",
+  BA: "29",
+  CE: "23",
+  DF: "53",
+  ES: "32",
+  GO: "52",
+  MA: "21",
+  MG: "31",
+  MS: "50",
+  MT: "51",
+  PA: "15",
+  PB: "25",
+  PE: "26",
+  PI: "22",
+  PR: "41",
+  RJ: "33",
+  RN: "24",
+  RO: "11",
+  RR: "14",
+  RS: "43",
+  SC: "42",
+  SE: "28",
+  SP: "35",
+  TO: "17",
 };
 
 function getCodigoUf(uf: string): string {
@@ -290,7 +342,11 @@ function tryForgeParse(pfxBytes: Buffer, senha: string): CertificadoInfo | null 
     const cert = certBag.cert;
     const subjectName = cert.subject.getField("CN")?.value || cert.subject.toString();
     const issuerName = cert.issuer.getField("CN")?.value || cert.issuer.toString();
-    const thumbprint = forge.md.sha1.create().update(forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes()).digest().toHex();
+    const thumbprint = forge.md.sha1
+      .create()
+      .update(forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes())
+      .digest()
+      .toHex();
 
     return {
       pfxBytes,
@@ -309,13 +365,25 @@ function tryForgeParse(pfxBytes: Buffer, senha: string): CertificadoInfo | null 
  * Extrai chave privada e cadeia de certificados usando crypto nativo do Node.js.
  * Funciona com qualquer algoritmo suportado pelo OpenSSL (AES-256, SHA-256, etc.)
  */
-function extractPkcs12Native(pfxBytes: Buffer, senha: string): {
+function extractPkcs12Native(
+  pfxBytes: Buffer,
+  senha: string,
+): {
   privateKey: crypto.KeyObject;
   certChain: Buffer[];
 } {
   // Extrair chave privada via crypto nativo
   // type "pkcs12" é suportado pelo Node.js 18+ mas não nas definições de tipo
-  const privateKey = (crypto as unknown as { createPrivateKey: (opts: { key: Buffer; format: string; type: string; passphrase: string }) => crypto.KeyObject }).createPrivateKey({
+  const privateKey = (
+    crypto as unknown as {
+      createPrivateKey: (opts: {
+        key: Buffer;
+        format: string;
+        type: string;
+        passphrase: string;
+      }) => crypto.KeyObject;
+    }
+  ).createPrivateKey({
     key: pfxBytes,
     format: "der",
     type: "pkcs12",
@@ -346,7 +414,11 @@ function extractCertChainFromPkcs12(pfxBytes: Buffer): Buffer[] {
       const cert = forge.pki.certificateFromAsn1(certAsn1);
       if (!cert?.subject) return false;
 
-      const fingerprint = forge.md.sha256.create().update(derBytes.toString("binary")).digest().toHex();
+      const fingerprint = forge.md.sha256
+        .create()
+        .update(derBytes.toString("binary"))
+        .digest()
+        .toHex();
       if (!fingerprints.has(fingerprint)) {
         fingerprints.add(fingerprint);
         certs.push(derBytes);
@@ -410,7 +482,11 @@ function parseCertificateNative(pfxBytes: Buffer, senha: string): CertificadoInf
 
   const subjectName = cert.subject.getField("CN")?.value || cert.subject.toString();
   const issuerName = cert.issuer.getField("CN")?.value || cert.issuer.toString();
-  const thumbprint = forge.md.sha1.create().update(forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes()).digest().toHex();
+  const thumbprint = forge.md.sha1
+    .create()
+    .update(forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes())
+    .digest()
+    .toHex();
 
   return {
     pfxBytes,
@@ -436,8 +512,6 @@ export function parseCertificate(pfxBytes: Buffer, senha: string): CertificadoIn
 // Assinatura XML (W3C XML Digital Signature - envelopamento)
 // ============================================================
 
-
-
 /**
  * Canonicaliza o infMDFe usando C14N 1.0 Inclusivo
  * (http://www.w3.org/TR/2001/REC-xml-c14n-20010315).
@@ -457,11 +531,7 @@ function canonicalizeMdfInfMdfInclusive(node: Element): string {
   const COMMENT_NODE = 8;
 
   function escapeC14nText(value: string): string {
-    return value
-      .replace(/\r\n?/g, "\n")
-      .replace(/&/g, "&")
-      .replace(/</g, "<")
-      .replace(/>/g, ">");
+    return value.replace(/\r\n?/g, "\n").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
   }
 
   function escapeC14nAttribute(value: string): string {
@@ -495,7 +565,12 @@ function canonicalizeMdfInfMdfInclusive(node: Element): string {
     }
 
     const allAttributes = Array.from(element.attributes);
-    const explicitXmlns = allAttributes.filter((attr) => attr.name === "xmlns" || attr.prefix === "xmlns" || attr.namespaceURI === "http://www.w3.org/2000/xmlns/");
+    const explicitXmlns = allAttributes.filter(
+      (attr) =>
+        attr.name === "xmlns" ||
+        attr.prefix === "xmlns" ||
+        attr.namespaceURI === "http://www.w3.org/2000/xmlns/",
+    );
     if (explicitXmlns.some((attr) => attr.name !== "xmlns")) {
       throw new Error("MDF-e com namespace prefixado não suportado");
     }
@@ -503,18 +578,32 @@ function canonicalizeMdfInfMdfInclusive(node: Element): string {
     if (explicitDefaultXmlns && explicitDefaultXmlns !== "http://www.portalfiscal.inf.br/mdfe") {
       throw new Error("MDF-e com namespace default divergente do MDF-e");
     }
-    const attributes = allAttributes
-      .filter((attr) => attr.name !== "xmlns" && attr.prefix !== "xmlns" && attr.namespaceURI !== "http://www.w3.org/2000/xmlns/");
-    if (attributes.some((attr) => attr.prefix || attr.namespaceURI === "http://www.w3.org/XML/1998/namespace" || (attr.namespaceURI || "") !== "")) {
+    const attributes = allAttributes.filter(
+      (attr) =>
+        attr.name !== "xmlns" &&
+        attr.prefix !== "xmlns" &&
+        attr.namespaceURI !== "http://www.w3.org/2000/xmlns/",
+    );
+    if (
+      attributes.some(
+        (attr) =>
+          attr.prefix ||
+          attr.namespaceURI === "http://www.w3.org/XML/1998/namespace" ||
+          (attr.namespaceURI || "") !== "",
+      )
+    ) {
       throw new Error("MDF-e com atributo namespace/XML não suportado para C14N inclusivo");
     }
-    attributes.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+    attributes.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 
     // Preserva o xmlns declarado explicitamente no nó (ex.: <infModal ... xmlns="...">);
     // a raiz sempre carrega o namespace. Namespaces redundantes NÃO são limpos.
     const rootNamespace = isRoot ? ' xmlns="http://www.portalfiscal.inf.br/mdfe"' : "";
-    const renderedAttributes = attributes.map((attr) => ` ${attr.name}="${escapeC14nAttribute(attr.value)}"`).join("");
-    const preservedXmlns = !isRoot && explicitDefaultXmlns ? ` xmlns="${explicitDefaultXmlns}"` : "";
+    const renderedAttributes = attributes
+      .map((attr) => ` ${attr.name}="${escapeC14nAttribute(attr.value)}"`)
+      .join("");
+    const preservedXmlns =
+      !isRoot && explicitDefaultXmlns ? ` xmlns="${explicitDefaultXmlns}"` : "";
     const children = Array.from(element.childNodes)
       .map((child) => render(child, false))
       .join("");
@@ -564,18 +653,28 @@ export function signMdfXml(xml: string, pfxBytes: Buffer, senha: string): string
   });
 
   // 5. Extração do SignatureValue gerado
-  const signatureValue = signed.match(/<SignatureValue>([^<]+)<\/SignatureValue>/)?.[1] || "(não encontrado)";
+  const signatureValue =
+    signed.match(/<SignatureValue>([^<]+)<\/SignatureValue>/)?.[1] || "(não encontrado)";
   console.log("[mdf-debug] SignatureValue (Base64):", signatureValue);
-  console.log("[mdf-debug] SignedInfo:", signed.match(/<SignedInfo[\s\S]*<\/SignedInfo>/)?.[0] || "(não encontrado)");
+  console.log(
+    "[mdf-debug] SignedInfo:",
+    signed.match(/<SignedInfo[\s\S]*<\/SignedInfo>/)?.[0] || "(não encontrado)",
+  );
 
   // 6. Validações pós-assinatura
   const signedReference = signed.match(/<Reference URI="([^"]+)"/)?.[1];
   const signedId = getMdfReferenceNode(signed).id;
   if (signedId !== id || signedReference !== `#${id}`) {
-    throw new Error(`Referência da assinatura MDF-e inválida: id=${signedId || "(ausente)"}/${signedReference || "(ausente)"}; esperado=${id}/#${id}`);
+    throw new Error(
+      `Referência da assinatura MDF-e inválida: id=${signedId || "(ausente)"}/${signedReference || "(ausente)"}; esperado=${id}/#${id}`,
+    );
   }
-  if (!signed.includes(`<CanonicalizationMethod Algorithm="${XML_INCLUSIVE_C14N}"></CanonicalizationMethod>`) ||
-      !signed.includes(`<Transform Algorithm="${XML_INCLUSIVE_C14N}"></Transform>`)) {
+  if (
+    !signed.includes(
+      `<CanonicalizationMethod Algorithm="${XML_INCLUSIVE_C14N}"></CanonicalizationMethod>`,
+    ) ||
+    !signed.includes(`<Transform Algorithm="${XML_INCLUSIVE_C14N}"></Transform>`)
+  ) {
     throw new Error("Assinatura MDF-e sem canonicalização inclusiva");
   }
 
@@ -648,7 +747,8 @@ function signXmlWithForge(
   const matchId = xml.match(/<inf(?:NFe|Cte|Evento|MDFe)\s+Id="([^"]+)"/);
   const uri = options?.referenceUri || (matchId ? `#${matchId[1]}` : "#NFe");
   const canonicalizationAlgorithm = options?.canonicalizationAlgorithm || XML_INCLUSIVE_C14N;
-  const referenceTransformAlgorithm = options?.referenceTransformAlgorithm || canonicalizationAlgorithm;
+  const referenceTransformAlgorithm =
+    options?.referenceTransformAlgorithm || canonicalizationAlgorithm;
 
   // MDF-e: digestInput recebe infMDFe já canonizada em C14N exclusivo.
   // Os fluxos legados continuam usando o digest fornecido ou o XML completo.
@@ -667,7 +767,11 @@ function signXmlWithForge(
     assertStrictC14nSignedInfo(signedInfo);
     console.log("[mdf-debug] string exata SignedInfo para RSA:", signedInfo);
   }
-  if (options?.logSignedInfoBytes) console.log("[mdf-debug] bytes de SignedInfo antes do RSA-SHA1:", Buffer.byteLength(signedInfo, "utf8"));
+  if (options?.logSignedInfoBytes)
+    console.log(
+      "[mdf-debug] bytes de SignedInfo antes do RSA-SHA1:",
+      Buffer.byteLength(signedInfo, "utf8"),
+    );
   const md2 = forge.md.sha1.create();
   md2.update(signedInfo, "utf8");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -680,7 +784,8 @@ function signXmlWithForge(
   // EventoCTe: Signature goes inside <eventoCTe> before </eventoCTe>
   if (xml.includes("</eventoCTe>")) return xml.replace("</eventoCTe>", signature + "</eventoCTe>");
   // EventoMDFe: idem (sem isto o evento ia sem Signature → 243).
-  if (xml.includes("</eventoMDFe>")) return xml.replace("</eventoMDFe>", signature + "</eventoMDFe>");
+  if (xml.includes("</eventoMDFe>"))
+    return xml.replace("</eventoMDFe>", signature + "</eventoMDFe>");
   // CTeSimp: XSD order is infCte → infCTeSupl → ds:Signature. Place Signature before </CTeSimp>
   if (xml.includes("</CTeSimp>")) return xml.replace("</CTeSimp>", signature + "</CTeSimp>");
   if (xml.includes("</CTe>")) return xml.replace("</CTe>", signature + "</CTe>");
@@ -720,7 +825,8 @@ function signXmlNative(
   const matchId = xml.match(/<inf(?:NFe|Cte|Evento|MDFe)\s+Id="([^"]+)"/);
   const uri = options?.referenceUri || (matchId ? `#${matchId[1]}` : "#NFe");
   const canonicalizationAlgorithm = options?.canonicalizationAlgorithm || XML_INCLUSIVE_C14N;
-  const referenceTransformAlgorithm = options?.referenceTransformAlgorithm || canonicalizationAlgorithm;
+  const referenceTransformAlgorithm =
+    options?.referenceTransformAlgorithm || canonicalizationAlgorithm;
 
   // Criar SHA-1 digest UTF-8 do conteúdo canônico/fornecido
   const md = forge.md.sha1.create();
@@ -736,7 +842,11 @@ function signXmlNative(
     assertStrictC14nSignedInfo(signedInfo);
     console.log("[mdf-debug] string exata SignedInfo para RSA:", signedInfo);
   }
-  if (options?.logSignedInfoBytes) console.log("[mdf-debug] bytes de SignedInfo antes do RSA-SHA1:", Buffer.byteLength(signedInfo, "utf8"));
+  if (options?.logSignedInfoBytes)
+    console.log(
+      "[mdf-debug] bytes de SignedInfo antes do RSA-SHA1:",
+      Buffer.byteLength(signedInfo, "utf8"),
+    );
   const sign = crypto.createSign("SHA1");
   sign.update(signedInfo, "utf8");
   const signatureBuffer = sign.sign(privateKey);
@@ -748,7 +858,8 @@ function signXmlNative(
   // EventoCTe: Signature goes inside <eventoCTe> before </eventoCTe>
   if (xml.includes("</eventoCTe>")) return xml.replace("</eventoCTe>", signature + "</eventoCTe>");
   // EventoMDFe: idem (sem isto o evento ia sem Signature → 243).
-  if (xml.includes("</eventoMDFe>")) return xml.replace("</eventoMDFe>", signature + "</eventoMDFe>");
+  if (xml.includes("</eventoMDFe>"))
+    return xml.replace("</eventoMDFe>", signature + "</eventoMDFe>");
   // CTeSimp: XSD order is infCte → infCTeSupl → ds:Signature. Place Signature before </CTeSimp>
   if (xml.includes("</CTeSimp>")) return xml.replace("</CTeSimp>", signature + "</CTeSimp>");
   if (xml.includes("</CTe>")) return xml.replace("</CTe>", signature + "</CTe>");
@@ -779,7 +890,12 @@ export function signXml(
 // Chamadas SOAP à SEFAZ
 // ============================================================
 
-async function soapRequest(url: string, soapBody: string, action: string, agent?: https.Agent): Promise<string> {
+async function soapRequest(
+  url: string,
+  soapBody: string,
+  action: string,
+  agent?: https.Agent,
+): Promise<string> {
   const envelope = `<?xml version="1.0" encoding="utf-8"?>
 <soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
   <soap12:Body>
@@ -794,27 +910,30 @@ async function soapRequest(url: string, soapBody: string, action: string, agent?
   if (agent) {
     const parsedUrl = new URL(url);
     return new Promise<string>((resolve, reject) => {
-      const req = https.request({
-        hostname: parsedUrl.hostname,
-        port: parsedUrl.port || 443,
-        path: parsedUrl.pathname,
-        method: "POST",
-        agent,
-        headers: {
-          "Content-Type": contentType,
-          "Content-Length": Buffer.byteLength(envelope),
+      const req = https.request(
+        {
+          hostname: parsedUrl.hostname,
+          port: parsedUrl.port || 443,
+          path: parsedUrl.pathname,
+          method: "POST",
+          agent,
+          headers: {
+            "Content-Type": contentType,
+            "Content-Length": Buffer.byteLength(envelope),
+          },
         },
-      }, (res) => {
-        let data = "";
-        res.on("data", (chunk) => data += chunk);
-        res.on("end", () => {
-          if (res.statusCode && res.statusCode >= 400) {
-            reject(new Error(`SEFAZ HTTP ${res.statusCode}: ${data.substring(0, 500)}`));
-          } else {
-            resolve(data);
-          }
-        });
-      });
+        (res) => {
+          let data = "";
+          res.on("data", (chunk) => (data += chunk));
+          res.on("end", () => {
+            if (res.statusCode && res.statusCode >= 400) {
+              reject(new Error(`SEFAZ HTTP ${res.statusCode}: ${data.substring(0, 500)}`));
+            } else {
+              resolve(data);
+            }
+          });
+        },
+      );
       req.on("error", reject);
       req.write(envelope);
       req.end();
@@ -846,14 +965,28 @@ function parseDistribuicaoResponse(response: string): {
   xMotivo: string;
   ultNSU: string;
   maxNSU: string;
-  notas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string; nsu: string }>;
+  notas: Array<{
+    chave: string;
+    emitente: string;
+    cnpj: string;
+    valor: number;
+    data: string;
+    nsu: string;
+  }>;
 } {
   const cStat = response.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
   const xMotivo = response.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1] || "";
   const ultNSU = response.match(/<ultNSU>(\d+)<\/ultNSU>/)?.[1] || "";
   const maxNSU = response.match(/<maxNSU>(\d+)<\/maxNSU>/)?.[1] || "";
 
-  const notas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string; nsu: string }> = [];
+  const notas: Array<{
+    chave: string;
+    emitente: string;
+    cnpj: string;
+    valor: number;
+    data: string;
+    nsu: string;
+  }> = [];
 
   const docZipMatches = response.matchAll(/<docZip[^>]*NSU="(\d+)"[^>]*>([\s\S]*?)<\/docZip>/g);
 
@@ -871,7 +1004,10 @@ function parseDistribuicaoResponse(response: string): {
       }
 
       const chave = decodedXml.match(/<chNFe>(\d{44})<\/chNFe>/)?.[1] || "";
-      const cnpjEmitente = decodedXml.match(/<CNPJCPF>(\d{14})<\/CNPJCPF>/)?.[1] || decodedXml.match(/<CNPJ>(\d{14})<\/CNPJ>/)?.[1] || "";
+      const cnpjEmitente =
+        decodedXml.match(/<CNPJCPF>(\d{14})<\/CNPJCPF>/)?.[1] ||
+        decodedXml.match(/<CNPJ>(\d{14})<\/CNPJ>/)?.[1] ||
+        "";
       const xNome = decodedXml.match(/<xNome>([^<]+)<\/xNome>/)?.[1] || "";
       const vNF = decodedXml.match(/<vNF>([^<]+)<\/vNF>/)?.[1] || "0";
       const dhEmi = decodedXml.match(/<dhEmi>([^<]+)<\/dhEmi>/)?.[1] || "";
@@ -901,7 +1037,20 @@ export async function consultarDestinatario(
   uf: string,
   ambiente: "homologacao" | "producao" = SEFAZ_AMBIENTE,
   startNsu?: string,
-): Promise<{ notas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string }>; debug?: { cStat: string; xMotivo: string; endpoint: string; tpAmb: string; cUFAutor: string; cnpj: string }; maxNsuObtido?: string; ultNSU?: string; resetouCursor?: boolean }> {
+): Promise<{
+  notas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string }>;
+  debug?: {
+    cStat: string;
+    xMotivo: string;
+    endpoint: string;
+    tpAmb: string;
+    cUFAutor: string;
+    cnpj: string;
+  };
+  maxNsuObtido?: string;
+  ultNSU?: string;
+  resetouCursor?: boolean;
+}> {
   const endpoints = getEndpoints(uf, ambiente);
   const ns = "http://www.portalfiscal.inf.br/nfe";
   const agent = createSefazAgent(pfxBytes, senha);
@@ -911,10 +1060,29 @@ export async function consultarDestinatario(
   const tpAmb = SEFAZ_TP_AMB;
   const cUFAutor = getCodigoUf(uf);
 
-  console.log("[sefaz] consultarDestinatario CNPJ:", cnpjLimpo, "UF:", uf, "codUF:", cUFAutor, "ambiente:", ambiente, "endpoint:", endpoints.nfeDistribuicaoDFe, "startNsu:", startNsu || "(zero)");
+  console.log(
+    "[sefaz] consultarDestinatario CNPJ:",
+    cnpjLimpo,
+    "UF:",
+    uf,
+    "codUF:",
+    cUFAutor,
+    "ambiente:",
+    ambiente,
+    "endpoint:",
+    endpoints.nfeDistribuicaoDFe,
+    "startNsu:",
+    startNsu || "(zero)",
+  );
 
   async function executarConsulta(nsuInicial: string) {
-    let allNotas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string }> = [];
+    const allNotas: Array<{
+      chave: string;
+      emitente: string;
+      cnpj: string;
+      valor: number;
+      data: string;
+    }> = [];
     let ultNSU = nsuInicial;
     let maxNSU = "";
     let page = 0;
@@ -922,7 +1090,7 @@ export async function consultarDestinatario(
     let cStat = "";
     let xMotivo = "";
 
-    do {
+    for (;;) {
       page++;
       const xmlBody = `<nfeDistDFeInteresse xmlns="${nsWdsl}">
   <nfeDadosMsg xmlns="${nsWdsl}">
@@ -949,8 +1117,18 @@ export async function consultarDestinatario(
       const parsed = parseDistribuicaoResponse(response);
       cStat = parsed.cStat;
       xMotivo = parsed.xMotivo;
-      console.log("[sefaz] cStat:", cStat, "xMotivo:", xMotivo,
-        "ultNSU:", parsed.ultNSU, "maxNSU:", parsed.maxNSU, "notas página:", parsed.notas.length);
+      console.log(
+        "[sefaz] cStat:",
+        cStat,
+        "xMotivo:",
+        xMotivo,
+        "ultNSU:",
+        parsed.ultNSU,
+        "maxNSU:",
+        parsed.maxNSU,
+        "notas página:",
+        parsed.notas.length,
+      );
 
       if (cStat !== "138" && cStat !== "137") {
         console.error("[sefaz] erro SEFAZ:", cStat, xMotivo);
@@ -964,12 +1142,19 @@ export async function consultarDestinatario(
         ultNSU = String(Number(parsed.ultNSU) + 1).padStart(15, "0");
       }
 
-      console.log("[sefaz] total acumulado:", allNotas.length, "próx ultNSU:", ultNSU, "maxNSU:", maxNSU);
+      console.log(
+        "[sefaz] total acumulado:",
+        allNotas.length,
+        "próx ultNSU:",
+        ultNSU,
+        "maxNSU:",
+        maxNSU,
+      );
 
       if (parsed.notas.length === 0 || !maxNSU || ultNSU > maxNSU || page >= MAX_PAGES) {
         break;
       }
-    } while (true);
+    }
 
     return { allNotas, maxNSU, cStat, xMotivo, ultNSU };
   }
@@ -1129,7 +1314,13 @@ export async function emitirNFe(
     };
   }
 
-  return { sucesso: false, chave: "", numero: "", codigo: "ERRO", motivo: "Resposta inválida da SEFAZ" };
+  return {
+    sucesso: false,
+    chave: "",
+    numero: "",
+    codigo: "ERRO",
+    motivo: "Resposta inválida da SEFAZ",
+  };
 }
 
 // ============================================================
@@ -1193,7 +1384,17 @@ export async function consultarPorChave(
   cnpj: string,
   uf: string,
   ambiente: "homologacao" | "producao" = SEFAZ_AMBIENTE,
-): Promise<{ nota: { chave: string; emitente: string; cnpj: string; valor: number; data: string; xml: string } | null; debug?: { cStat: string; xMotivo: string; endpoint: string } }> {
+): Promise<{
+  nota: {
+    chave: string;
+    emitente: string;
+    cnpj: string;
+    valor: number;
+    data: string;
+    xml: string;
+  } | null;
+  debug?: { cStat: string; xMotivo: string; endpoint: string };
+}> {
   const endpoints = getEndpoints(uf, ambiente);
   const ns = "http://www.portalfiscal.inf.br/nfe";
   const nsWdsl = "http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe";
@@ -1202,7 +1403,14 @@ export async function consultarPorChave(
   const chaveLimpa = chave.replace(/\D/g, "");
 
   if (chaveLimpa.length !== 44) {
-    return { nota: null, debug: { cStat: "ERRO", xMotivo: "Chave de acesso deve ter 44 dígitos", endpoint: endpoints.nfeDistribuicaoDFe } };
+    return {
+      nota: null,
+      debug: {
+        cStat: "ERRO",
+        xMotivo: "Chave de acesso deve ter 44 dígitos",
+        endpoint: endpoints.nfeDistribuicaoDFe,
+      },
+    };
   }
 
   const xmlBody = `<nfeDistDFeInteresse xmlns="${nsWdsl}">
@@ -1250,10 +1458,14 @@ export async function consultarPorChave(
     decodedXml = compressedBuffer.toString("utf8");
   }
 
-  console.info("[sefaz] XML consultado decodificado", { bytes: Buffer.byteLength(decodedXml, "utf8") });
+  console.info("[sefaz] XML consultado decodificado", {
+    bytes: Buffer.byteLength(decodedXml, "utf8"),
+  });
 
-  const emitCNPJ = decodedXml.match(/<emit>[\s\S]*?<CNPJ>(\d{14})<\/CNPJ>[\s\S]*?<\/emit>/)?.[1] || "";
-  const emitXNome = decodedXml.match(/<emit>[\s\S]*?<xNome>([^<]+)<\/xNome>[\s\S]*?<\/emit>/)?.[1] || "";
+  const emitCNPJ =
+    decodedXml.match(/<emit>[\s\S]*?<CNPJ>(\d{14})<\/CNPJ>[\s\S]*?<\/emit>/)?.[1] || "";
+  const emitXNome =
+    decodedXml.match(/<emit>[\s\S]*?<xNome>([^<]+)<\/xNome>[\s\S]*?<\/emit>/)?.[1] || "";
   const vNF = decodedXml.match(/<vNF>([^<]+)<\/vNF>/)?.[1] || "0";
   const dhEmi = decodedXml.match(/<dhEmi>([^<]+)<\/dhEmi>/)?.[1] || "";
 

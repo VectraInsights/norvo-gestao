@@ -99,7 +99,11 @@ import {
 } from "@/lib/sefaz-cte-server";
 import { SEFAZ_AMBIENTE, erroSefazAmigavel } from "@/lib/sefaz-ambiente";
 import { pisoMinimoAntt } from "@/lib/piso-antt";
-import { emitirCiotFn, consultarFrotaAnttFn, consultarCiotGeradoAnttFn } from "@/lib/antt-ciot-server";
+import {
+  emitirCiotFn,
+  consultarFrotaAnttFn,
+  consultarCiotGeradoAnttFn,
+} from "@/lib/antt-ciot-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { garantirPadraoNcmFiscal } from "@/lib/ncm-fiscal";
 import { gerarDactePdf, DACTE_REV } from "@/lib/dacte-pdf";
@@ -130,11 +134,15 @@ const normalizaCst = (v: unknown) => {
 // Eixos da combinação (ANTT conta cavalo + carretas): tração + reboques pela placa
 function eixosCombinacao(f: any, veics: any[]) {
   const byPlaca = (p: string) =>
-    (veics || []).find((v: any) => String(v.placa || "").toUpperCase() === String(p || "").toUpperCase());
+    (veics || []).find(
+      (v: any) => String(v.placa || "").toUpperCase() === String(p || "").toUpperCase(),
+    );
   const trac = String(f?.placaVeiculo || "").toUpperCase();
   let n = Number((byPlaca(trac) as any)?.quantidade_eixos) || 0;
   for (const k of ["placaReboque", "semiReboque1", "semiReboque2"]) {
-    const p = String(f?.[k] || "").trim().toUpperCase();
+    const p = String(f?.[k] || "")
+      .trim()
+      .toUpperCase();
     if (!p || p === trac) continue;
     n += Number((byPlaca(p) as any)?.quantidade_eixos) || 0;
   }
@@ -312,14 +320,21 @@ function PreviewDacte({
   }, [chave, numero, serie, xmlAssinado]);
   if (erro) {
     return (
-      <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
+      <Dialog
+        open
+        onOpenChange={(v) => {
+          if (!v) onClose();
+        }}
+      >
         <DialogContent className="w-[420px] max-w-[calc(100vw-2rem)] rounded-2xl sm:p-6">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">{titulo}</DialogTitle>
             <DialogDescription className="leading-relaxed">{erro}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={onClose} className="h-10 rounded-xl">Fechar</Button>
+            <Button variant="outline" onClick={onClose} className="h-10 rounded-xl">
+              Fechar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -327,7 +342,12 @@ function PreviewDacte({
   }
   if (!url) {
     return (
-      <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
+      <Dialog
+        open
+        onOpenChange={(v) => {
+          if (!v) onClose();
+        }}
+      >
         <DialogContent className="w-[420px] max-w-[calc(100vw-2rem)] rounded-2xl sm:p-6">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">{titulo}</DialogTitle>
@@ -395,7 +415,13 @@ function destDoDocCiot(d: { xml_assinado: string | null }): string {
     const nd = String(nfs[0]?.destCnpj || "").replace(/\D/g, "");
     if (nd) return nd;
     let raw = typeof (j as any).xml === "string" ? (j as any).xml : "";
-    if (!raw && String(d.xml_assinado || "").trim().startsWith("<")) raw = d.xml_assinado || "";
+    if (
+      !raw &&
+      String(d.xml_assinado || "")
+        .trim()
+        .startsWith("<")
+    )
+      raw = d.xml_assinado || "";
     // Só dentro de <dest> — o 1º CNPJ solto do XML seria o do emitente.
     const m = raw.match(/<dest>[\s\S]{0,3000}?<(CNPJ|CPF)>(\d{11,14})<\/(CNPJ|CPF)>/);
     if (m) return (m[2] || "").replace(/\D/g, "");
@@ -406,13 +432,42 @@ function destDoDocCiot(d: { xml_assinado: string | null }): string {
 // UF pelo código IBGE do município (2 primeiros dígitos). O IBGE é a fonte
 // autoritativa: evita término "MARABA/AP" quando a UF veio do destinatário.
 const UF_POR_IBGE: Record<string, string> = {
-  "11": "RO", "12": "AC", "13": "AM", "14": "RR", "15": "PA", "16": "AP", "17": "TO",
-  "21": "MA", "22": "PI", "23": "CE", "24": "RN", "25": "PB", "26": "PE", "27": "AL",
-  "28": "SE", "29": "BA", "31": "MG", "32": "ES", "33": "RJ", "35": "SP",
-  "41": "PR", "42": "SC", "43": "RS", "50": "MS", "51": "MT", "52": "GO", "53": "DF",
+  "11": "RO",
+  "12": "AC",
+  "13": "AM",
+  "14": "RR",
+  "15": "PA",
+  "16": "AP",
+  "17": "TO",
+  "21": "MA",
+  "22": "PI",
+  "23": "CE",
+  "24": "RN",
+  "25": "PB",
+  "26": "PE",
+  "27": "AL",
+  "28": "SE",
+  "29": "BA",
+  "31": "MG",
+  "32": "ES",
+  "33": "RJ",
+  "35": "SP",
+  "41": "PR",
+  "42": "SC",
+  "43": "RS",
+  "50": "MS",
+  "51": "MT",
+  "52": "GO",
+  "53": "DF",
 };
 function ufPorCMunIBGE(cMun: unknown): string {
-  return UF_POR_IBGE[String(cMun || "").replace(/\D/g, "").slice(0, 2)] || "";
+  return (
+    UF_POR_IBGE[
+      String(cMun || "")
+        .replace(/\D/g, "")
+        .slice(0, 2)
+    ] || ""
+  );
 }
 
 // Resolve o cMun IBGE por cidade+UF (backstop p/ percursos antigos salvos sem
@@ -421,7 +476,9 @@ function ufPorCMunIBGE(cMun: unknown): string {
 const cmunIBGEFixCache = new Map<string, string>();
 async function resolverCMunIBGE(xmun: unknown, uf: unknown): Promise<string> {
   const xu = String(xmun || "").trim();
-  const uu = String(uf || "").trim().toUpperCase();
+  const uu = String(uf || "")
+    .trim()
+    .toUpperCase();
   if (!xu || !uu) return "";
   const key = xu.toUpperCase() + "|" + uu;
   if (cmunIBGEFixCache.has(key)) return cmunIBGEFixCache.get(key)!;
@@ -554,9 +611,9 @@ function linhaDocs(d: CteDoc): {
     try {
       // <chNFe> (Simplificado) ou <infNFe><chave> (Normal): o número da NF-e
       // vai embutido na chave (9 dígitos). Sem isso caía no "1" da contagem.
-      const chaves = [...(d.xml_assinado || "").matchAll(/<(?:chNFe|chave)>(\d{44})<\/(?:chNFe|chave)>/g)].map(
-        (m) => m[1],
-      );
+      const chaves = [
+        ...(d.xml_assinado || "").matchAll(/<(?:chNFe|chave)>(\d{44})<\/(?:chNFe|chave)>/g),
+      ].map((m) => m[1]);
       nfsArr = chaves.map((ch) => ch.slice(25, 34).replace(/^0+/, "") || "0");
     } catch {
       nfsArr = [];
@@ -589,7 +646,9 @@ function CtePage() {
   const qc = useQueryClient();
   const search = Route.useSearch();
   const [isParsing, setIsParsing] = useState(false);
-  const [importProgress, setImportProgress] = useState<{ feito: number; total: number } | null>(null);
+  const [importProgress, setImportProgress] = useState<{ feito: number; total: number } | null>(
+    null,
+  );
   const [manualNfeOpen, setManualNfeOpen] = useState(false);
   const [manualNfe, setManualNfe] = useState({
     modelo: "55",
@@ -665,22 +724,18 @@ function CtePage() {
     const s = lerSnapshotCte();
     return (Array.isArray(s?.mercadorias) ? s.mercadorias : []) as any;
   });
-  const [selecionadas, setSelecionadas] = useState<Set<string>>(
-    () => {
-      const s = lerSnapshotCte();
-      return Array.isArray(s?.selecionadas) ? new Set(s.selecionadas as string[]) : new Set<string>();
-    },
-  );
+  const [selecionadas, setSelecionadas] = useState<Set<string>>(() => {
+    const s = lerSnapshotCte();
+    return Array.isArray(s?.selecionadas) ? new Set(s.selecionadas as string[]) : new Set<string>();
+  });
   // selecionadasAtivas = notas que estao marcadas e somam no total.
   // selecionadas (acima) = notas que estao na grade do CT-e (aparecem na lista).
   // Desmarcar uma nota tira de selecionadasAtivas (para de somar) mas mantem em selecionadas (segue na grade).
   // Ao carregar, as notas selecionadas para o CT-e ja estao ativas (marcadas e somando).
-  const [selecionadasAtivas, setSelecionadasAtivas] = useState<Set<string>>(
-    () => {
-      const s = lerSnapshotCte();
-      return Array.isArray(s?.selecionadas) ? new Set(s.selecionadas as string[]) : new Set<string>();
-    },
-  );
+  const [selecionadasAtivas, setSelecionadasAtivas] = useState<Set<string>>(() => {
+    const s = lerSnapshotCte();
+    return Array.isArray(s?.selecionadas) ? new Set(s.selecionadas as string[]) : new Set<string>();
+  });
   const [confRemetente, setConfRemetente] = useState<{ nome: string; chaves: string[] } | null>(
     null,
   );
@@ -735,7 +790,8 @@ function CtePage() {
     const salvo = filtrosSalvos.filtros.find((item) => item.id === id);
     const valores = salvo?.filtros ?? {};
     if (typeof valores.filtroRemetente === "string") setFiltroRemetente(valores.filtroRemetente);
-    if (typeof valores.filtroDestinatario === "string") setFiltroDestinatario(valores.filtroDestinatario);
+    if (typeof valores.filtroDestinatario === "string")
+      setFiltroDestinatario(valores.filtroDestinatario);
     if (typeof valores.periodoIni === "string") setPeriodoIni(valores.periodoIni);
     if (typeof valores.periodoFim === "string") setPeriodoFim(valores.periodoFim);
   };
@@ -774,7 +830,8 @@ function CtePage() {
     const arr = mercadorias.filter((m) => {
       if (!dentroPeriodo(m.data)) return false;
       if (buscaNorm) {
-        const texto = `${(m as any).nNF || ""} ${(m as any).chave || ""} ${(m as any).emit || ""} ${(m as any).dest || ""}`.toLowerCase();
+        const texto =
+          `${(m as any).nNF || ""} ${(m as any).chave || ""} ${(m as any).emit || ""} ${(m as any).dest || ""}`.toLowerCase();
         const casaTexto = texto.includes(buscaNorm);
         // Pesquisa por valor: "25,00" acha 25.00 (a partir de 2 dígitos)
         const casaValor =
@@ -873,13 +930,31 @@ function CtePage() {
   const buscaDocsDig = buscaDocsNorm.replace(/\D/g, "");
   const docCasaBusca = (d: CteDoc) => {
     if (!buscaDocsNorm) return true;
-    if (String(d.numero ?? "").toLowerCase().includes(buscaDocsNorm)) return true;
-    if (String(d.chave_acesso ?? "").toLowerCase().includes(buscaDocsNorm)) return true;
-    if (String(d.motivo_rejeicao ?? "").toLowerCase().includes(buscaDocsNorm)) return true;
+    if (
+      String(d.numero ?? "")
+        .toLowerCase()
+        .includes(buscaDocsNorm)
+    )
+      return true;
+    if (
+      String(d.chave_acesso ?? "")
+        .toLowerCase()
+        .includes(buscaDocsNorm)
+    )
+      return true;
+    if (
+      String(d.motivo_rejeicao ?? "")
+        .toLowerCase()
+        .includes(buscaDocsNorm)
+    )
+      return true;
     // Pesquisa por valor: "25,00" acha 25.00 (a partir de 2 dígitos)
     if (
       buscaDocsDig.length >= 2 &&
-      Number(d.valor_servico || 0).toFixed(2).replace(/\D/g, "").includes(buscaDocsDig)
+      Number(d.valor_servico || 0)
+        .toFixed(2)
+        .replace(/\D/g, "")
+        .includes(buscaDocsDig)
     )
       return true;
     return false;
@@ -887,10 +962,18 @@ function CtePage() {
   const docDataRef = (d: CteDoc) => ((d.data_autorizacao ?? d.created_at) || "").slice(0, 10);
   const docsFiltrados = useMemo(
     () => ({
-      autorizados: docsByStatus.autorizados.filter((d) => dentroPeriodo(docDataRef(d))).filter(docCasaBusca),
-      rejeitados: docsByStatus.rejeitados.filter((d) => dentroPeriodo(docDataRef(d))).filter(docCasaBusca),
-      cancelados: docsByStatus.cancelados.filter((d) => dentroPeriodo(docDataRef(d))).filter(docCasaBusca),
-      rascunhos: docsByStatus.rascunhos.filter((d) => dentroPeriodo(docDataRef(d))).filter(docCasaBusca),
+      autorizados: docsByStatus.autorizados
+        .filter((d) => dentroPeriodo(docDataRef(d)))
+        .filter(docCasaBusca),
+      rejeitados: docsByStatus.rejeitados
+        .filter((d) => dentroPeriodo(docDataRef(d)))
+        .filter(docCasaBusca),
+      cancelados: docsByStatus.cancelados
+        .filter((d) => dentroPeriodo(docDataRef(d)))
+        .filter(docCasaBusca),
+      rascunhos: docsByStatus.rascunhos
+        .filter((d) => dentroPeriodo(docDataRef(d)))
+        .filter(docCasaBusca),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [docsByStatus, buscaDocsNorm, buscaDocsDig, periodoIni, periodoFim],
@@ -910,7 +993,12 @@ function CtePage() {
         onChange={setPeriodoFim}
         className="h-7 text-xs w-[150px] shrink-0"
       />
-      <SearchField value={buscaDocs} onChange={setBuscaDocs} size="xxs" className="ml-auto w-full sm:w-60" />
+      <SearchField
+        value={buscaDocs}
+        onChange={setBuscaDocs}
+        size="xxs"
+        className="ml-auto w-full sm:w-60"
+      />
     </div>
   );
 
@@ -1018,12 +1106,10 @@ function CtePage() {
         for (const c of p.chavesNFe || []) grav(String(c).replace(/\D/g, ""));
         for (const nf of p.nfs || []) grav(String(nf?.chave || "").replace(/\D/g, ""));
         const xml = String(p.xml || "");
-        for (const mt of xml.matchAll(/<(?:chNFe|chave)>(\d{44})<\/(?:chNFe|chave)>/g))
-          grav(mt[1]);
+        for (const mt of xml.matchAll(/<(?:chNFe|chave)>(\d{44})<\/(?:chNFe|chave)>/g)) grav(mt[1]);
       } catch {
         const xml = String((d as any).xml_assinado || "");
-        for (const mt of xml.matchAll(/<(?:chNFe|chave)>(\d{44})<\/(?:chNFe|chave)>/g))
-          grav(mt[1]);
+        for (const mt of xml.matchAll(/<(?:chNFe|chave)>(\d{44})<\/(?:chNFe|chave)>/g)) grav(mt[1]);
       }
     }
     return m;
@@ -1126,7 +1212,7 @@ function CtePage() {
       // Leitura imune a namespace (regex no XML cru): querySelector pode falhar
       // conforme o motor — o DACTE saía com a UF do form (ex. MARABA/AP).
       const ideXml = xmlStr.match(/<ide>([\s\S]*?)<\/ide>/)?.[1] || "";
-      const ideTag = (t: string) => ideXml.match(new RegExp(`<${t}>([^<]*)<\/${t}>`))?.[1] || "";
+      const ideTag = (t: string) => ideXml.match(new RegExp(`<${t}>([^<]*)</${t}>`))?.[1] || "";
       const nFes = Array.from(xmlDoc.querySelectorAll("det")).map((det) => ({
         nNF: det.querySelector("infNFe > ide > nNF")?.textContent || "",
         serie: det.querySelector("infNFe > ide > serie")?.textContent || "1",
@@ -1408,22 +1494,20 @@ function CtePage() {
           const nmA = tag("infCte > emit > xNome") || remD;
           let nmB = tag("infCte > toma > xNome") || "";
           if (!nmB || nmB.startsWith("CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO")) nmB = dstD;
-          const { error: insErr } = await supabase
-            .from("cte_percursos" as any)
-            .insert({
-              empresa_id: (empresa as any).id,
-              codigo: String(last + 1).padStart(4, "0"),
-              nome: (nmA + " > " + nmB).slice(0, 120),
-              rem_cnpj: remD,
-              dest_cnpj: dstD,
-              toma_cnpj: tomaD,
-              coleta_xmun: detX1,
-              coleta_uf: tag("infCte > ide > UFIni") || "",
-              entrega_xmun: detX2,
-              entrega_uf: tag("infCte > ide > UFFim") || "",
-              cfop: tag("infCte > ide > CFOP") || "5353",
-              obs_gerais: "",
-            });
+          const { error: insErr } = await supabase.from("cte_percursos" as any).insert({
+            empresa_id: (empresa as any).id,
+            codigo: String(last + 1).padStart(4, "0"),
+            nome: (nmA + " > " + nmB).slice(0, 120),
+            rem_cnpj: remD,
+            dest_cnpj: dstD,
+            toma_cnpj: tomaD,
+            coleta_xmun: detX1,
+            coleta_uf: tag("infCte > ide > UFIni") || "",
+            entrega_xmun: detX2,
+            entrega_uf: tag("infCte > ide > UFFim") || "",
+            cfop: tag("infCte > ide > CFOP") || "5353",
+            obs_gerais: "",
+          });
           if (!insErr) healed = true;
           else {
             const k2 = "perc-err:" + (doc.chave_acesso || "");
@@ -1754,8 +1838,7 @@ function CtePage() {
           pjForm.xMunIni ||
           percColX ||
           "",
-        origemUF:
-          ideTag("UFIni") || tag("infCte > ide > UFIni") || pjForm.ufIni || percColU || "",
+        origemUF: ideTag("UFIni") || tag("infCte > ide > UFIni") || pjForm.ufIni || percColU || "",
         destinoCidade:
           tag("det > xMunFim") ||
           ideTag("xMunFim") ||
@@ -1763,8 +1846,7 @@ function CtePage() {
           pjForm.xMunFim ||
           percEntX ||
           "",
-        destinoUF:
-          ideTag("UFFim") || tag("infCte > ide > UFFim") || pjForm.ufFim || percEntU || "",
+        destinoUF: ideTag("UFFim") || tag("infCte > ide > UFFim") || pjForm.ufFim || percEntU || "",
         valorServico:
           parseFloat(tag("infCte > vPrest > vTPrest")) || Number(doc.valor_servico) || 0,
         valorCarga:
@@ -1871,6 +1953,9 @@ function CtePage() {
       });
       return pdfBlob;
     } catch (e: any) {
+      // Log antes de propagar: o try envolve ~760 linhas de montagem do DACTE e o
+      // rethrow puro (catch só com throw) não deixava rastro do ponto de falha.
+      console.error("[cte] falha ao gerar DACTE a partir do XML assinado:", e);
       throw e;
     }
   };
@@ -2288,7 +2373,9 @@ function CtePage() {
       for (let ini = 0; ; ini += 500) {
         const { data, error } = await supabase
           .from("ciot_operacoes" as any)
-          .select("id,ciot,ciot_verificador,protocolo,id_operacao,status,valor_frete,distancia_km,tipo_carga,placa,tomador_nome,created_at,cte_ids")
+          .select(
+            "id,ciot,ciot_verificador,protocolo,id_operacao,status,valor_frete,distancia_km,tipo_carga,placa,tomador_nome,created_at,cte_ids",
+          )
           .eq("empresa_id", empresa!.id)
           .order("created_at", { ascending: false })
           .range(ini, ini + 499);
@@ -2300,7 +2387,11 @@ function CtePage() {
     },
   });
   const [ciotConfirma, setCiotConfirma] = useState(false);
-  const [ciotFrota, setCiotFrota] = useState<Array<{ rntrc: string; situacao: any; frota: any }> | null>(null);
+  const [ciotFrota, setCiotFrota] = useState<Array<{
+    rntrc: string;
+    situacao: any;
+    frota: any;
+  }> | null>(null);
   const [ciotFrotaLoading, setCiotFrotaLoading] = useState(false);
   const [ciotConsulta, setCiotConsulta] = useState("");
   const [ciotConsultaRes, setCiotConsultaRes] = useState<any>(null);
@@ -2328,9 +2419,20 @@ function CtePage() {
       return d.length === 8 ? "0" + d : d;
     };
     const byPlaca = (pl: string) =>
-      (veiculos || []).find((v: any) => String(v.placa || "").toUpperCase() === String(pl || "").toUpperCase()) as any;
-    const placas = [r.forms[0]?.placaVeiculo, r.forms[0]?.placaReboque, r.forms[0]?.semiReboque1, r.forms[0]?.semiReboque2]
-      .map((pl) => String(pl || "").trim().toUpperCase())
+      (veiculos || []).find(
+        (v: any) => String(v.placa || "").toUpperCase() === String(pl || "").toUpperCase(),
+      ) as any;
+    const placas = [
+      r.forms[0]?.placaVeiculo,
+      r.forms[0]?.placaReboque,
+      r.forms[0]?.semiReboque1,
+      r.forms[0]?.semiReboque2,
+    ]
+      .map((pl) =>
+        String(pl || "")
+          .trim()
+          .toUpperCase(),
+      )
       .filter(Boolean)
       .filter((pl, i, a) => a.indexOf(pl) === i);
     // Agrupa por RNTRC do cadastro de cada placa: a TXE pode pertencer a um
@@ -2347,7 +2449,13 @@ function CtePage() {
       const res: Array<{ rntrc: string; situacao: any; frota: any }> = [];
       for (const [rn, pls] of grupos) {
         const ret: any = await consultarFrotaAnttFn({
-          data: { empresaId: empresa.id, interessadoDoc: emitCnpj, transportadorDoc: emitCnpj, rntrc: rn, placas: pls },
+          data: {
+            empresaId: empresa.id,
+            interessadoDoc: emitCnpj,
+            transportadorDoc: emitCnpj,
+            rntrc: rn,
+            placas: pls,
+          },
         });
         res.push({ rntrc: rn, situacao: ret?.situacao, frota: ret?.frota });
       }
@@ -2439,7 +2547,9 @@ function CtePage() {
     let destCnpj = destDoDocCiot(sel[0]);
     if (!destCnpj) {
       try {
-        const chaves = [...(sel[0].xml_assinado || "").matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map((m) => m[1]);
+        const chaves = [...(sel[0].xml_assinado || "").matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(
+          (m) => m[1],
+        );
         if (chaves.length > 0 && empresa) {
           const { data } = await supabase
             .from("cte_nfes_pendentes" as any)
@@ -2465,9 +2575,20 @@ function CtePage() {
       // leva só placa + eixos DO PRÓPRIO veículo (tração primeiro, reboques
       // depois). Mandar a soma da combinação num item só rejeita ([205]).
       const byPlacaCiot = (pl: string) =>
-        (veiculos || []).find((v: any) => String(v.placa || "").toUpperCase() === String(pl || "").toUpperCase());
-      const placasCiot = [forms[0]?.placaVeiculo, forms[0]?.placaReboque, forms[0]?.semiReboque1, forms[0]?.semiReboque2]
-        .map((pl) => String(pl || "").trim().toUpperCase())
+        (veiculos || []).find(
+          (v: any) => String(v.placa || "").toUpperCase() === String(pl || "").toUpperCase(),
+        );
+      const placasCiot = [
+        forms[0]?.placaVeiculo,
+        forms[0]?.placaReboque,
+        forms[0]?.semiReboque1,
+        forms[0]?.semiReboque2,
+      ]
+        .map((pl) =>
+          String(pl || "")
+            .trim()
+            .toUpperCase(),
+        )
         .filter(Boolean)
         .filter((pl, i, a) => a.indexOf(pl) === i);
       // O RNTRC da operação é o da TRAÇÃO (dono do cavalo): a TXE pode estar
@@ -2487,7 +2608,9 @@ function CtePage() {
         .filter((v) => v.eixos > 0);
       if (veicsCiot.length === 0) {
         toast.dismiss(tProg);
-        toast.error("Tração sem eixos no cadastro do veículo — confira a placa em Frota → Veículos");
+        toast.error(
+          "Tração sem eixos no cadastro do veículo — confira a placa em Frota → Veículos",
+        );
         setEmitindoCiotLote(false);
         return;
       }
@@ -2528,7 +2651,9 @@ function CtePage() {
         },
       });
       if (ret?.sucesso && ret?.ciotCompleto) {
-        const chaves = sel.map((d) => String(d.chave_acesso || "").replace(/\D/g, "")).filter(Boolean);
+        const chaves = sel
+          .map((d) => String(d.chave_acesso || "").replace(/\D/g, ""))
+          .filter(Boolean);
         await supabase.from("ciot_operacoes" as any).insert({
           empresa_id: empresa.id,
           ciot: ret.ciotCompleto,
@@ -2571,7 +2696,9 @@ function CtePage() {
         qc.invalidateQueries({ queryKey: ["cte-documentos"] });
         toast.success(`CIOT ${ret.ciotCompleto} autorizado (prot. ${ret.protocolo || "—"})`);
       } else {
-        toast.error("CIOT rejeitado", { description: `[${ret?.codigo || "?"}] ${ret?.mensagem || "sem resposta da ANTT"} (IdOp ${ret?.idOperacao || "—"})` });
+        toast.error("CIOT rejeitado", {
+          description: `[${ret?.codigo || "?"}] ${ret?.mensagem || "sem resposta da ANTT"} (IdOp ${ret?.idOperacao || "—"})`,
+        });
       }
     } catch (e: any) {
       toast.dismiss(tProg);
@@ -2809,7 +2936,6 @@ function CtePage() {
       });
       return mudou ? novos : atuais;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendentesDB]);
   useEffect(() => {
     if (open) return; // diálogo aberto usa mercadorias próprias (rascunho/CT-e)
@@ -2953,7 +3079,9 @@ function CtePage() {
       for (let ini = 0; ; ini += 500) {
         const { data, error } = await supabase
           .from("veiculos" as never)
-          .select("id,placa,marca_modelo,tipo,renavam,rntrc,tag_pedagio,quantidade_eixos,proprietario,proprietario_doc")
+          .select(
+            "id,placa,marca_modelo,tipo,renavam,rntrc,tag_pedagio,quantidade_eixos,proprietario,proprietario_doc",
+          )
           .eq("empresa_id", empresa!.id)
           .order("placa")
           .range(ini, ini + 499);
@@ -3002,7 +3130,10 @@ function CtePage() {
         .eq("empresa_id", empresa!.id)
         .maybeSingle();
       if (error) throw error;
-      return (data ?? null) as unknown as { fase2_ativo: boolean; cclasstrib_padrao: string } | null;
+      return (data ?? null) as unknown as {
+        fase2_ativo: boolean;
+        cclasstrib_padrao: string;
+      } | null;
     },
   });
   // Resumo da operação CIOT (usado no diálogo e na emissão): frete somado,
@@ -3012,17 +3143,27 @@ function CtePage() {
     const sel = docsByStatus.autorizados.filter((d) => ciotSel.has(d.id));
     if (sel.length === 0) return null;
     const forms = sel.map((d) => formDeDocCiot(d));
-    const tomas = [...new Set(forms.map((f) => String(f.cnpjTomador || "").replace(/\D/g, "")).filter(Boolean))];
+    const tomas = [
+      ...new Set(forms.map((f) => String(f.cnpjTomador || "").replace(/\D/g, "")).filter(Boolean)),
+    ];
     const tomaOk = tomas.length === 1 && tomas[0].length === 14;
     // Uma operação CIOT = um motorista (não mistura condutores no lote)
     const motos = [
       ...new Set(
-        forms.map((f) => String(f.motoristaId || f.motoristaNome || "").trim().toUpperCase()).filter(Boolean),
+        forms
+          .map((f) =>
+            String(f.motoristaId || f.motoristaNome || "")
+              .trim()
+              .toUpperCase(),
+          )
+          .filter(Boolean),
       ),
     ];
     const motoOk = motos.length === 1;
     const valorTotal = sel.reduce(
-      (a, d, i) => a + (Number(d.valor_servico) || Number(String(forms[i]?.vPrest || "").replace(",", ".")) || 0),
+      (a, d, i) =>
+        a +
+        (Number(d.valor_servico) || Number(String(forms[i]?.vPrest || "").replace(",", ".")) || 0),
       0,
     );
     const placa = String(forms[0]?.placaVeiculo || "").toUpperCase();
@@ -3048,7 +3189,9 @@ function CtePage() {
     // CIOT próprio exige tração no CNPJ do emissor: compara o proprietário do
     // cavalo (cadastro de veículos) com o CNPJ da empresa emissora do CT-e.
     const emitCnpjCiot = String((empresa as any)?.cnpj || "").replace(/\D/g, "");
-    const veicTrac = (veiculos || []).find((v: any) => String(v.placa || "").toUpperCase() === placa);
+    const veicTrac = (veiculos || []).find(
+      (v: any) => String(v.placa || "").toUpperCase() === placa,
+    );
     const donoDoc = String((veicTrac as any)?.proprietario_doc || "").replace(/\D/g, "");
     const donoNome = String((veicTrac as any)?.proprietario || "");
     const donoOk = emitCnpjCiot.length === 14 && donoDoc.length > 0 && donoDoc === emitCnpjCiot;
@@ -3219,19 +3362,27 @@ function CtePage() {
   // Insert resiliente: tenta com `ie`, se a migration ainda não foi aplicada reinsere sem.
   // Entra no cache na hora (busca instantânea) em vez de esperar refetch.
   const insertContatoResiliente = async (row: Record<string, unknown>) => {
-    const { error } = await supabase.from("transportes" as any).insert({ ...(row as Record<string, unknown>) } as any);
+    const { error } = await supabase
+      .from("transportes" as any)
+      .insert({ ...(row as Record<string, unknown>) } as any);
     if (error && /ie/i.test(error.message || "")) {
       const { ie: _omit, ...semIe } = row;
       const retry = await supabase.from("transportes" as any).insert({ ...semIe } as any);
       if (!retry.error && empresa) {
-        qc.setQueryData(["contatos-cte", empresa.id], (old: any) => [...(Array.isArray(old) ? old : []), semIe]);
+        qc.setQueryData(["contatos-cte", empresa.id], (old: any) => [
+          ...(Array.isArray(old) ? old : []),
+          semIe,
+        ]);
       } else if (empresa) {
         qc.invalidateQueries({ queryKey: ["contatos-cte", empresa.id] });
       }
       return;
     }
     if (!error && empresa) {
-      qc.setQueryData(["contatos-cte", empresa.id], (old: any) => [...(Array.isArray(old) ? old : []), row]);
+      qc.setQueryData(["contatos-cte", empresa.id], (old: any) => [
+        ...(Array.isArray(old) ? old : []),
+        row,
+      ]);
     } else if (empresa) {
       qc.invalidateQueries({ queryKey: ["contatos-cte", empresa.id] });
     }
@@ -3357,7 +3508,13 @@ function CtePage() {
     if (!open || !empresa) return;
     const sel = mercadorias.filter((m) => selecionadas.has(m.chave));
     const a = (sel.length > 0 ? sel[0] : mercadorias[0] || {}) as any;
-    const docs = [a.emitCnpj, a.destCnpj, form.cnpjTomador, form.cnpjConsignatario, form.cnpjRedespacho]
+    const docs = [
+      a.emitCnpj,
+      a.destCnpj,
+      form.cnpjTomador,
+      form.cnpjConsignatario,
+      form.cnpjRedespacho,
+    ]
       .map((d) => String(d || "").replace(/\D/g, ""))
       .filter((d) => d.length === 11 || d.length === 14)
       .filter((d) => !contatoByDoc.has(d));
@@ -3373,12 +3530,25 @@ function CtePage() {
         qc.setQueryData(["contatos-cte", empresa.id], (old: any) => {
           const arr = Array.isArray(old) ? old : [];
           const seen = new Set(arr.map((c: any) => String(c.documento || "").replace(/\D/g, "")));
-          return [...arr, ...(data as any[]).filter((c: any) => !seen.has(String(c.documento || "").replace(/\D/g, "")))];
+          return [
+            ...arr,
+            ...(data as any[]).filter(
+              (c: any) => !seen.has(String(c.documento || "").replace(/\D/g, "")),
+            ),
+          ];
         });
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, mercadorias, selecionadas, form.cnpjTomador, form.cnpjConsignatario, form.cnpjRedespacho, contatoByDoc]);
+  }, [
+    open,
+    mercadorias,
+    selecionadas,
+    form.cnpjTomador,
+    form.cnpjConsignatario,
+    form.cnpjRedespacho,
+    contatoByDoc,
+  ]);
   // Tomador: troca de toma recalcula remetente/destinatário; CNPJ manual busca dados
   const [lookingUpTomador, setLookingUpTomador] = useState(false);
   const lastLookupTomador = useRef("");
@@ -3600,7 +3770,7 @@ function CtePage() {
         if (novos.length > 0) {
           const rows = novos.map((c) => ({
             empresa_id: empresa!.id,
-                nome: c.nome,
+            nome: c.nome,
             documento: docDe(c),
             ie: c.ie || null,
             uf: c.uf || null,
@@ -3637,7 +3807,11 @@ function CtePage() {
         }
         await mapPool(patches, 5, (p) =>
           Promise.resolve(
-            supabase.from("transportes" as any).update(p.upd).eq("empresa_id", empresa!.id).eq("documento", p.doc),
+            supabase
+              .from("transportes" as any)
+              .update(p.upd)
+              .eq("empresa_id", empresa!.id)
+              .eq("documento", p.doc),
           ),
         );
       };
@@ -3659,9 +3833,7 @@ function CtePage() {
             if (dados) {
               const { data: atual } = await supabase
                 .from("transportes" as any)
-                .select(
-                  "id,nome,logradouro,numero,complemento,bairro,cidade,uf,cep,telefone,email",
-                )
+                .select("id,nome,logradouro,numero,complemento,bairro,cidade,uf,cep,telefone,email")
                 .eq("empresa_id", empresa!.id)
                 .eq("documento", doc)
                 .maybeSingle();
@@ -3693,10 +3865,11 @@ function CtePage() {
       let duplicadas = 0;
       let reservadas = 0;
       const chavesNoLote = new Set<string>();
-      const novasPorIndice: Array<(typeof mercadorias)[number] | null> = new Array(xmls.length).fill(null);
-      const extrasPorIndice: Array<{ transpIE: string; destIE: string; emitIE: string }> = new Array(
+      const novasPorIndice: Array<(typeof mercadorias)[number] | null> = new Array(
         xmls.length,
       ).fill(null);
+      const extrasPorIndice: Array<{ transpIE: string; destIE: string; emitIE: string }> =
+        new Array(xmls.length).fill(null);
       // Status atual no banco p/ bloquear reimport de NF reservada (rascunho) ou embarcada
       const { data: existentes } = await supabase
         .from("cte_nfes_pendentes" as any)
@@ -4023,33 +4196,33 @@ function CtePage() {
         let tomadorIE = extra0.destIE;
         if (primeiraNova.modFrete === "0") tomadorIE = extra0.emitIE;
         else if (primeiraNova.modFrete === "2") tomadorIE = extra0.transpIE || extra0.destIE;
-          setForm((f) => ({
-            ...f,
-            toma: !f.cnpjTomador ? tomaIni : f.toma,
-            cnpjTomador: primeiraNova.tomadorCnpj || f.cnpjTomador,
-            xNomeTomador: primeiraNova.tomador || f.xNomeTomador,
-            ieTomador: tomadorIE || f.ieTomador,
-            ufTomador: primeiraNova.tomadorUF || f.ufTomador,
-            cMunTomador: primeiraNova.tomadorCMun || f.cMunTomador,
-            xMunTomador: primeiraNova.tomadorXMun || f.xMunTomador,
-            logradouroTomador: primeiraNova.tomadorLogradouro || f.logradouroTomador,
-            bairroTomador: primeiraNova.tomadorBairro || f.bairroTomador,
-            cepTomador: primeiraNova.tomadorCEP || f.cepTomador,
-            cMunIni: primeiraNova.emitCMun || f.cMunIni,
-            xMunIni: primeiraNova.emitXMun || f.xMunIni,
-            ufIni: primeiraNova.emitUF || f.ufIni,
-            cMunFim: primeiraNova.destCMun || f.cMunFim,
-            xMunFim: primeiraNova.destXMun || f.xMunFim,
-            ufFim: primeiraNova.destUF || f.ufFim,
-            cMunEnv: primeiraNova.emitCMun || f.cMunEnv,
-            xMunEnv: primeiraNova.emitXMun || f.xMunEnv,
-            ufEnv: primeiraNova.emitUF || f.ufEnv,
-          }));
-        }
-        added = novas.length;
-        await flushContatos();
-        // Em background (não segura a importação): corrige o cadastro com a Receita.
-        void reconciliarContatosReceita();
+        setForm((f) => ({
+          ...f,
+          toma: !f.cnpjTomador ? tomaIni : f.toma,
+          cnpjTomador: primeiraNova.tomadorCnpj || f.cnpjTomador,
+          xNomeTomador: primeiraNova.tomador || f.xNomeTomador,
+          ieTomador: tomadorIE || f.ieTomador,
+          ufTomador: primeiraNova.tomadorUF || f.ufTomador,
+          cMunTomador: primeiraNova.tomadorCMun || f.cMunTomador,
+          xMunTomador: primeiraNova.tomadorXMun || f.xMunTomador,
+          logradouroTomador: primeiraNova.tomadorLogradouro || f.logradouroTomador,
+          bairroTomador: primeiraNova.tomadorBairro || f.bairroTomador,
+          cepTomador: primeiraNova.tomadorCEP || f.cepTomador,
+          cMunIni: primeiraNova.emitCMun || f.cMunIni,
+          xMunIni: primeiraNova.emitXMun || f.xMunIni,
+          ufIni: primeiraNova.emitUF || f.ufIni,
+          cMunFim: primeiraNova.destCMun || f.cMunFim,
+          xMunFim: primeiraNova.destXMun || f.xMunFim,
+          ufFim: primeiraNova.destUF || f.ufFim,
+          cMunEnv: primeiraNova.emitCMun || f.cMunEnv,
+          xMunEnv: primeiraNova.emitXMun || f.xMunEnv,
+          ufEnv: primeiraNova.emitUF || f.ufEnv,
+        }));
+      }
+      added = novas.length;
+      await flushContatos();
+      // Em background (não segura a importação): corrige o cadastro com a Receita.
+      void reconciliarContatosReceita();
       if (added > 0) {
         // Dedupe por chave: reimportar NF já presente (ex. devolvida) não duplica na lista
         const vistas = new Set(mercadorias.map((m) => m.chave));
@@ -4068,10 +4241,8 @@ function CtePage() {
         toast.success(`${added} XML(s) importado(s)`);
         // Detalhes (duplicadas/bloqueadas) vão em aviso próprio, fora do toast principal.
         const avisos: string[] = [];
-        if (duplicadas > 0)
-          avisos.push(`${duplicadas} já existiam (chave duplicada bloqueada)`);
-        if (reservadas > 0)
-          avisos.push(`${reservadas} bloqueada(s) (em rascunho/CT-e)`);
+        if (duplicadas > 0) avisos.push(`${duplicadas} já existiam (chave duplicada bloqueada)`);
+        if (reservadas > 0) avisos.push(`${reservadas} bloqueada(s) (em rascunho/CT-e)`);
         if (avisos.length) toast.info(avisos.join("; "));
       } else if (duplicadas > 0 || reservadas > 0) {
         toast.info(
@@ -4132,10 +4303,17 @@ function CtePage() {
 
   const excluirRascunho = async (doc: CteDoc) => {
     if (!empresa) return;
-    if (!doc.id) { toast.error("Rascunho sem id — recarregue a página (Ctrl+F5)"); return; }
+    if (!doc.id) {
+      toast.error("Rascunho sem id — recarregue a página (Ctrl+F5)");
+      return;
+    }
     try {
       let parsed: any = {};
-      try { parsed = JSON.parse(doc.xml_assinado || "{}"); } catch { parsed = {}; }
+      try {
+        parsed = JSON.parse(doc.xml_assinado || "{}");
+      } catch {
+        parsed = {};
+      }
       const { error: delErr, count } = await supabase
         .from("cte_documentos" as any)
         .delete({ count: "exact" })
@@ -4156,44 +4334,44 @@ function CtePage() {
               {
                 empresa_id: empresa.id,
                 chave: nf.chave,
-              n_nf: nf.nNF,
-              serie: nf.serie,
-              emit_nome: nf.emit,
-              emit_cnpj: nf.emitCnpj,
-              emit_uf: nf.emitUF,
-              emit_cmun: nf.emitCMun,
-              emit_xmun: nf.emitXMun,
-              emit_ie: (nf as any).emitIE || null,
-              emit_logradouro: (nf as any).emitLogradouro || null,
-              emit_nro: (nf as any).emitNro || null,
-              emit_bairro: (nf as any).emitBairro || null,
-              emit_cep: (nf as any).emitCEP || null,
-              emit_fone: (nf as any).emitFone || null,
-              dest_nome: nf.dest,
-              dest_cnpj: nf.destCnpj,
-              dest_uf: nf.destUF,
-              dest_cmun: nf.destCMun,
-              dest_xmun: nf.destXMun,
-              dest_ie: (nf as any).destIE || null,
-              dest_logradouro: (nf as any).destLogradouro || null,
-              dest_nro: (nf as any).destNro || null,
-              dest_bairro: (nf as any).destBairro || null,
-              dest_cep: (nf as any).destCEP || null,
-              dest_fone: (nf as any).destFone || null,
-              valor: nf.valor,
-              peso: nf.peso,
-              data_emissao: nf.data || null,
-              tomador_nome: nf.tomador,
-              tomador_cnpj: nf.tomadorCnpj,
-              tomador_uf: nf.tomadorUF,
-              tomador_cmun: nf.tomadorCMun,
-              tomador_xmun: nf.tomadorXMun,
-              mod_frete: nf.modFrete,
-              status: "pendente",
-            },
-            { onConflict: "empresa_id,chave" },
-          );
-          if (upErr) throw upErr;
+                n_nf: nf.nNF,
+                serie: nf.serie,
+                emit_nome: nf.emit,
+                emit_cnpj: nf.emitCnpj,
+                emit_uf: nf.emitUF,
+                emit_cmun: nf.emitCMun,
+                emit_xmun: nf.emitXMun,
+                emit_ie: (nf as any).emitIE || null,
+                emit_logradouro: (nf as any).emitLogradouro || null,
+                emit_nro: (nf as any).emitNro || null,
+                emit_bairro: (nf as any).emitBairro || null,
+                emit_cep: (nf as any).emitCEP || null,
+                emit_fone: (nf as any).emitFone || null,
+                dest_nome: nf.dest,
+                dest_cnpj: nf.destCnpj,
+                dest_uf: nf.destUF,
+                dest_cmun: nf.destCMun,
+                dest_xmun: nf.destXMun,
+                dest_ie: (nf as any).destIE || null,
+                dest_logradouro: (nf as any).destLogradouro || null,
+                dest_nro: (nf as any).destNro || null,
+                dest_bairro: (nf as any).destBairro || null,
+                dest_cep: (nf as any).destCEP || null,
+                dest_fone: (nf as any).destFone || null,
+                valor: nf.valor,
+                peso: nf.peso,
+                data_emissao: nf.data || null,
+                tomador_nome: nf.tomador,
+                tomador_cnpj: nf.tomadorCnpj,
+                tomador_uf: nf.tomadorUF,
+                tomador_cmun: nf.tomadorCMun,
+                tomador_xmun: nf.tomadorXMun,
+                mod_frete: nf.modFrete,
+                status: "pendente",
+              },
+              { onConflict: "empresa_id,chave" },
+            );
+            if (upErr) throw upErr;
           }
         }
         qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
@@ -4208,7 +4386,13 @@ function CtePage() {
   // Aplica CIOT + dados do pedágio nos rascunhos marcados (só preenche o que foi informado)
   const aplicarLoteCiotPedagio = async () => {
     if (!empresa || envSel.size === 0 || loteSalvando) return;
-    if (!loteCiot.trim() && loteModo === "manter" && !loteOperadora && !loteVpo.trim() && !(parseFloat(loteVale) > 0)) {
+    if (
+      !loteCiot.trim() &&
+      loteModo === "manter" &&
+      !loteOperadora &&
+      !loteVpo.trim() &&
+      !(parseFloat(loteVale) > 0)
+    ) {
       toast.error("Informe ao menos um campo para aplicar no lote");
       return;
     }
@@ -4243,7 +4427,8 @@ function CtePage() {
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
       setLoteCiotOpen(false);
       if (ok) toast.success(`${ok} rascunho(s) atualizado(s)`);
-      if (erros.length) toast.error(`${erros.length} falharam`, { description: erros.slice(0, 3).join(" | ") });
+      if (erros.length)
+        toast.error(`${erros.length} falharam`, { description: erros.slice(0, 3).join(" | ") });
     } finally {
       setLoteSalvando(false);
     }
@@ -4337,7 +4522,6 @@ function CtePage() {
     setAba("geral");
     setOpen(true);
     if (snap.editingRascunhoId || snap.percursoId) snapPendenteRef.current = snap;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresa]);
   // Enriquecimento da volta: rascunho completo + percurso fresco do banco
   useEffect(() => {
@@ -4420,7 +4604,10 @@ function CtePage() {
               segResponsavel: r.seg_responsavel || f.segResponsavel,
               distanciaKm: r.distancia_km || f.distanciaKm,
               duracaoHoras: r.duracao_horas || f.duracaoHoras,
-              icmsCST: normalizaCst(r.icms_cst || (f as any).icmsCST, ehSimplesMei(empresa?.regime_tributario)),
+              icmsCST: normalizaCst(
+                r.icms_cst || (f as any).icmsCST,
+                ehSimplesMei(empresa?.regime_tributario),
+              ),
               icmsAliq: r.icms_aliq || f.icmsAliq,
               reducaoBase: (r.reducao_base || (f as any).reducaoBase) as string,
               creditoOutorgado: (r.credito_outorgado || (f as any).creditoOutorgado) as string,
@@ -4726,15 +4913,19 @@ function CtePage() {
           qtdUnit: Number((m as any).qtdUnit ?? (m as any).quantidade ?? 0),
         }));
       const proximo = 1;
-      const { data: novoDoc, error } = await supabase.from("cte_documentos" as any).insert({
-        empresa_id: empresa.id,
-        status: "rascunho",
-        numero: proximo,
-        serie: "1",
-        valor_servico: totalPrestacao(form),
-        peso_carga: parseFloat(form.peso) || 0,
-        xml_assinado: JSON.stringify({ form, chavesNFe: chaves, nfs: nfsSalvas }),
-      } as any).select("id").single();
+      const { data: novoDoc, error } = await supabase
+        .from("cte_documentos" as any)
+        .insert({
+          empresa_id: empresa.id,
+          status: "rascunho",
+          numero: proximo,
+          serie: "1",
+          valor_servico: totalPrestacao(form),
+          peso_carga: parseFloat(form.peso) || 0,
+          xml_assinado: JSON.stringify({ form, chavesNFe: chaves, nfs: nfsSalvas }),
+        } as any)
+        .select("id")
+        .single();
       if (error) throw error;
       if (editingRascunhoId) {
         await supabase
@@ -4917,12 +5108,12 @@ function CtePage() {
           );
           if (vv && Traciona(vv.tipo) && !String(form.semiReboque1 || "").trim())
             pend.push("Placa do reboque (veiculo 1 de tracao)");
-           const donoDoc = String((vv as any)?.proprietario_doc || "").replace(/\D/g, "");
-           const emitCnpj = String((empresa as any)?.cnpj || "").replace(/\D/g, "");
-           const isTerceiro = donoDoc.length > 0 && donoDoc !== emitCnpj;
-           if (isTerceiro && !String((form as any).ciot || "").trim()) {
-             pend.push("CIOT obrigatorio (veiculo terceirizado)");
-           }
+          const donoDoc = String((vv as any)?.proprietario_doc || "").replace(/\D/g, "");
+          const emitCnpj = String((empresa as any)?.cnpj || "").replace(/\D/g, "");
+          const isTerceiro = donoDoc.length > 0 && donoDoc !== emitCnpj;
+          if (isTerceiro && !String((form as any).ciot || "").trim()) {
+            pend.push("CIOT obrigatorio (veiculo terceirizado)");
+          }
         }
         if (!(parseFloat(form.vPrest) > 0)) pend.push("Valor do servico maior que zero");
         if (!String(form.icmsCST || "").trim()) pend.push("CST do ICMS");
@@ -4932,16 +5123,16 @@ function CtePage() {
           if (!String(form.seguradoraNome || "").trim()) pend.push("Seguradora");
           if (!String(form.apolice || "").trim()) pend.push("Apolice do seguro");
           if (!String(form.segResponsavel || "").trim()) pend.push("Responsavel do seguro");
-          if (!["4", "5"].includes(String(form.segResponsavel || ""))) pend.push("responsável do seguro deve ser Emitente (4) ou Tomador (5)");
+          if (!["4", "5"].includes(String(form.segResponsavel || "")))
+            pend.push("responsável do seguro deve ser Emitente (4) ou Tomador (5)");
         }
-        if (String((form as any).toma) === "9") pend.push("operação sem transporte não gera CT-e (troque o tomador)");
+        if (String((form as any).toma) === "9")
+          pend.push("operação sem transporte não gera CT-e (troque o tomador)");
         if (pend.length > 0) throw new Error("Para emitir informe: " + pend.join("; "));
         validarPedagio(form);
         // cMun da prestação (não da NF-e): resolve pela cidade+UF quando divergente/vazio
-        const cMunIniFix =
-          (await resolverCMunIBGE(form.xMunIni, form.ufIni)) || form.cMunIni;
-        const cMunFimFix =
-          (await resolverCMunIBGE(form.xMunFim, form.ufFim)) || form.cMunFim;
+        const cMunIniFix = (await resolverCMunIBGE(form.xMunIni, form.ufIni)) || form.cMunIni;
+        const cMunFimFix = (await resolverCMunIBGE(form.xMunFim, form.ufFim)) || form.cMunFim;
         const ret: any = await emitirCteFn({
           data: {
             empresaId: empresa.id,
@@ -4953,25 +5144,49 @@ function CtePage() {
               modelo: (form as any).modoEmbarque === "simplificado" ? "simp" : "normal",
               retira: "1",
               rem: {
-                cnpj: m0.emitCnpj, xNome: m0.emit,
-                uf: m0.emitUF, cMun: m0.emitCMun, xMun: m0.emitXMun,
-                ie: m0.emitIE, cep: m0.emitCEP, logradouro: m0.emitLogradouro,
-                nro: m0.emitNro, bairro: m0.emitBairro, fone: m0.emitFone,
+                cnpj: m0.emitCnpj,
+                xNome: m0.emit,
+                uf: m0.emitUF,
+                cMun: m0.emitCMun,
+                xMun: m0.emitXMun,
+                ie: m0.emitIE,
+                cep: m0.emitCEP,
+                logradouro: m0.emitLogradouro,
+                nro: m0.emitNro,
+                bairro: m0.emitBairro,
+                fone: m0.emitFone,
               },
               dest: {
-                cnpj: m0.destCnpj, xNome: m0.dest,
-                uf: m0.destUF, cMun: m0.destCMun, xMun: m0.destXMun,
-                ie: form.ieDestinatario || m0.destIE, cep: m0.destCEP, logradouro: m0.destLogradouro,
-                nro: m0.destNro, bairro: m0.destBairro, fone: m0.destFone,
+                cnpj: m0.destCnpj,
+                xNome: m0.dest,
+                uf: m0.destUF,
+                cMun: m0.destCMun,
+                xMun: m0.destXMun,
+                ie: form.ieDestinatario || m0.destIE,
+                cep: m0.destCEP,
+                logradouro: m0.destLogradouro,
+                nro: m0.destNro,
+                bairro: m0.destBairro,
+                fone: m0.destFone,
               },
               componentes: [
                 { xNome: "FRETE", vComp: num2(form.vPrest) },
-                ...(num2(form.taxaColeta) > 0 ? [{ xNome: "COLETA", vComp: num2(form.taxaColeta) }] : []),
-                ...(num2(form.taxaEntrega) > 0 ? [{ xNome: "ENTREGA", vComp: num2(form.taxaEntrega) }] : []),
-                ...(num2(form.adValorem) > 0 ? [{ xNome: "AD VALOREM", vComp: num2(form.adValorem) }] : []),
+                ...(num2(form.taxaColeta) > 0
+                  ? [{ xNome: "COLETA", vComp: num2(form.taxaColeta) }]
+                  : []),
+                ...(num2(form.taxaEntrega) > 0
+                  ? [{ xNome: "ENTREGA", vComp: num2(form.taxaEntrega) }]
+                  : []),
+                ...(num2(form.adValorem) > 0
+                  ? [{ xNome: "AD VALOREM", vComp: num2(form.adValorem) }]
+                  : []),
                 ...(num2(form.gris) > 0 ? [{ xNome: "GRIS", vComp: num2(form.gris) }] : []),
-                ...(num2(form.outrosPed) > 0 ? [{ xNome: "OUTROS", vComp: num2(form.outrosPed) }] : []),
-                ...((form as any).adicionalPed && num2((form as any).adicionalPed) > 0 ? [{ xNome: "ADICIONAL", vComp: num2((form as any).adicionalPed) }] : []),
+                ...(num2(form.outrosPed) > 0
+                  ? [{ xNome: "OUTROS", vComp: num2(form.outrosPed) }]
+                  : []),
+                ...((form as any).adicionalPed && num2((form as any).adicionalPed) > 0
+                  ? [{ xNome: "ADICIONAL", vComp: num2((form as any).adicionalPed) }]
+                  : []),
               ],
               toma: form.toma,
               cnpjTomador: form.cnpjTomador,
@@ -4996,9 +5211,20 @@ function CtePage() {
                 rntrc: rntrcFinal,
                 motoristas: motoristasXml(),
                 veiculos: (() => {
-                  const tpRodDeTipo = (t: any) => { const s = String(t || "").toLowerCase(); if (s.includes("cavalo")) return "03"; if (s.includes("truck") && !s.includes("bitruck")) return "01"; if (s.includes("toco")) return "02"; if (s.includes("van") || s.includes("furg")) return "04"; if (s.includes("utilit")) return "05"; return "06"; };
+                  const tpRodDeTipo = (t: any) => {
+                    const s = String(t || "").toLowerCase();
+                    if (s.includes("cavalo")) return "03";
+                    if (s.includes("truck") && !s.includes("bitruck")) return "01";
+                    if (s.includes("toco")) return "02";
+                    if (s.includes("van") || s.includes("furg")) return "04";
+                    if (s.includes("utilit")) return "05";
+                    return "06";
+                  };
                   const itemVeic = (placa: string) => {
-                    const vv = (veiculos || []).find((v) => String(v.placa || "").toUpperCase() === String(placa || "").toUpperCase());
+                    const vv = (veiculos || []).find(
+                      (v) =>
+                        String(v.placa || "").toUpperCase() === String(placa || "").toUpperCase(),
+                    );
                     return {
                       placa: String(placa).toUpperCase(),
                       uf: empresa.uf || "MG",
@@ -5073,7 +5299,9 @@ function CtePage() {
                 cep: empresa.cep,
               } as any,
               chavesNFe: chaves,
-              valoresNFe: chaves.map((ch) => Number((mercadorias.find((m) => m.chave === ch) as any)?.valor) || 0),
+              valoresNFe: chaves.map(
+                (ch) => Number((mercadorias.find((m) => m.chave === ch) as any)?.valor) || 0,
+              ),
             },
           },
         });
@@ -5319,8 +5547,7 @@ function CtePage() {
         toast.success(`CC-e registrada${ret?.protocolo ? ` (prot. ${ret.protocolo})` : ""}`);
         setCceDoc(null);
         setCceTexto("");
-      } else
-        toast.error(erroSefazAmigavel(ret?.cStat, ret?.mensagem || ret?.xMotivo));
+      } else toast.error(erroSefazAmigavel(ret?.cStat, ret?.mensagem || ret?.xMotivo));
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -5365,12 +5592,11 @@ function CtePage() {
             else if (r.devolvidas > 1)
               toast.success(`${r.devolvidas} NF-es devolvidas p/ embarque`);
             else if (!r.encontrouNf)
-              toast.warning(
-                "CT-e cancelado, mas as NF-es não foram encontradas para devolução",
-              );
+              toast.warning("CT-e cancelado, mas as NF-es não foram encontradas para devolução");
           }
         }
-      } else if (!vars?.quiet) toast.error(erroSefazAmigavel((ret as any)?.cStat, (ret as any).xMotivo));
+      } else if (!vars?.quiet)
+        toast.error(erroSefazAmigavel((ret as any)?.cStat, (ret as any).xMotivo));
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -5419,54 +5645,50 @@ function CtePage() {
         if (!nf?.chave) continue;
         await supabase.from("cte_nfes_pendentes" as any).upsert(
           {
-                    empresa_id: empresa.id,
-                    chave: nf.chave,
-                    n_nf: nf.nNF,
-                    serie: nf.serie || "1",
-                    emit_nome: nf.emit || "",
-                    emit_cnpj: nf.emitCnpj || "",
-                    emit_uf: nf.emitUF || "",
-                    emit_cmun: nf.emitCMun || "",
-                    emit_xmun: nf.emitXMun || "",
-                    emit_ie: nf.emitIE || "",
-                    emit_logradouro: nf.emitLogradouro || "",
-                    emit_nro: nf.emitNro || "",
-                    emit_bairro: nf.emitBairro || "",
-                    emit_cep: nf.emitCEP || "",
-                    emit_fone: nf.emitFone || "",
-                    dest_nome: nf.dest || "",
-                    dest_cnpj: nf.destCnpj || "",
-                    dest_uf: nf.destUF || "",
-                    dest_cmun: nf.destCMun || "",
-                    dest_xmun: nf.destXMun || "",
-                    dest_ie: nf.destIE || "",
-                    dest_logradouro: nf.destLogradouro || "",
-                    dest_nro: nf.destNro || "",
-                    dest_bairro: nf.destBairro || "",
-                    dest_cep: nf.destCEP || "",
-                    dest_fone: nf.destFone || "",
-                    valor: nf.valor || 0,
-                    peso: nf.peso || 0,
-                    data_emissao: nf.data || null,
-                    tomador_nome: nf.tomador || "",
-                    tomador_cnpj: nf.tomadorCnpj || "",
-                    tomador_uf: nf.tomadorUF || "",
-                    tomador_cmun: nf.tomadorCMun || "",
-                    tomador_xmun: nf.tomadorXMun || "",
-                    mod_frete: nf.modFrete || "",
-                    status: "pendente",
-                  },
-                  { onConflict: "empresa_id,chave" },
-                );
-              }
-              console.log(
-                "[CTE-CANCEL-REVERT] re-inserted",
-                rascunhoNfs.length,
-                "NF-e from rascunho JSON",
-              );
-            }
-            qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
-            return { devolvidas: count || 0, encontrouNf: true };
+            empresa_id: empresa.id,
+            chave: nf.chave,
+            n_nf: nf.nNF,
+            serie: nf.serie || "1",
+            emit_nome: nf.emit || "",
+            emit_cnpj: nf.emitCnpj || "",
+            emit_uf: nf.emitUF || "",
+            emit_cmun: nf.emitCMun || "",
+            emit_xmun: nf.emitXMun || "",
+            emit_ie: nf.emitIE || "",
+            emit_logradouro: nf.emitLogradouro || "",
+            emit_nro: nf.emitNro || "",
+            emit_bairro: nf.emitBairro || "",
+            emit_cep: nf.emitCEP || "",
+            emit_fone: nf.emitFone || "",
+            dest_nome: nf.dest || "",
+            dest_cnpj: nf.destCnpj || "",
+            dest_uf: nf.destUF || "",
+            dest_cmun: nf.destCMun || "",
+            dest_xmun: nf.destXMun || "",
+            dest_ie: nf.destIE || "",
+            dest_logradouro: nf.destLogradouro || "",
+            dest_nro: nf.destNro || "",
+            dest_bairro: nf.destBairro || "",
+            dest_cep: nf.destCEP || "",
+            dest_fone: nf.destFone || "",
+            valor: nf.valor || 0,
+            peso: nf.peso || 0,
+            data_emissao: nf.data || null,
+            tomador_nome: nf.tomador || "",
+            tomador_cnpj: nf.tomadorCnpj || "",
+            tomador_uf: nf.tomadorUF || "",
+            tomador_cmun: nf.tomadorCMun || "",
+            tomador_xmun: nf.tomadorXMun || "",
+            mod_frete: nf.modFrete || "",
+            status: "pendente",
+          },
+          { onConflict: "empresa_id,chave" },
+        );
+      }
+      console.log("[CTE-CANCEL-REVERT] re-inserted", rascunhoNfs.length, "NF-e from rascunho JSON");
+    }
+    qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
+    return { devolvidas: count || 0, encontrouNf: true };
   };
 
   // NF-es vinculadas a CT-e autorizado ou rascunho NUNCA voltam (já têm dono).
@@ -5481,7 +5703,7 @@ function CtePage() {
         .eq("empresa_id", empresa.id)
         .in("status", ["autorizado", "rascunho"])
         .range(ini, ini + 499);
-      for (const d of ((data as any[]) || [])) {
+      for (const d of (data as any[]) || []) {
         for (const c of chavesNFeDoXml((d as any)?.xml_assinado)) emUso.add(c);
       }
       if (!data || (data as any[]).length < 500) break;
@@ -5536,10 +5758,8 @@ function CtePage() {
       if (!empresa) throw new Error("Empresa não selecionada");
       const chaves =
         selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map((m) => m.chave);
-      const cMunIniFix =
-        (await resolverCMunIBGE(form.xMunIni, form.ufIni)) || form.cMunIni;
-      const cMunFimFix =
-        (await resolverCMunIBGE(form.xMunFim, form.ufFim)) || form.cMunFim;
+      const cMunIniFix = (await resolverCMunIBGE(form.xMunIni, form.ufIni)) || form.cMunIni;
+      const cMunFimFix = (await resolverCMunIBGE(form.xMunFim, form.ufFim)) || form.cMunFim;
 
       // Mesma modalidade do XML real: complemento/substituição (tpCTe) e
       // subcontratação/redespacho (tpServ) + chave do CT-e anterior.
@@ -5567,19 +5787,57 @@ function CtePage() {
             ambiente: SEFAZ_AMBIENTE,
             modelo: (form as any).modoEmbarque === "simplificado" ? "simp" : "normal",
             retira: "1",
-            rem: (() => { const a = (mercadorias.find((m) => chaves.includes(m.chave)) || mercadorias[0] || {}) as any; return {
-              cnpj: a.emitCnpj, xNome: a.emit, uf: a.emitUF, cMun: a.emitCMun, xMun: a.emitXMun,
-              ie: a.emitIE, cep: a.emitCEP, logradouro: a.emitLogradouro, nro: a.emitNro, bairro: a.emitBairro, fone: a.emitFone }; })(),
-            dest: (() => { const a = (mercadorias.find((m) => chaves.includes(m.chave)) || mercadorias[0] || {}) as any; return {
-              cnpj: a.destCnpj, xNome: a.dest, uf: a.destUF, cMun: a.destCMun, xMun: a.destXMun,
-              ie: form.ieDestinatario || a.destIE, cep: a.destCEP, logradouro: a.destLogradouro, nro: a.destNro, bairro: a.destBairro, fone: a.destFone }; })(),
+            rem: (() => {
+              const a = (mercadorias.find((m) => chaves.includes(m.chave)) ||
+                mercadorias[0] ||
+                {}) as any;
+              return {
+                cnpj: a.emitCnpj,
+                xNome: a.emit,
+                uf: a.emitUF,
+                cMun: a.emitCMun,
+                xMun: a.emitXMun,
+                ie: a.emitIE,
+                cep: a.emitCEP,
+                logradouro: a.emitLogradouro,
+                nro: a.emitNro,
+                bairro: a.emitBairro,
+                fone: a.emitFone,
+              };
+            })(),
+            dest: (() => {
+              const a = (mercadorias.find((m) => chaves.includes(m.chave)) ||
+                mercadorias[0] ||
+                {}) as any;
+              return {
+                cnpj: a.destCnpj,
+                xNome: a.dest,
+                uf: a.destUF,
+                cMun: a.destCMun,
+                xMun: a.destXMun,
+                ie: form.ieDestinatario || a.destIE,
+                cep: a.destCEP,
+                logradouro: a.destLogradouro,
+                nro: a.destNro,
+                bairro: a.destBairro,
+                fone: a.destFone,
+              };
+            })(),
             componentes: [
               { xNome: "FRETE", vComp: num2(form.vPrest) },
-              ...(num2(form.taxaColeta) > 0 ? [{ xNome: "COLETA", vComp: num2(form.taxaColeta) }] : []),
-              ...(num2(form.taxaEntrega) > 0 ? [{ xNome: "ENTREGA", vComp: num2(form.taxaEntrega) }] : []),
-              ...(num2(form.adValorem) > 0 ? [{ xNome: "AD VALOREM", vComp: num2(form.adValorem) }] : []),
+              ...(num2(form.taxaColeta) > 0
+                ? [{ xNome: "COLETA", vComp: num2(form.taxaColeta) }]
+                : []),
+              ...(num2(form.taxaEntrega) > 0
+                ? [{ xNome: "ENTREGA", vComp: num2(form.taxaEntrega) }]
+                : []),
+              ...(num2(form.adValorem) > 0
+                ? [{ xNome: "AD VALOREM", vComp: num2(form.adValorem) }]
+                : []),
               ...(num2(form.gris) > 0 ? [{ xNome: "GRIS", vComp: num2(form.gris) }] : []),
-              ...(num2(form.outrosPed) > 0 ? [{ xNome: "OUTROS", vComp: num2(form.outrosPed) }] : []),
+              ...(num2(form.outrosPed) > 0
+                ? [{ xNome: "OUTROS", vComp: num2(form.outrosPed) }]
+                : []),
             ],
             toma: form.toma,
             cnpjTomador: form.cnpjTomador,
@@ -5592,8 +5850,7 @@ function CtePage() {
             cClassTrib: rtcCfg?.cclasstrib_padrao || "000001",
             tpCTe: tpCTeOrigem as any,
             tpServ: tpServOrigem,
-            cteReferenciado:
-              tpCTeOrigem !== "0" || tpServOrigem !== "0" ? chaveOrigem : undefined,
+            cteReferenciado: tpCTeOrigem !== "0" || tpServOrigem !== "0" ? chaveOrigem : undefined,
             docAnt: tpServOrigem !== "0" ? { chaves: [chaveOrigem], tpPrest: "1" } : undefined,
             vPrest: totalPrestacao(form),
             vCarga: parseFloat(form.vCarga) || 0,
@@ -5679,7 +5936,9 @@ function CtePage() {
               cep: empresa.cep,
             } as any,
             chavesNFe: chaves,
-            valoresNFe: chaves.map((ch) => Number((mercadorias.find((m) => m.chave === ch) as any)?.valor) || 0),
+            valoresNFe: chaves.map(
+              (ch) => Number((mercadorias.find((m) => m.chave === ch) as any)?.valor) || 0,
+            ),
           },
         },
       });
@@ -5723,7 +5982,10 @@ function CtePage() {
       tomaDoc: onlyDigitsPercurso(form.cnpjTomador),
     };
   };
-  const trioPercursoOk = (r: Record<string, any>, d: { remDoc: string; destDoc: string; tomaDoc: string }) =>
+  const trioPercursoOk = (
+    r: Record<string, any>,
+    d: { remDoc: string; destDoc: string; tomaDoc: string },
+  ) =>
     onlyDigitsPercurso(r.rem_cnpj) === d.remDoc &&
     onlyDigitsPercurso(r.dest_cnpj) === d.destDoc &&
     onlyDigitsPercurso(r.toma_cnpj) === d.tomaDoc;
@@ -5748,7 +6010,10 @@ function CtePage() {
 
     // CNPJs devem ter exatamente 14 dígitos. Normaliza ambos para comparar apenas
     // os digitos, ignorando pontos, barras e qualquer outro caractere nao numerico.
-    const cnpj14 = (s: string) => String(s || "").replace(/\D/g, "").slice(0, 14);
+    const cnpj14 = (s: string) =>
+      String(s || "")
+        .replace(/\D/g, "")
+        .slice(0, 14);
 
     const rDoc = cnpj14(d.remDoc);
     const dDoc = cnpj14(d.destDoc);
@@ -5852,7 +6117,10 @@ function CtePage() {
       segResponsavel: r.seg_responsavel || f.segResponsavel,
       distanciaKm: r.distancia_km || f.distanciaKm,
       duracaoHoras: r.duracao_horas || f.duracaoHoras,
-      icmsCST: normalizaCst(r.icms_cst || (f as any).icmsCST, ehSimplesMei(empresa?.regime_tributario)),
+      icmsCST: normalizaCst(
+        r.icms_cst || (f as any).icmsCST,
+        ehSimplesMei(empresa?.regime_tributario),
+      ),
       icmsAliq: r.icms_aliq || f.icmsAliq,
       reducaoBase: (r.reducao_base || (f as any).reducaoBase) as string,
       creditoOutorgado: (r.credito_outorgado || (f as any).creditoOutorgado) as string,
@@ -6061,9 +6329,7 @@ function CtePage() {
   const aliqIcmsNum = (() => {
     const s = String(form.icmsAliq ?? "").trim();
     if (!s) return NaN;
-    return s.includes(",")
-      ? Number(s.replace(/\./g, "").replace(",", "."))
-      : parseFloat(s);
+    return s.includes(",") ? Number(s.replace(/\./g, "").replace(",", ".")) : parseFloat(s);
   })();
   const aliqIcmsEsp = aliqIcmsEsperada(form.ufIni, form.ufFim);
   const aliqIcmsOk =
@@ -6071,7 +6337,8 @@ function CtePage() {
     (Number.isFinite(aliqIcmsNum) && Math.abs(aliqIcmsNum - aliqIcmsEsp) < 0.005);
   // Veículo terceirizado (CNPJ divergente do emissor): CIOT obrigatório
   const vvTracCiots = (veiculos || []).find(
-    (v: any) => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase(),
+    (v: any) =>
+      String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase(),
   );
   const donoDocCiot = String((vvTracCiots as any)?.proprietario_doc || "").replace(/\D/g, "");
   const emitCnpjCiot = String((empresa as any)?.cnpj || "").replace(/\D/g, "");
@@ -6085,12 +6352,10 @@ function CtePage() {
         ? Number(s.replace(/\./g, "").replace(",", ".")) || 0
         : parseFloat(s) || 0;
     };
-    const tomOk =
-      soDig(form.cnpjTomador).length === 14 && !!String(form.xNomeTomador || "").trim();
+    const tomOk = soDig(form.cnpjTomador).length === 14 && !!String(form.xNomeTomador || "").trim();
     const iniOk = !!String(form.xMunIni || "").trim() && !!String(form.ufIni || "").trim();
     const fimOk = !!String(form.xMunFim || "").trim() && !!String(form.ufFim || "").trim();
-    const rntrcOk =
-      !!rntrcFinal && !/^ISENTO$/i.test(rntrcFinal) && soDig(rntrcFinal).length === 8;
+    const rntrcOk = !!rntrcFinal && !/^ISENTO$/i.test(rntrcFinal) && soDig(rntrcFinal).length === 8;
     const geral: string[] = [];
     if (!tomOk) geral.push("tomador incompleto");
     if (!percursoMatch) geral.push("sem percurso");
@@ -6101,8 +6366,7 @@ function CtePage() {
     // Cavalo sem carreta: mesma regra da emissão (tração cadastrada que traciona exige Reboque 1)
     const vvTrac = (veiculos || []).find(
       (v: any) =>
-        String(v.placa || "").toUpperCase() ===
-        String(form.placaVeiculo || "").toUpperCase(),
+        String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase(),
     );
     if (
       String(form.placaVeiculo || "").trim() &&
@@ -6128,7 +6392,8 @@ function CtePage() {
     if (!String(form.icmsCST || "").trim()) trib.push("CST");
     if (String(form.icmsAliq ?? "").trim() === "") trib.push("alíquota ICMS");
     if (mercadorias.length === 0) trib.push("NF-es");
-    if (!aliqIcmsOk && aliqIcmsEsp !== null) trib.push(`alíquota esperada ${aliqIcmsEsp}% p/ a rota`);
+    if (!aliqIcmsOk && aliqIcmsEsp !== null)
+      trib.push(`alíquota esperada ${aliqIcmsEsp}% p/ a rota`);
     return { geral, transporte, trib };
   })();
   const tabOk = (() => ({
@@ -6166,7 +6431,8 @@ function CtePage() {
     });
   // A soma do total usa apenas as notas ativas (selecionadas e ainda marcadas).
   // Se nenhuma estiver ativa, nada soma (totBase vazio).
-  const totBase = selecionadasAtivas.size > 0 ? mercadorias.filter((m) => selecionadasAtivas.has(m.chave)) : [];
+  const totBase =
+    selecionadasAtivas.size > 0 ? mercadorias.filter((m) => selecionadasAtivas.has(m.chave)) : [];
   const totGrade = totBase.reduce(
     (acc, m) => ({
       qtd:
@@ -6438,13 +6704,24 @@ function CtePage() {
                 {listaOrd.map((d) => {
                   const L = linhaDocs(d);
                   const nNFs = L.nfs ? L.nfs.split(", ") : [];
-                  const info = { placas: L.placas ? L.placas.split(" / ") : [], motorista: L.motorista, dataEmi: L.dataEmi };
+                  const info = {
+                    placas: L.placas ? L.placas.split(" / ") : [],
+                    motorista: L.motorista,
+                    dataEmi: L.dataEmi,
+                  };
                   const isRascunho = d.status === "rascunho";
                   // Com MDF-e ativo: sem botão de cancelar em hipótese alguma
                   const stMdfRow = d.chave_acesso ? mdfStatusPorCte.get(d.chave_acesso) : undefined;
                   const cancBloq = stMdfRow === "autorizado" || stMdfRow === "encerrado";
                   return (
-                    <TableRow key={d.id} className={isRascunho ? "bg-muted/30 transition-colors hover:bg-accent/30" : "transition-colors hover:bg-accent/30"}>
+                    <TableRow
+                      key={d.id}
+                      className={
+                        isRascunho
+                          ? "bg-muted/30 transition-colors hover:bg-accent/30"
+                          : "transition-colors hover:bg-accent/30"
+                      }
+                    >
                       {rotulo === "autorizados" && !semSelecao && d.chave_acesso && (
                         <TableCell>
                           <input
@@ -6496,383 +6773,417 @@ function CtePage() {
                           />
                         </TableCell>
                       )}
-                    <TableCell className="font-mono text-xs whitespace-nowrap">
-                      {info.placas.length ? info.placas.join(" / ") : "—"}
-                    </TableCell>
-                    <TableCell
-                      className="text-xs max-w-[120px] truncate"
-                      title={info.motorista || ""}
-                    >
-                      {info.motorista || "—"}
-                    </TableCell>
-                    <TableCell className="font-mono">
-                      {d.numero ?? "—"}
-                      {d.status === "rejeitado" && d.motivo_rejeicao ? (
-                        <p
-                          className="font-sans text-[10px] text-destructive/80 max-w-[160px] truncate"
-                          title={d.motivo_rejeicao}
-                        >
-                          {d.motivo_rejeicao}
-                        </p>
-                      ) : null}
-                    </TableCell>
-                    <TableCell>{d.serie ?? "—"}</TableCell>
-                    <TableCell className="text-xs max-w-[180px] truncate" title={nNFs.join(", ")}>
-                      {nNFs.length > 0 ? nNFs.join(", ") : d.chave_acesso ? "—" : "—"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {brl(Number(d.valor_servico ?? 0))}
-                    </TableCell>
-                    <TableCell
-                      className="text-xs max-w-[100px] truncate"
-                      title={(d as any).responsavel_emissao || ""}
-                    >
-                      {(d as any).responsavel_emissao || "—"}
-                    </TableCell>
-                    <TableCell className="text-xs whitespace-nowrap">
-                      <StatusBadge status={d.status} />
-                    </TableCell>
-                    <TableCell className="text-xs whitespace-nowrap">
-                      {info.dataEmi || "—"}
-                    </TableCell>
-                    <TableCell className="flex gap-0.5 justify-center pl-1 whitespace-nowrap [&_button]:h-6 [&_button]:w-6 [&_svg]:h-3 [&_svg]:w-3">
-                      {isRascunho ? (
-                        <>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 text-primary"
-                            onClick={() => editarRascunho(d)}
-                            title="Editar rascunho"
+                      <TableCell className="font-mono text-xs whitespace-nowrap">
+                        {info.placas.length ? info.placas.join(" / ") : "—"}
+                      </TableCell>
+                      <TableCell
+                        className="text-xs max-w-[120px] truncate"
+                        title={info.motorista || ""}
+                      >
+                        {info.motorista || "—"}
+                      </TableCell>
+                      <TableCell className="font-mono">
+                        {d.numero ?? "—"}
+                        {d.status === "rejeitado" && d.motivo_rejeicao ? (
+                          <p
+                            className="font-sans text-[10px] text-destructive/80 max-w-[160px] truncate"
+                            title={d.motivo_rejeicao}
                           >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 text-destructive"
-                            onClick={() => setConfRascunho(d)}
-                            title="Excluir rascunho"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          {d.status === "autorizado" && (
-                            <>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7 text-primary"
-                                onClick={() => visualizarPdf(d)}
-                                title="Visualizar DACTE"
-                              >
-                                <Eye className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7 text-primary"
-                                onClick={() => {
-                                  setCceDoc(d);
-                                  setCceTexto("");
-                                }}
-                                title="Carta de Correção (CC-e)"
-                              >
-                                <FilePenLine className="h-3.5 w-3.5" />
-                              </Button>
-                            </>
-                          )}
-                          {d.status === "rejeitado" && String(d.xml_assinado || "").includes("<") && (
+                            {d.motivo_rejeicao}
+                          </p>
+                        ) : null}
+                      </TableCell>
+                      <TableCell>{d.serie ?? "—"}</TableCell>
+                      <TableCell className="text-xs max-w-[180px] truncate" title={nNFs.join(", ")}>
+                        {nNFs.length > 0 ? nNFs.join(", ") : d.chave_acesso ? "—" : "—"}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {brl(Number(d.valor_servico ?? 0))}
+                      </TableCell>
+                      <TableCell
+                        className="text-xs max-w-[100px] truncate"
+                        title={(d as any).responsavel_emissao || ""}
+                      >
+                        {(d as any).responsavel_emissao || "—"}
+                      </TableCell>
+                      <TableCell className="text-xs whitespace-nowrap">
+                        <StatusBadge status={d.status} />
+                      </TableCell>
+                      <TableCell className="text-xs whitespace-nowrap">
+                        {info.dataEmi || "—"}
+                      </TableCell>
+                      <TableCell className="flex gap-0.5 justify-center pl-1 whitespace-nowrap [&_button]:h-6 [&_button]:w-6 [&_svg]:h-3 [&_svg]:w-3">
+                        {isRascunho ? (
+                          <>
                             <Button
                               size="icon"
                               variant="ghost"
                               className="h-7 w-7 text-primary"
-                              onClick={() => downloadXml(d)}
-                              title="Baixar XML rejeitado (para diagnóstico)"
+                              onClick={() => editarRascunho(d)}
+                              title="Editar rascunho"
                             >
-                              <FileCode className="h-3.5 w-3.5" />
+                              <Pencil className="h-3.5 w-3.5" />
                             </Button>
-                          )}
-                        </>
-                      )}
-                      {!isRascunho && !cancBloq && d.status === "autorizado" && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-destructive"
-                          onClick={() => {
-                            if (!d.chave_acesso) return;
-                            const stMdf = mdfStatusPorCte.get(d.chave_acesso);
-                            if (stMdf === "encerrado") {
-                              toast.error("Manifesto encerrado — o CT-e não pode ser cancelado");
-                              return;
-                            }
-                            if (stMdf) {
-                              toast.error(
-                                "CT-e vinculado a um MDF-e ativo — cancele o manifesto primeiro",
-                              );
-                              return;
-                            }
-                            setCteCancelar({
-                              chave: d.chave_acesso,
-                              protocolo: d.protocolo_sefaz || undefined,
-                              ambiente: SEFAZ_AMBIENTE,
-                            });
-                            setMotivoCanc("ERRO DE EMISSAO DO CT-E");
-                          }}
-                          title="Cancelar"
-                        >
-                          <Ban className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
-                      {!isRascunho && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-primary"
-                          onClick={() => visualizarDoc(d)}
-                          title="Ver dados e status"
-                        >
-                          <ClipboardList className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
-                      {!isRascunho && d.status === "autorizado" && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-primary"
-                          onClick={() => substituirCte(d)}
-                          title="Emitir CT-e de substituição"
-                        >
-                          <Repeat className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
-                      {!isRascunho && d.status === "autorizado" && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-primary"
-                          onClick={() => complementarCte(d)}
-                          title="Emitir CT-e complementar"
-                          aria-label="Emitir CT-e complementar"
-                        >
-                          <FilePlus2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </Card>
-      )}
-
-      {cteCancelarLote && (
-        <Dialog
-          open={cteCancelarLote}
-          onOpenChange={(v) => {
-            if (!v) setCteCancelarLote(false);
-          }}
-        >
-          <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3 rounded-2xl sm:p-6">
-            <DialogHeader className="gap-1.5 pb-1">
-              <DialogTitle className="tracking-tight">Cancelar CT-es selecionados</DialogTitle>
-            </DialogHeader>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              Serão cancelados {autorizadosSelecionados.length} CT-e(s) autorizado(s). O
-              processamento será feito um por vez.
-            </p>
-            <div className="grid gap-1.5">
-              <Label>Motivo (obrigatório)</Label>
-              <Select value={motivoCanc} onValueChange={setMotivoCanc}>
-                <SelectTrigger className="h-10 rounded-xl">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ERRO DE EMISSAO DO CT-E">ERRO DE EMISSÃO DO CT-E</SelectItem>
-                  <SelectItem value="CLIENTE CANCELOU O SERVICO">
-                    CLIENTE CANCELOU O SERVIÇO
-                  </SelectItem>
-                  <SelectItem value="FALTA DE ENERGIA/IMPOSSIBILIDADE TECNICA">
-                    FALTA DE ENERGIA/IMPOSSIBILIDADE TÉCNICA
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setCteCancelarLote(false)} className="h-10 rounded-xl">
-                Voltar
-              </Button>
-              <Button
-                variant="destructive"
-                disabled={cancelar.isPending || motivoCanc.length < 15}
-                className="h-10 rounded-xl px-5"
-                onClick={async () => {
-                  const docsLote = [...autorizadosSelecionados];
-                  setCteCancelarLote(false);
-                  let ok = 0;
-                  let falhas = 0;
-                  let devolvidas = 0;
-                  for (const d of docsLote) {
-                    if (!d.chave_acesso) continue;
-                    const st = mdfStatusPorCte.get(d.chave_acesso);
-                    if (st) continue;
-                    try {
-                      const r: any = await cancelar.mutateAsync({
-                        chave: d.chave_acesso,
-                        protocolo: d.protocolo_sefaz || undefined,
-                        ambiente: SEFAZ_AMBIENTE,
-                        justificativa: motivoCanc,
-                        quiet: true,
-                      });
-                      if (r?.sucesso) {
-                        ok++;
-                        try {
-                          const rr = await reverterNfesCancelado(d.chave_acesso);
-                          devolvidas += rr.devolvidas;
-                        } catch {}
-                      } else falhas++;
-                    } catch {
-                      falhas++;
-                    }
-                  }
-                  setMdfSel(new Set());
-                  if (ok === 1) toast.success("1 CT-e cancelado");
-                  else if (ok > 1) toast.success(`${ok} CT-es cancelados`);
-                  if (devolvidas === 1) toast.success("1 NF-e devolvida p/ embarque");
-                  else if (devolvidas > 1)
-                    toast.success(`${devolvidas} NF-es devolvidas p/ embarque`);
-                  if (falhas > 0) toast.error(`${falhas} cancelamento(s) falharam`);
-                }}
-              >
-                Confirmar cancelamento
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-      {impOpen && (
-        <Dialog open={impOpen} onOpenChange={setImpOpen}>
-          <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3 rounded-2xl sm:p-6">
-            <DialogHeader className="gap-1.5 pb-1">
-              <DialogTitle className="tracking-tight">Exportar</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-1.5">
-              <Label>Selecione o formato:</Label>
-              <div className="flex flex-col gap-1">
-                {((["pdf", "xml", "ambos"] as const)).map((v) => (
-                  <label key={v} className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-accent">
-                    <input type="radio" name="imp-tipo" checked={impTipo === v} onChange={() => setImpTipo(v)} className="h-4 w-4 accent-primary" />
-                    {v === "pdf" ? "PDF" : v === "xml" ? "XML" : "PDF/XML"}
-                  </label>
-                ))}
-              </div>
-            </div>
-            <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setImpOpen(false)} className="h-10 rounded-xl">Voltar</Button>
-              <Button disabled={impProc} onClick={() => void importarLote()} className="h-10 rounded-xl px-5 shadow-sm">
-                {impProc ? "Baixando…" : "Baixar"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-      {cteCancelar && (
-        <Dialog
-          open={!!cteCancelar}
-          onOpenChange={(v) => {
-            if (!v) setCteCancelar(null);
-          }}
-        >
-          <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3 rounded-2xl sm:p-6">
-            <DialogHeader className="gap-1.5 pb-1">
-              <DialogTitle className="tracking-tight">Cancelar CT-e</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-1.5">
-              <Label>Motivo (obrigatório)</Label>
-              <Select value={motivoCanc} onValueChange={setMotivoCanc}>
-                <SelectTrigger className="h-10 rounded-xl">
-                  <SelectValue placeholder="Selecione o motivo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ERRO DE EMISSAO DO CT-E">ERRO DE EMISSÃO DO CT-E</SelectItem>
-                  <SelectItem value="CLIENTE CANCELOU O SERVICO">
-                    CLIENTE CANCELOU O SERVIÇO
-                  </SelectItem>
-                  <SelectItem value="FALTA DE ENERGIA/IMPOSSIBILIDADE TECNICA">
-                    FALTA DE ENERGIA/IMPOSSIBILIDADE TÉCNICA
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setCteCancelar(null)} className="h-10 rounded-xl">
-                Voltar
-              </Button>
-              <Button
-                variant="destructive"
-                disabled={!motivoCanc.trim() || cancelar.isPending}
-                className="h-10 rounded-xl px-5"
-                onClick={() => {
-                  if (!cteCancelar) return;
-                  cancelar.mutate(
-                    { ...cteCancelar, justificativa: motivoCanc },
-                    { onSettled: () => setCteCancelar(null) },
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-destructive"
+                              onClick={() => setConfRascunho(d)}
+                              title="Excluir rascunho"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            {d.status === "autorizado" && (
+                              <>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 text-primary"
+                                  onClick={() => visualizarPdf(d)}
+                                  title="Visualizar DACTE"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 text-primary"
+                                  onClick={() => {
+                                    setCceDoc(d);
+                                    setCceTexto("");
+                                  }}
+                                  title="Carta de Correção (CC-e)"
+                                >
+                                  <FilePenLine className="h-3.5 w-3.5" />
+                                </Button>
+                              </>
+                            )}
+                            {d.status === "rejeitado" &&
+                              String(d.xml_assinado || "").includes("<") && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 text-primary"
+                                  onClick={() => downloadXml(d)}
+                                  title="Baixar XML rejeitado (para diagnóstico)"
+                                >
+                                  <FileCode className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                          </>
+                        )}
+                        {!isRascunho && !cancBloq && d.status === "autorizado" && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-destructive"
+                            onClick={() => {
+                              if (!d.chave_acesso) return;
+                              const stMdf = mdfStatusPorCte.get(d.chave_acesso);
+                              if (stMdf === "encerrado") {
+                                toast.error("Manifesto encerrado — o CT-e não pode ser cancelado");
+                                return;
+                              }
+                              if (stMdf) {
+                                toast.error(
+                                  "CT-e vinculado a um MDF-e ativo — cancele o manifesto primeiro",
+                                );
+                                return;
+                              }
+                              setCteCancelar({
+                                chave: d.chave_acesso,
+                                protocolo: d.protocolo_sefaz || undefined,
+                                ambiente: SEFAZ_AMBIENTE,
+                              });
+                              setMotivoCanc("ERRO DE EMISSAO DO CT-E");
+                            }}
+                            title="Cancelar"
+                          >
+                            <Ban className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        {!isRascunho && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-primary"
+                            onClick={() => visualizarDoc(d)}
+                            title="Ver dados e status"
+                          >
+                            <ClipboardList className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        {!isRascunho && d.status === "autorizado" && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-primary"
+                            onClick={() => substituirCte(d)}
+                            title="Emitir CT-e de substituição"
+                          >
+                            <Repeat className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        {!isRascunho && d.status === "autorizado" && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-primary"
+                            onClick={() => complementarCte(d)}
+                            title="Emitir CT-e complementar"
+                            aria-label="Emitir CT-e complementar"
+                          >
+                            <FilePlus2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
                   );
-                }}
-              >
-                Confirmar Cancelamento
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-      {cceDoc && (
-        <Dialog
-          open={!!cceDoc}
-          onOpenChange={(v) => {
-            if (!v) setCceDoc(null);
-          }}
-        >
-          <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
-            <DialogHeader className="gap-1.5 pb-1">
-              <DialogTitle className="tracking-tight">Carta de Correção — CT-e {cceDoc.numero ?? ""}</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-2">
-              <Label>Correção (mín. 15 caracteres)</Label>
-              <Textarea
-                value={cceTexto}
-                onChange={(e) => setCceTexto(e.target.value)}
-                rows={4}
-                maxLength={1000}
-                className="rounded-xl leading-relaxed"
-              />
-              <div className="text-right text-[11px] text-muted-foreground text-tabular">
-                {cceTexto.trim().length}/1000
-              </div>
-              <p className="text-[11px] leading-relaxed text-muted-foreground">
-                Não corrige valores, CFOP, tomador, datas nem documentos vinculados —
-                esses casos exigem cancelar e reemitir.
+                })}
+              </TableBody>
+            </Table>
+          </Card>
+        )}
+
+        {cteCancelarLote && (
+          <Dialog
+            open={cteCancelarLote}
+            onOpenChange={(v) => {
+              if (!v) setCteCancelarLote(false);
+            }}
+          >
+            <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3 rounded-2xl sm:p-6">
+              <DialogHeader className="gap-1.5 pb-1">
+                <DialogTitle className="tracking-tight">Cancelar CT-es selecionados</DialogTitle>
+              </DialogHeader>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Serão cancelados {autorizadosSelecionados.length} CT-e(s) autorizado(s). O
+                processamento será feito um por vez.
               </p>
-            </div>
-            <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setCceDoc(null)} className="h-10 rounded-xl">
-                Voltar
-              </Button>
-              <Button
-                disabled={cceTexto.trim().length < 15 || enviarCce.isPending}
-                onClick={() => enviarCce.mutate()}
-                className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
-              >
-                {enviarCce.isPending ? "Enviando…" : "Enviar CC-e"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+              <div className="grid gap-1.5">
+                <Label>Motivo (obrigatório)</Label>
+                <Select value={motivoCanc} onValueChange={setMotivoCanc}>
+                  <SelectTrigger className="h-10 rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ERRO DE EMISSAO DO CT-E">ERRO DE EMISSÃO DO CT-E</SelectItem>
+                    <SelectItem value="CLIENTE CANCELOU O SERVICO">
+                      CLIENTE CANCELOU O SERVIÇO
+                    </SelectItem>
+                    <SelectItem value="FALTA DE ENERGIA/IMPOSSIBILIDADE TECNICA">
+                      FALTA DE ENERGIA/IMPOSSIBILIDADE TÉCNICA
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <DialogFooter className="gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setCteCancelarLote(false)}
+                  className="h-10 rounded-xl"
+                >
+                  Voltar
+                </Button>
+                <Button
+                  variant="destructive"
+                  disabled={cancelar.isPending || motivoCanc.length < 15}
+                  className="h-10 rounded-xl px-5"
+                  onClick={async () => {
+                    const docsLote = [...autorizadosSelecionados];
+                    setCteCancelarLote(false);
+                    let ok = 0;
+                    let falhas = 0;
+                    let devolvidas = 0;
+                    for (const d of docsLote) {
+                      if (!d.chave_acesso) continue;
+                      const st = mdfStatusPorCte.get(d.chave_acesso);
+                      if (st) continue;
+                      try {
+                        const r: any = await cancelar.mutateAsync({
+                          chave: d.chave_acesso,
+                          protocolo: d.protocolo_sefaz || undefined,
+                          ambiente: SEFAZ_AMBIENTE,
+                          justificativa: motivoCanc,
+                          quiet: true,
+                        });
+                        if (r?.sucesso) {
+                          ok++;
+                          try {
+                            const rr = await reverterNfesCancelado(d.chave_acesso);
+                            devolvidas += rr.devolvidas;
+                          } catch {}
+                        } else falhas++;
+                      } catch {
+                        falhas++;
+                      }
+                    }
+                    setMdfSel(new Set());
+                    if (ok === 1) toast.success("1 CT-e cancelado");
+                    else if (ok > 1) toast.success(`${ok} CT-es cancelados`);
+                    if (devolvidas === 1) toast.success("1 NF-e devolvida p/ embarque");
+                    else if (devolvidas > 1)
+                      toast.success(`${devolvidas} NF-es devolvidas p/ embarque`);
+                    if (falhas > 0) toast.error(`${falhas} cancelamento(s) falharam`);
+                  }}
+                >
+                  Confirmar cancelamento
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+        {impOpen && (
+          <Dialog open={impOpen} onOpenChange={setImpOpen}>
+            <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3 rounded-2xl sm:p-6">
+              <DialogHeader className="gap-1.5 pb-1">
+                <DialogTitle className="tracking-tight">Exportar</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-1.5">
+                <Label>Selecione o formato:</Label>
+                <div className="flex flex-col gap-1">
+                  {(["pdf", "xml", "ambos"] as const).map((v) => (
+                    <label
+                      key={v}
+                      className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-accent"
+                    >
+                      <input
+                        type="radio"
+                        name="imp-tipo"
+                        checked={impTipo === v}
+                        onChange={() => setImpTipo(v)}
+                        className="h-4 w-4 accent-primary"
+                      />
+                      {v === "pdf" ? "PDF" : v === "xml" ? "XML" : "PDF/XML"}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <DialogFooter className="gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setImpOpen(false)}
+                  className="h-10 rounded-xl"
+                >
+                  Voltar
+                </Button>
+                <Button
+                  disabled={impProc}
+                  onClick={() => void importarLote()}
+                  className="h-10 rounded-xl px-5 shadow-sm"
+                >
+                  {impProc ? "Baixando…" : "Baixar"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+        {cteCancelar && (
+          <Dialog
+            open={!!cteCancelar}
+            onOpenChange={(v) => {
+              if (!v) setCteCancelar(null);
+            }}
+          >
+            <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3 rounded-2xl sm:p-6">
+              <DialogHeader className="gap-1.5 pb-1">
+                <DialogTitle className="tracking-tight">Cancelar CT-e</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-1.5">
+                <Label>Motivo (obrigatório)</Label>
+                <Select value={motivoCanc} onValueChange={setMotivoCanc}>
+                  <SelectTrigger className="h-10 rounded-xl">
+                    <SelectValue placeholder="Selecione o motivo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ERRO DE EMISSAO DO CT-E">ERRO DE EMISSÃO DO CT-E</SelectItem>
+                    <SelectItem value="CLIENTE CANCELOU O SERVICO">
+                      CLIENTE CANCELOU O SERVIÇO
+                    </SelectItem>
+                    <SelectItem value="FALTA DE ENERGIA/IMPOSSIBILIDADE TECNICA">
+                      FALTA DE ENERGIA/IMPOSSIBILIDADE TÉCNICA
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <DialogFooter className="gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setCteCancelar(null)}
+                  className="h-10 rounded-xl"
+                >
+                  Voltar
+                </Button>
+                <Button
+                  variant="destructive"
+                  disabled={!motivoCanc.trim() || cancelar.isPending}
+                  className="h-10 rounded-xl px-5"
+                  onClick={() => {
+                    if (!cteCancelar) return;
+                    cancelar.mutate(
+                      { ...cteCancelar, justificativa: motivoCanc },
+                      { onSettled: () => setCteCancelar(null) },
+                    );
+                  }}
+                >
+                  Confirmar Cancelamento
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+        {cceDoc && (
+          <Dialog
+            open={!!cceDoc}
+            onOpenChange={(v) => {
+              if (!v) setCceDoc(null);
+            }}
+          >
+            <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
+              <DialogHeader className="gap-1.5 pb-1">
+                <DialogTitle className="tracking-tight">
+                  Carta de Correção — CT-e {cceDoc.numero ?? ""}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-2">
+                <Label>Correção (mín. 15 caracteres)</Label>
+                <Textarea
+                  value={cceTexto}
+                  onChange={(e) => setCceTexto(e.target.value)}
+                  rows={4}
+                  maxLength={1000}
+                  className="rounded-xl leading-relaxed"
+                />
+                <div className="text-right text-[11px] text-muted-foreground text-tabular">
+                  {cceTexto.trim().length}/1000
+                </div>
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  Não corrige valores, CFOP, tomador, datas nem documentos vinculados — esses casos
+                  exigem cancelar e reemitir.
+                </p>
+              </div>
+              <DialogFooter className="gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setCceDoc(null)}
+                  className="h-10 rounded-xl"
+                >
+                  Voltar
+                </Button>
+                <Button
+                  disabled={cceTexto.trim().length < 15 || enviarCce.isPending}
+                  onClick={() => enviarCce.mutate()}
+                  className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                >
+                  {enviarCce.isPending ? "Enviando…" : "Enviar CC-e"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </>
     );
   };
@@ -6888,7 +7199,11 @@ function CtePage() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-2.5">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}</div>
+        <div className="space-y-2.5">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />
+          ))}
+        </div>
       ) : (
         <Tabs value={statusTab} onValueChange={trocarAba} className="flex-1 min-h-0 flex flex-col">
           {/* Cartão único: cabeçalho neutro + abas; conteúdo das abas abaixo */}
@@ -6940,7 +7255,9 @@ function CtePage() {
               <TabsContent value="embarque" className="mt-0 flex-1 min-h-0 flex flex-col gap-3">
                 <div className="border rounded-xl bg-background px-3 py-1.5 shrink-0 shadow-sm flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
                   <div className="flex items-center gap-2.5">
-                    <span className="font-semibold text-primary whitespace-nowrap">Embarque via CT-e</span>
+                    <span className="font-semibold text-primary whitespace-nowrap">
+                      Embarque via CT-e
+                    </span>
                     <label className="flex items-center gap-1 whitespace-nowrap">
                       <input
                         type="radio"
@@ -6957,9 +7274,7 @@ function CtePage() {
                         name="modo-embarque"
                         checked={(form as any).modoEmbarque === "simplificado"}
                         onClick={() => setSelecionadas(new Set())}
-                        onChange={() =>
-                          setForm((f) => ({ ...f, modoEmbarque: "simplificado" }))
-                        }
+                        onChange={() => setForm((f) => ({ ...f, modoEmbarque: "simplificado" }))}
                       />{" "}
                       CT-e Simplificado
                     </label>
@@ -7009,13 +7324,28 @@ function CtePage() {
                     <span className="text-[10px] font-semibold uppercase tracking-wide shrink-0">
                       Listagem das Notas Fiscais
                     </span>
-                    <SearchField value={buscaEmb} onChange={setBuscaEmb} size="xxs" className="w-52 shrink-0" />
+                    <SearchField
+                      value={buscaEmb}
+                      onChange={setBuscaEmb}
+                      size="xxs"
+                      className="w-52 shrink-0"
+                    />
                     <span className="text-xs shrink-0">
                       Qtde NF-e: {mercadoriasSorted.length}/{mercadorias.length}
                     </span>
                   </div>
-                  <div ref={embScrollRef} onScroll={() => syncEmb("tab")} className="overflow-auto flex-1 min-h-0 min-w-0 max-h-[60vh] [&_.erp-table-wrap]:overflow-x-visible [&_.erp-table-wrap]:max-h-none">
-                    <Table className={mercadorias.length ? "min-w-max [&_td]:px-1.5 [&_td]:py-1 [&_th]:px-1.5 [&_th]:py-1.5" : "w-full [&_td]:px-1.5 [&_td]:py-1 [&_th]:px-1.5 [&_th]:py-1.5"}>
+                  <div
+                    ref={embScrollRef}
+                    onScroll={() => syncEmb("tab")}
+                    className="overflow-auto flex-1 min-h-0 min-w-0 max-h-[60vh] [&_.erp-table-wrap]:overflow-x-visible [&_.erp-table-wrap]:max-h-none"
+                  >
+                    <Table
+                      className={
+                        mercadorias.length
+                          ? "min-w-max [&_td]:px-1.5 [&_td]:py-1 [&_th]:px-1.5 [&_th]:py-1.5"
+                          : "w-full [&_td]:px-1.5 [&_td]:py-1 [&_th]:px-1.5 [&_th]:py-1.5"
+                      }
+                    >
                       <TableHeader className="sticky top-0 z-10 bg-muted">
                         <TableRow>
                           <TableHead className="w-6">
@@ -7058,9 +7388,14 @@ function CtePage() {
                                       return;
                                     }
                                   }
-                                setSelecionadas(new Set(mercadoriasSorted.map((m) => m.chave)));
-                                setSelecionadasAtivas(new Set(mercadoriasSorted.map((m) => m.chave)));
-                                } else { setSelecionadas(new Set()); setSelecionadasAtivas(new Set()); }
+                                  setSelecionadas(new Set(mercadoriasSorted.map((m) => m.chave)));
+                                  setSelecionadasAtivas(
+                                    new Set(mercadoriasSorted.map((m) => m.chave)),
+                                  );
+                                } else {
+                                  setSelecionadas(new Set());
+                                  setSelecionadasAtivas(new Set());
+                                }
                               }}
                             />
                           </TableHead>
@@ -7112,7 +7447,9 @@ function CtePage() {
                           mercadoriasSorted.map((m) => (
                             <TableRow
                               key={m.chave}
-                              className={"text-[11px]" + (!nfTemPercurso(m) ? " text-destructive" : "")}
+                              className={
+                                "text-[11px]" + (!nfTemPercurso(m) ? " text-destructive" : "")
+                              }
                               title={!nfTemPercurso(m) ? "Sem percurso cadastrado" : undefined}
                               data-selected={selecionadas.has(m.chave)}
                             >
@@ -7126,9 +7463,13 @@ function CtePage() {
                                       const red = (form as any).modoEmbarque === "simplificado";
                                       if (!red) {
                                         // CT-e Avulso: várias NF-es desde que mesmo remetente + destinatário
-                                        const kR = (x: (typeof mercadorias)[number]) => x.emitCnpj || x.emit;
-                                        const kD = (x: (typeof mercadorias)[number]) => x.destCnpj || x.dest;
-                                        const ref = mercadorias.find((x) => selecionadas.has(x.chave));
+                                        const kR = (x: (typeof mercadorias)[number]) =>
+                                          x.emitCnpj || x.emit;
+                                        const kD = (x: (typeof mercadorias)[number]) =>
+                                          x.destCnpj || x.dest;
+                                        const ref = mercadorias.find((x) =>
+                                          selecionadas.has(x.chave),
+                                        );
                                         if (ref) {
                                           if (kR(ref) !== kR(m)) {
                                             toast.error("O CT-e exige o mesmo remetente");
@@ -7145,10 +7486,13 @@ function CtePage() {
                                         return;
                                       }
                                       // CT-e Simplificado: várias, só do mesmo remetente + tomador
-                                      const kR = (x: (typeof mercadorias)[number]) => x.emitCnpj || x.emit;
+                                      const kR = (x: (typeof mercadorias)[number]) =>
+                                        x.emitCnpj || x.emit;
                                       const kT = (x: (typeof mercadorias)[number]) =>
                                         x.tomadorCnpj || x.tomador;
-                                      const ref = mercadorias.find((x) => selecionadas.has(x.chave));
+                                      const ref = mercadorias.find((x) =>
+                                        selecionadas.has(x.chave),
+                                      );
                                       if (ref) {
                                         if (kR(ref) !== kR(m)) {
                                           toast.error(
@@ -7212,15 +7556,22 @@ function CtePage() {
                               </TableCell>
                               <TableCell className="font-mono whitespace-nowrap">{m.nNF}</TableCell>
                               <TableCell className="whitespace-nowrap">{m.serie}</TableCell>
-                              <TableCell className="whitespace-nowrap">{m.data ? dateBR(m.data) : "—"}</TableCell>
-                              <TableCell className="text-right whitespace-nowrap">{brl(m.valor)}</TableCell>
+                              <TableCell className="whitespace-nowrap">
+                                {m.data ? dateBR(m.data) : "—"}
+                              </TableCell>
+                              <TableCell className="text-right whitespace-nowrap">
+                                {brl(m.valor)}
+                              </TableCell>
                               <TableCell className="text-right whitespace-nowrap">
                                 {Number(m.peso).toLocaleString("pt-BR", {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2,
                                 })}
                               </TableCell>
-                              <TableCell className="font-mono text-[10px] whitespace-nowrap" title={m.chave}>
+                              <TableCell
+                                className="font-mono text-[10px] whitespace-nowrap"
+                                title={m.chave}
+                              >
                                 {m.chave}
                               </TableCell>
                             </TableRow>
@@ -7230,7 +7581,10 @@ function CtePage() {
                     </Table>
                   </div>
                   {embOverflow && (
-                    <div className="shrink-0 border-t border-border/60 bg-background" title="Rolagem horizontal da listagem">
+                    <div
+                      className="shrink-0 border-t border-border/60 bg-background"
+                      title="Rolagem horizontal da listagem"
+                    >
                       <div
                         ref={embBarRef}
                         onScroll={() => syncEmb("bar")}
@@ -7250,15 +7604,21 @@ function CtePage() {
                         Importando XML {importProgress.feito}/{importProgress.total}…
                       </span>
                       <span>
-                        {Math.round((importProgress.feito / Math.max(1, importProgress.total)) * 100)}%
+                        {Math.round(
+                          (importProgress.feito / Math.max(1, importProgress.total)) * 100,
+                        )}
+                        %
                       </span>
                     </div>
-                    <Progress value={(importProgress.feito / Math.max(1, importProgress.total)) * 100} />
+                    <Progress
+                      value={(importProgress.feito / Math.max(1, importProgress.total)) * 100}
+                    />
                   </div>
                 )}
                 <div className="flex flex-wrap gap-2 shrink-0">
                   <label className="flex items-center gap-2 px-3 py-2 border rounded bg-accent text-accent-foreground cursor-pointer hover:bg-accent/70 text-xs font-medium">
-                    <UploadCloud className="h-4 w-4" /> {isParsing ? "Importando…" : "Importar NFes (XML)"}
+                    <UploadCloud className="h-4 w-4" />{" "}
+                    {isParsing ? "Importando…" : "Importar NFes (XML)"}
                     <input
                       type="file"
                       accept=".xml"
@@ -7385,7 +7745,9 @@ function CtePage() {
                         // tomador oficial do CT-e acontece no builder sefaz-cte).
                         // Sem modFrete o padrão é CIF (remetente paga).
                         const mfToma = String((first as any).modFrete || "0");
-                        const tomaSel = ["0", "1", "2", "3", "4", "9"].includes(mfToma) ? mfToma : "0";
+                        const tomaSel = ["0", "1", "2", "3", "4", "9"].includes(mfToma)
+                          ? mfToma
+                          : "0";
                         const tomCnpjDigits = (
                           ((first as any).tomadorCnpj || first.destCnpj || "") as string
                         ).replace(/\D/g, "");
@@ -7399,14 +7761,28 @@ function CtePage() {
                         const tNomeRaw = tomaEhRemet
                           ? first.emit || ""
                           : (first as any).tomador || first.dest || "";
-                        const tUF = (tomaEhRemet ? (first as any).emitUF : (first as any).tomadorUF) || "";
-                        const tCMun = (tomaEhRemet ? (first as any).emitCMun : (first as any).tomadorCMun) || "";
-                        const tXMun = (tomaEhRemet ? (first as any).emitXMun : (first as any).tomadorXMun) || "";
-                        const tIE = (tomaEhRemet ? (first as any).emitIE : (first as any).tomadorIE) || "";
-                        const tLgr = (tomaEhRemet ? (first as any).emitLogradouro : (first as any).tomadorLogradouro) || "";
-                        const tBai = (tomaEhRemet ? (first as any).emitBairro : (first as any).tomadorBairro) || "";
-                        const tCEP = (tomaEhRemet ? (first as any).emitCEP : (first as any).tomadorCEP) || "";
-                        const cTom2 = contatoByDoc.get(String(tCnpjRaw || "").replace(/\D/g, "")) || cTom;
+                        const tUF =
+                          (tomaEhRemet ? (first as any).emitUF : (first as any).tomadorUF) || "";
+                        const tCMun =
+                          (tomaEhRemet ? (first as any).emitCMun : (first as any).tomadorCMun) ||
+                          "";
+                        const tXMun =
+                          (tomaEhRemet ? (first as any).emitXMun : (first as any).tomadorXMun) ||
+                          "";
+                        const tIE =
+                          (tomaEhRemet ? (first as any).emitIE : (first as any).tomadorIE) || "";
+                        const tLgr =
+                          (tomaEhRemet
+                            ? (first as any).emitLogradouro
+                            : (first as any).tomadorLogradouro) || "";
+                        const tBai =
+                          (tomaEhRemet
+                            ? (first as any).emitBairro
+                            : (first as any).tomadorBairro) || "";
+                        const tCEP =
+                          (tomaEhRemet ? (first as any).emitCEP : (first as any).tomadorCEP) || "";
+                        const cTom2 =
+                          contatoByDoc.get(String(tCnpjRaw || "").replace(/\D/g, "")) || cTom;
                         lastLookupTomador.current = String(tCnpjRaw || "").replace(/\D/g, "");
                         const tomF = {
                           toma: tomaSel,
@@ -7419,7 +7795,8 @@ function CtePage() {
                           logradouroTomador: tLgr || (cTom2 as any).logradouro || "",
                           nroTomador: (cTom2 as any).numero || "",
                           bairroTomador: tBai || (cTom2 as any).bairro || "",
-                          cepTomador: tCEP || String((cTom2 as any).cep || "").replace(/\D/g, "") || "",
+                          cepTomador:
+                            tCEP || String((cTom2 as any).cep || "").replace(/\D/g, "") || "",
                           foneTomador: (cTom2 as any).telefone || "",
                           emailTomador: "",
                         };
@@ -7463,8 +7840,10 @@ function CtePage() {
                         try {
                           await qc.refetchQueries({ queryKey: ["cte-percursos", empresa?.id] });
                         } catch {}
-                        const frescos = ((qc.getQueryData(["cte-percursos", empresa?.id]) as any[]) ??
-                          percursos) as any[];
+                        const frescos = ((qc.getQueryData([
+                          "cte-percursos",
+                          empresa?.id,
+                        ]) as any[]) ?? percursos) as any[];
                         const dgT = (v: any) => String(v || "").replace(/\D/g, "");
                         const mPerc = matchPercurso(
                           {
@@ -7495,511 +7874,625 @@ function CtePage() {
                   </div>
                 </div>
               </TabsContent>
-          <AlertDialog
-            open={!!confRemetente}
-            onOpenChange={(o) => {
-              if (!o) setConfRemetente(null);
-            }}
-          >
-            <AlertDialogContent className="rounded-2xl">
-              <AlertDialogHeader className="gap-1.5">
-                <AlertDialogTitle className="tracking-tight">Selecionar todas do remetente?</AlertDialogTitle>
-                <AlertDialogDescription className="leading-relaxed">
-                  {confRemetente &&
-                    `Selecionar todas as ${confRemetente.chaves.length + 1} NF-e de ${confRemetente.nome}?`}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter className="gap-2">
-                <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
-                <AlertDialogAction
-                  className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
-                  onClick={() => {
-                    if (confRemetente)
-                      setSelecionadas((prev) => new Set([...prev, ...confRemetente.chaves]));
-                    setConfRemetente(null);
-                  }}
-                >
-                  Selecionar
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-          <Dialog open={percPickOpen} onOpenChange={setPercPickOpen}>
-            <DialogContent
-              onEscapeKeyDown={(event) => event.stopPropagation()}
-              className="fixed inset-0 left-0 top-0 translate-x-0 translate-y-0 w-screen h-screen max-w-none max-h-none rounded-none p-6 overflow-y-auto sm:p-8"
-            >
-              <DialogHeader className="mx-auto w-full max-w-3xl gap-1.5 pb-1">
-                <DialogTitle className="tracking-tight">Novo CT-e — escolher percurso</DialogTitle>
-              </DialogHeader>
-              <SearchField
-                value={percPickQuery}
-                onChange={setPercPickQuery}
-                placeholder="Buscar percurso por código, nome ou CNPJ..."
-                className="mx-auto w-full max-w-3xl"
-              />
-              <div className="mx-auto max-h-64 w-full max-w-3xl space-y-1.5 overflow-y-auto">
-                {percursos
-                  .filter((r) => {
-                    if (!percPickQuery) return true;
-                    const q = percPickQuery.toLowerCase();
-                    return [
-                      r.codigo,
-                      r.nome,
-                      r.rem_nome || String(r.nome || "").split(" > ")[0],
-                      r.dest_nome || String(r.nome || "").split(" > ")[1],
-                      r.rem_cnpj,
-                      r.dest_cnpj,
-                    ].some((value) =>
-                      String(value || "")
-                        .toLowerCase()
-                        .includes(q),
-                    );
-                  })
-                  .map((r) => (
-                    <button
-                      key={r.id}
-                      type="button"
-                      onClick={() => setPercPickSel(r.codigo)}
-                      onDoubleClick={() => novoAvulsoDePercurso(r)}
-                      className={
-                        "w-full rounded-xl border px-3.5 py-2.5 text-left text-xs shadow-sm transition-all hover:-translate-y-px hover:shadow-md " +
-                        (percPickSel === r.codigo
-                          ? "border-primary bg-primary/10"
-                          : "border-border bg-card hover:bg-accent")
-                      }
-                      title="Dois cliques para usar direto"
+              <AlertDialog
+                open={!!confRemetente}
+                onOpenChange={(o) => {
+                  if (!o) setConfRemetente(null);
+                }}
+              >
+                <AlertDialogContent className="rounded-2xl">
+                  <AlertDialogHeader className="gap-1.5">
+                    <AlertDialogTitle className="tracking-tight">
+                      Selecionar todas do remetente?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="leading-relaxed">
+                      {confRemetente &&
+                        `Selecionar todas as ${confRemetente.chaves.length + 1} NF-e de ${confRemetente.nome}?`}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="gap-2">
+                    <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                      onClick={() => {
+                        if (confRemetente)
+                          setSelecionadas((prev) => new Set([...prev, ...confRemetente.chaves]));
+                        setConfRemetente(null);
+                      }}
                     >
-                      <div className="flex min-w-0 items-center gap-3 whitespace-nowrap overflow-hidden">
-                        <span className="font-mono font-semibold shrink-0">{r.codigo}</span>
-                        <span
-                          className="truncate"
-                          title={`${r.rem_nome || r.nome || "Remetente não informado"} → ${r.dest_nome || "Destinatário não informado"}`}
-                        >
-                          {r.rem_nome ||
-                            String(r.nome || "").split(" > ")[0] ||
-                            "Remetente não informado"}{" "}
-                          →{" "}
-                          {r.dest_nome ||
-                            String(r.nome || "").split(" > ")[1] ||
-                            "Destinatário não informado"}
-                        </span>
-                        <span className="shrink-0 text-[11px] text-muted-foreground">
-                          ({formatarCnpjPercurso(r.rem_cnpj)} → {formatarCnpjPercurso(r.dest_cnpj)})
-                        </span>
-                        {(r.coleta_xmun || r.entrega_xmun) && (
-                          <span className="shrink-0 text-[11px] text-muted-foreground">
-                            {r.coleta_xmun || "?"}/{r.coleta_uf || "?"} → {r.entrega_xmun || "?"}/
-                            {r.entrega_uf || "?"}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                {percursos.length === 0 && (
-                  <p className="rounded-xl bg-muted/40 px-4 py-6 text-center text-xs leading-relaxed text-muted-foreground">
-                    Nenhum percurso cadastrado. Cadastre em Fiscal → Percursos.
-                  </p>
-                )}
-              </div>
-              <DialogFooter className="mx-auto w-full max-w-3xl gap-2">
-                <Button variant="outline" onClick={() => setPercPickOpen(false)} className="h-10 rounded-xl">
-                  Cancelar
-                </Button>
-                <Button
-                  disabled={!percursos.some((r) => r.codigo === percPickSel)}
-                  onClick={() => {
-                    const r = percursos.find((x) => x.codigo === percPickSel);
-                    if (r) novoAvulsoDePercurso(r);
-                  }}
-                  className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                      Selecionar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <Dialog open={percPickOpen} onOpenChange={setPercPickOpen}>
+                <DialogContent
+                  onEscapeKeyDown={(event) => event.stopPropagation()}
+                  className="fixed inset-0 left-0 top-0 translate-x-0 translate-y-0 w-screen h-screen max-w-none max-h-none rounded-none p-6 overflow-y-auto sm:p-8"
                 >
-                  Usar percurso
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-          <TabsContent value="rascunhos" className="mt-0">
-            {barraFiltroDocs()}
-            {docsFiltrados.rascunhos.length > 0 && (
-              <div className="mb-2 flex items-center justify-end gap-2">
-                {envSel.size > 0 && (
-                <span className="text-xs text-muted-foreground">
-                  {`${envSel.size} selecionado(s)`}
-                </span>
-                )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={envSel.size === 0}
-                  title="Preenche Nº CIOT e dados do pedágio nos rascunhos marcados"
-                  onClick={() => { setLoteCiot(""); setLoteModo("manter"); setLoteOperadora(""); setLoteVpo(""); setLoteVale(""); setLoteCiotOpen(true); }}
-                >
-                  Preencher CIOT
-                </Button>
-                <Button
-                  size="sm"
-                  disabled={envSel.size === 0 || enviandoLote}
-                  onClick={enviarSelecionados}
-                >
-                  {enviandoLote
-                    ? "Enviando…"
-                    : `Enviar selecionados${envSel.size > 0 ? ` (${envSel.size})` : ""}`}
-                </Button>
-              </div>
-            )}
-            {renderTabelaDocs(docsFiltrados.rascunhos, "aguardando envio")}
-          </TabsContent>
-          <TabsContent value="autorizados" className="mt-0">
-            {barraFiltroDocs()}
-            {docsFiltrados.autorizados.length > 0 && (
-              <div className="mb-1 flex items-center justify-between gap-2">
-                <Tabs value={mdfVincTab} onValueChange={(v) => { setMdfVincTab(v); setImpSel(new Set()); }}>
-                  <TabsList className="mb-0">
-                    <TabsTrigger
-                      value="sem"
-                      className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-                    >
-                      Sem MDF-e ({autSemMdf.length})
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="com"
-                      className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-                    >
-                      Com MDF-e ({autComMdf.length})
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!autorizadosSelecionados.length}
-                    onClick={cancelarSelecionados}
-                    title="Cancelar CT-es selecionados"
-                  >
-                    <Ban className="mr-1 h-3.5 w-3.5" /> Cancelar selecionados
-                    {autorizadosSelecionados.length > 0 ? ` (${autorizadosSelecionados.length})` : ""}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={mdfSel.size === 0}
-                    onClick={() => {
-                      try {
-                        localStorage.setItem(
-                          "prefill_mdf_from_cte",
-                          JSON.stringify({ chaves: [...mdfSel] }),
+                  <DialogHeader className="mx-auto w-full max-w-3xl gap-1.5 pb-1">
+                    <DialogTitle className="tracking-tight">
+                      Novo CT-e — escolher percurso
+                    </DialogTitle>
+                  </DialogHeader>
+                  <SearchField
+                    value={percPickQuery}
+                    onChange={setPercPickQuery}
+                    placeholder="Buscar percurso por código, nome ou CNPJ..."
+                    className="mx-auto w-full max-w-3xl"
+                  />
+                  <div className="mx-auto max-h-64 w-full max-w-3xl space-y-1.5 overflow-y-auto">
+                    {percursos
+                      .filter((r) => {
+                        if (!percPickQuery) return true;
+                        const q = percPickQuery.toLowerCase();
+                        return [
+                          r.codigo,
+                          r.nome,
+                          r.rem_nome || String(r.nome || "").split(" > ")[0],
+                          r.dest_nome || String(r.nome || "").split(" > ")[1],
+                          r.rem_cnpj,
+                          r.dest_cnpj,
+                        ].some((value) =>
+                          String(value || "")
+                            .toLowerCase()
+                            .includes(q),
                         );
-                      } catch {}
-                      setMdfSel(new Set());
-                      navigate({ to: "/fiscal/mdf" } as any);
-                    }}
-                  >
-                    <Truck className="mr-1 h-3 w-3" /> Gerar MDF-e ({mdfSel.size})
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={(mdfVincTab === "com" ? impSel.size : autSemMdf.filter((d) => d.chave_acesso && mdfSel.has(d.chave_acesso)).length) === 0 || impProc}
-                    onClick={() => setImpOpen(true)}
-                    title="Baixar XML/PDF dos selecionados"
-                  >
-                    <Download className="mr-1 h-3 w-3" /> Exportar ({mdfVincTab === "com" ? impSel.size : autSemMdf.filter((d) => d.chave_acesso && mdfSel.has(d.chave_acesso)).length})
-                  </Button>
-                </div>
-              </div>
-            )}
-            {renderTabelaDocs(
-              mdfVincTab === "com" ? autComMdf : autSemMdf,
-              "autorizados",
-              mdfVincTab === "com",
-            )}
-          </TabsContent>
-          <TabsContent value="ciot" className="mt-0 space-y-3">
-            {barraFiltroDocs()}
-            <Card className="overflow-hidden rounded-2xl shadow-panel">
-              <div className="bg-primary/8 border-b border-primary/20 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
-                CT-es autorizados — selecione para uma operação CIOT
-              </div>
-              {docsFiltrados.autorizados.length === 0 ? (
-                <div className="p-4">
-                  <EmptyState icon={Truck} title="Nenhum CT-e autorizado" description="Autorize CT-es para emitir o CIOT cobrindo um ou vários." />
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-10">
-                        <input
-                          type="checkbox"
-                          checked={
-                            docsFiltrados.autorizados.length > 0 &&
-                            docsFiltrados.autorizados.every((d) => ciotSel.has(d.id))
+                      })
+                      .map((r) => (
+                        <button
+                          key={r.id}
+                          type="button"
+                          onClick={() => setPercPickSel(r.codigo)}
+                          onDoubleClick={() => novoAvulsoDePercurso(r)}
+                          className={
+                            "w-full rounded-xl border px-3.5 py-2.5 text-left text-xs shadow-sm transition-all hover:-translate-y-px hover:shadow-md " +
+                            (percPickSel === r.codigo
+                              ? "border-primary bg-primary/10"
+                              : "border-border bg-card hover:bg-accent")
                           }
-                          onChange={() => {
-                            setCiotSel((prev) => {
-                              const todos = docsFiltrados.autorizados.map((d) => d.id);
-                              return todos.every((k) => prev.has(k))
-                                ? new Set()
-                                : new Set(todos);
-                            });
-                          }}
-                          title="Selecionar todos"
-                        />
-                      </TableHead>
-                      <TableHead className="text-center">Número</TableHead>
-                      <TableHead className="text-center">Placa</TableHead>
-                      <TableHead className="text-center">Motorista</TableHead>
-                      <TableHead className="text-center">Rota</TableHead>
-                      <TableHead className="text-center">Peso (kg)</TableHead>
-                      <TableHead className="text-center">Distância</TableHead>
-                      <TableHead className="text-center">Valor</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {docsFiltrados.autorizados.map((d) => {
-                      const f = formDeDocCiot(d);
-                      const info = infoCteLinha(d.xml_assinado);
-                      const ori = [String(f.xMunIni || ""), String(f.ufIni || "")].filter(Boolean).join("/");
-                      const dst = [String(f.xMunFim || ""), String(f.ufFim || "")].filter(Boolean).join("/");
-                      const rota = ori || dst ? `${ori || "—"} → ${dst || "—"}` : "—";
-                      return (
-                        <TableRow key={d.id} className="transition-colors hover:bg-accent/30">
-                          <TableCell>
+                          title="Dois cliques para usar direto"
+                        >
+                          <div className="flex min-w-0 items-center gap-3 whitespace-nowrap overflow-hidden">
+                            <span className="font-mono font-semibold shrink-0">{r.codigo}</span>
+                            <span
+                              className="truncate"
+                              title={`${r.rem_nome || r.nome || "Remetente não informado"} → ${r.dest_nome || "Destinatário não informado"}`}
+                            >
+                              {r.rem_nome ||
+                                String(r.nome || "").split(" > ")[0] ||
+                                "Remetente não informado"}{" "}
+                              →{" "}
+                              {r.dest_nome ||
+                                String(r.nome || "").split(" > ")[1] ||
+                                "Destinatário não informado"}
+                            </span>
+                            <span className="shrink-0 text-[11px] text-muted-foreground">
+                              ({formatarCnpjPercurso(r.rem_cnpj)} →{" "}
+                              {formatarCnpjPercurso(r.dest_cnpj)})
+                            </span>
+                            {(r.coleta_xmun || r.entrega_xmun) && (
+                              <span className="shrink-0 text-[11px] text-muted-foreground">
+                                {r.coleta_xmun || "?"}/{r.coleta_uf || "?"} →{" "}
+                                {r.entrega_xmun || "?"}/{r.entrega_uf || "?"}
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    {percursos.length === 0 && (
+                      <p className="rounded-xl bg-muted/40 px-4 py-6 text-center text-xs leading-relaxed text-muted-foreground">
+                        Nenhum percurso cadastrado. Cadastre em Fiscal → Percursos.
+                      </p>
+                    )}
+                  </div>
+                  <DialogFooter className="mx-auto w-full max-w-3xl gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setPercPickOpen(false)}
+                      className="h-10 rounded-xl"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      disabled={!percursos.some((r) => r.codigo === percPickSel)}
+                      onClick={() => {
+                        const r = percursos.find((x) => x.codigo === percPickSel);
+                        if (r) novoAvulsoDePercurso(r);
+                      }}
+                      className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                    >
+                      Usar percurso
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              <TabsContent value="rascunhos" className="mt-0">
+                {barraFiltroDocs()}
+                {docsFiltrados.rascunhos.length > 0 && (
+                  <div className="mb-2 flex items-center justify-end gap-2">
+                    {envSel.size > 0 && (
+                      <span className="text-xs text-muted-foreground">
+                        {`${envSel.size} selecionado(s)`}
+                      </span>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={envSel.size === 0}
+                      title="Preenche Nº CIOT e dados do pedágio nos rascunhos marcados"
+                      onClick={() => {
+                        setLoteCiot("");
+                        setLoteModo("manter");
+                        setLoteOperadora("");
+                        setLoteVpo("");
+                        setLoteVale("");
+                        setLoteCiotOpen(true);
+                      }}
+                    >
+                      Preencher CIOT
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={envSel.size === 0 || enviandoLote}
+                      onClick={enviarSelecionados}
+                    >
+                      {enviandoLote
+                        ? "Enviando…"
+                        : `Enviar selecionados${envSel.size > 0 ? ` (${envSel.size})` : ""}`}
+                    </Button>
+                  </div>
+                )}
+                {renderTabelaDocs(docsFiltrados.rascunhos, "aguardando envio")}
+              </TabsContent>
+              <TabsContent value="autorizados" className="mt-0">
+                {barraFiltroDocs()}
+                {docsFiltrados.autorizados.length > 0 && (
+                  <div className="mb-1 flex items-center justify-between gap-2">
+                    <Tabs
+                      value={mdfVincTab}
+                      onValueChange={(v) => {
+                        setMdfVincTab(v);
+                        setImpSel(new Set());
+                      }}
+                    >
+                      <TabsList className="mb-0">
+                        <TabsTrigger
+                          value="sem"
+                          className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                        >
+                          Sem MDF-e ({autSemMdf.length})
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="com"
+                          className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                        >
+                          Com MDF-e ({autComMdf.length})
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!autorizadosSelecionados.length}
+                        onClick={cancelarSelecionados}
+                        title="Cancelar CT-es selecionados"
+                      >
+                        <Ban className="mr-1 h-3.5 w-3.5" /> Cancelar selecionados
+                        {autorizadosSelecionados.length > 0
+                          ? ` (${autorizadosSelecionados.length})`
+                          : ""}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={mdfSel.size === 0}
+                        onClick={() => {
+                          try {
+                            localStorage.setItem(
+                              "prefill_mdf_from_cte",
+                              JSON.stringify({ chaves: [...mdfSel] }),
+                            );
+                          } catch {}
+                          setMdfSel(new Set());
+                          navigate({ to: "/fiscal/mdf" } as any);
+                        }}
+                      >
+                        <Truck className="mr-1 h-3 w-3" /> Gerar MDF-e ({mdfSel.size})
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={
+                          (mdfVincTab === "com"
+                            ? impSel.size
+                            : autSemMdf.filter((d) => d.chave_acesso && mdfSel.has(d.chave_acesso))
+                                .length) === 0 || impProc
+                        }
+                        onClick={() => setImpOpen(true)}
+                        title="Baixar XML/PDF dos selecionados"
+                      >
+                        <Download className="mr-1 h-3 w-3" /> Exportar (
+                        {mdfVincTab === "com"
+                          ? impSel.size
+                          : autSemMdf.filter((d) => d.chave_acesso && mdfSel.has(d.chave_acesso))
+                              .length}
+                        )
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {renderTabelaDocs(
+                  mdfVincTab === "com" ? autComMdf : autSemMdf,
+                  "autorizados",
+                  mdfVincTab === "com",
+                )}
+              </TabsContent>
+              <TabsContent value="ciot" className="mt-0 space-y-3">
+                {barraFiltroDocs()}
+                <Card className="overflow-hidden rounded-2xl shadow-panel">
+                  <div className="bg-primary/8 border-b border-primary/20 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                    CT-es autorizados — selecione para uma operação CIOT
+                  </div>
+                  {docsFiltrados.autorizados.length === 0 ? (
+                    <div className="p-4">
+                      <EmptyState
+                        icon={Truck}
+                        title="Nenhum CT-e autorizado"
+                        description="Autorize CT-es para emitir o CIOT cobrindo um ou vários."
+                      />
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-10">
                             <input
                               type="checkbox"
-                              checked={ciotSel.has(d.id)}
-                              onChange={() =>
-                                setCiotSel((prev) => {
-                                  const next = new Set(prev);
-                                  if (next.has(d.id)) next.delete(d.id);
-                                  else next.add(d.id);
-                                  return next;
-                                })
+                              checked={
+                                docsFiltrados.autorizados.length > 0 &&
+                                docsFiltrados.autorizados.every((d) => ciotSel.has(d.id))
                               }
-                              title="Selecionar para o CIOT"
+                              onChange={() => {
+                                setCiotSel((prev) => {
+                                  const todos = docsFiltrados.autorizados.map((d) => d.id);
+                                  return todos.every((k) => prev.has(k))
+                                    ? new Set()
+                                    : new Set(todos);
+                                });
+                              }}
+                              title="Selecionar todos"
                             />
-                          </TableCell>
-                          <TableCell className="font-mono text-center">{d.numero ?? "—"}</TableCell>
-                          <TableCell className="font-mono text-xs text-center whitespace-nowrap">
-                            {info.placas.length ? info.placas.join(" / ") : "—"}
-                          </TableCell>
-                          <TableCell className="text-xs max-w-[160px] truncate" title={info.motorista || ""}>
-                            {info.motorista || "—"}
-                          </TableCell>
-                          <TableCell className="text-xs text-center">{rota}</TableCell>
-                          <TableCell className="text-center text-xs">
-                            {f.peso ? Number(String(f.peso).replace(",", "."))?.toLocaleString("pt-BR") : "—"}
-                          </TableCell>
-                          <TableCell className="text-center text-xs">
-                            {f.distanciaKm ? `${f.distanciaKm} km` : "—"}
-                          </TableCell>
-                          <TableCell className="text-right">{brl(Number(d.valor_servico) || 0)}</TableCell>
+                          </TableHead>
+                          <TableHead className="text-center">Número</TableHead>
+                          <TableHead className="text-center">Placa</TableHead>
+                          <TableHead className="text-center">Motorista</TableHead>
+                          <TableHead className="text-center">Rota</TableHead>
+                          <TableHead className="text-center">Peso (kg)</TableHead>
+                          <TableHead className="text-center">Distância</TableHead>
+                          <TableHead className="text-center">Valor</TableHead>
                         </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              )}
-            </Card>
-            {ciotSel.size > 0 && (
-              <Card className="p-3 space-y-2">
-                <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
-                  Operação CIOT — {ciotSel.size} CT-e(s)
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button size="sm" variant="outline" onClick={verificarFrotaCiot} disabled={ciotFrotaLoading || ciotSel.size === 0}>
-                    {ciotFrotaLoading ? "Consultando…" : "Verificar frota na ANTT"}
-                  </Button>
-                  <Button size="sm" onClick={() => setCiotConfirma(true)} disabled={emitindoCiotLote || ciotSel.size === 0}>
-                    {emitindoCiotLote ? "Emitindo…" : `Emitir CIOT (${ciotSel.size} CT-e)`}
-                  </Button>
-                </div>
-                {ciotFrota && (
-                  <div className="rounded border px-2 py-1 text-[11px] space-y-1">
-                    {ciotFrota.map((g, gi) => {
-                      const lista = Array.isArray(g.frota?.Frota) ? g.frota.Frota : [];
-                      const msg = String(
-                        (Array.isArray(g.situacao?.Mensagem) ? g.situacao.Mensagem[0] : g.situacao?.Mensagem) ||
-                          (Array.isArray(g.frota?.Mensagem) ? g.frota.Mensagem[0] : g.frota?.Mensagem) || "",
-                      );
-                      return (
-                        <div key={gi} className="space-y-0.5">
-                          <div>
-                            RNTRC: {String(g.situacao?.RNTRCTransportador ?? g.rntrc)}
-                            {" • "}Ativo: {String(g.situacao?.RNTRCAtivo ?? "—")}
-                            {" • "}Tipo: {String(g.situacao?.TipoTransportador ?? "—")}
-                          </div>
-                          {lista.map((v: any, i: number) => {
-                            const sit = Number(v.SituacaoVeiculoFrotaTransportador ?? v.situacao);
-                            return (
-                              <div key={i} className={sit === 1 ? "text-success font-semibold" : "text-destructive font-semibold"}>
-                                {String(v.PlacaVeiculo ?? v.placa ?? "?")} → {sit === 1 ? "pertence à frota" : "NÃO pertence à frota"}
+                      </TableHeader>
+                      <TableBody>
+                        {docsFiltrados.autorizados.map((d) => {
+                          const f = formDeDocCiot(d);
+                          const info = infoCteLinha(d.xml_assinado);
+                          const ori = [String(f.xMunIni || ""), String(f.ufIni || "")]
+                            .filter(Boolean)
+                            .join("/");
+                          const dst = [String(f.xMunFim || ""), String(f.ufFim || "")]
+                            .filter(Boolean)
+                            .join("/");
+                          const rota = ori || dst ? `${ori || "—"} → ${dst || "—"}` : "—";
+                          return (
+                            <TableRow key={d.id} className="transition-colors hover:bg-accent/30">
+                              <TableCell>
+                                <input
+                                  type="checkbox"
+                                  checked={ciotSel.has(d.id)}
+                                  onChange={() =>
+                                    setCiotSel((prev) => {
+                                      const next = new Set(prev);
+                                      if (next.has(d.id)) next.delete(d.id);
+                                      else next.add(d.id);
+                                      return next;
+                                    })
+                                  }
+                                  title="Selecionar para o CIOT"
+                                />
+                              </TableCell>
+                              <TableCell className="font-mono text-center">
+                                {d.numero ?? "—"}
+                              </TableCell>
+                              <TableCell className="font-mono text-xs text-center whitespace-nowrap">
+                                {info.placas.length ? info.placas.join(" / ") : "—"}
+                              </TableCell>
+                              <TableCell
+                                className="text-xs max-w-[160px] truncate"
+                                title={info.motorista || ""}
+                              >
+                                {info.motorista || "—"}
+                              </TableCell>
+                              <TableCell className="text-xs text-center">{rota}</TableCell>
+                              <TableCell className="text-center text-xs">
+                                {f.peso
+                                  ? Number(String(f.peso).replace(",", "."))?.toLocaleString(
+                                      "pt-BR",
+                                    )
+                                  : "—"}
+                              </TableCell>
+                              <TableCell className="text-center text-xs">
+                                {f.distanciaKm ? `${f.distanciaKm} km` : "—"}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {brl(Number(d.valor_servico) || 0)}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  )}
+                </Card>
+                {ciotSel.size > 0 && (
+                  <Card className="p-3 space-y-2">
+                    <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                      Operação CIOT — {ciotSel.size} CT-e(s)
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={verificarFrotaCiot}
+                        disabled={ciotFrotaLoading || ciotSel.size === 0}
+                      >
+                        {ciotFrotaLoading ? "Consultando…" : "Verificar frota na ANTT"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => setCiotConfirma(true)}
+                        disabled={emitindoCiotLote || ciotSel.size === 0}
+                      >
+                        {emitindoCiotLote ? "Emitindo…" : `Emitir CIOT (${ciotSel.size} CT-e)`}
+                      </Button>
+                    </div>
+                    {ciotFrota && (
+                      <div className="rounded border px-2 py-1 text-[11px] space-y-1">
+                        {ciotFrota.map((g, gi) => {
+                          const lista = Array.isArray(g.frota?.Frota) ? g.frota.Frota : [];
+                          const msg = String(
+                            (Array.isArray(g.situacao?.Mensagem)
+                              ? g.situacao.Mensagem[0]
+                              : g.situacao?.Mensagem) ||
+                              (Array.isArray(g.frota?.Mensagem)
+                                ? g.frota.Mensagem[0]
+                                : g.frota?.Mensagem) ||
+                              "",
+                          );
+                          return (
+                            <div key={gi} className="space-y-0.5">
+                              <div>
+                                RNTRC: {String(g.situacao?.RNTRCTransportador ?? g.rntrc)}
+                                {" • "}Ativo: {String(g.situacao?.RNTRCAtivo ?? "—")}
+                                {" • "}Tipo: {String(g.situacao?.TipoTransportador ?? "—")}
                               </div>
-                            );
-                          })}
-                          {!lista.some((v: any) => Number(v.SituacaoVeiculoFrotaTransportador ?? v.situacao) === 1) && (
-                            <div className="text-destructive">
-                              Nenhuma placa deste RNTRC vinculada em homologação — peça o vínculo a pef@antt.gov.br; sem isso a declaração rejeita.
+                              {lista.map((v: any, i: number) => {
+                                const sit = Number(
+                                  v.SituacaoVeiculoFrotaTransportador ?? v.situacao,
+                                );
+                                return (
+                                  <div
+                                    key={i}
+                                    className={
+                                      sit === 1
+                                        ? "text-success font-semibold"
+                                        : "text-destructive font-semibold"
+                                    }
+                                  >
+                                    {String(v.PlacaVeiculo ?? v.placa ?? "?")} →{" "}
+                                    {sit === 1 ? "pertence à frota" : "NÃO pertence à frota"}
+                                  </div>
+                                );
+                              })}
+                              {!lista.some(
+                                (v: any) =>
+                                  Number(v.SituacaoVeiculoFrotaTransportador ?? v.situacao) === 1,
+                              ) && (
+                                <div className="text-destructive">
+                                  Nenhuma placa deste RNTRC vinculada em homologação — peça o
+                                  vínculo a pef@antt.gov.br; sem isso a declaração rejeita.
+                                </div>
+                              )}
+                              {msg !== "" && <div className="text-muted-foreground">{msg}</div>}
                             </div>
-                          )}
-                          {msg !== "" && <div className="text-muted-foreground">{msg}</div>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-                <p className="text-[10px] text-muted-foreground">
-                  Direto na ANTT (homologação) — só frota própria, sem TAC. Tomador único obrigatório.
-                </p>
-              </Card>
-            )}
-            <AlertDialog open={ciotConfirma} onOpenChange={setCiotConfirma}>
-              <AlertDialogContent className="rounded-2xl">
-                <AlertDialogHeader className="gap-1.5">
-                  <AlertDialogTitle className="tracking-tight">Emitir CIOT</AlertDialogTitle>
-                </AlertDialogHeader>
-                {resumoCiot && (
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="rounded border px-2 py-1">
-                      <div className="text-[10px] text-muted-foreground">
-                        Piso mínimo ANTT
+                          );
+                        })}
                       </div>
-                      <div className="font-semibold">
-                        {resumoCiot.piso !== null ? brl(resumoCiot.piso) : "—"}
-                      </div>
-                    </div>
-                    <div className="rounded border px-2 py-1">
-                      <div className="text-[10px] text-muted-foreground">
-                        Total CIOT
-                      </div>
-                      <div className="font-semibold">{brl(resumoCiot.valorTotal)}</div>
-                    </div>
-                  </div>
-                )}
-                {resumoCiot && !resumoCiot.motoOk && (
-                  <div className="rounded border border-destructive/50 bg-destructive/10 px-2 py-1 text-xs font-semibold text-destructive">
-                    Motoristas diferentes nos CT-es — uma operação CIOT exige o mesmo motorista.
-                  </div>
-                )}
-                {resumoCiot?.abaixo && (
-                  <div className="rounded border border-destructive/50 bg-destructive/10 px-2 py-1 text-xs font-semibold text-destructive">
-                    Valores abaixo do piso mínimo — não será possível emitir.
-                  </div>
-                )}
-                {resumoCiot && !resumoCiot.donoOk && (
-                  <div className="rounded border border-destructive/50 bg-destructive/10 px-2 py-1 text-xs font-semibold text-destructive">
-                    Tração {resumoCiot.placa || "—"}{" "}
-                    {resumoCiot.donoDoc
-                      ? `em nome de ${resumoCiot.donoNome || "terceiro"} — CIOT próprio exige cavalo no CNPJ do emissor.`
-                      : "sem proprietário cadastrado — informe o CNPJ do emissor no veículo."}
-                  </div>
-                )}
-                <AlertDialogFooter className="gap-2">
-                  <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
-                  <AlertDialogAction
-                    data-acao
-                    disabled={!resumoCiot || resumoCiot.abaixo || !resumoCiot.donoOk || !resumoCiot.motoOk || emitindoCiotLote}
-                    onClick={emitirCiotLote}
-                    className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
-                  >
-                    Emitir
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            <Card className="overflow-hidden rounded-2xl shadow-panel">
-              <div className="bg-primary/8 border-b border-primary/20 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
-                CIOTs emitidos ({(ciotOps ?? []).length})
-              </div>
-              <div className="flex items-center gap-2 px-3 py-2 border-b">
-                <Input
-                  className="h-8 max-w-[200px] font-mono text-xs"
-                  
-                  value={ciotConsulta}
-                  onChange={(e) => setCiotConsulta(e.target.value.replace(/\D/g, "").slice(0, 12))}
-                />
-                <Button size="sm" variant="outline" onClick={consultarCiotNaAntt} disabled={ciotConsultaLoading}>
-                  {ciotConsultaLoading ? "Consultando…" : "Consultar na ANTT"}
-                </Button>
-                {ciotConsultaRes && (
-                  <span className="text-[11px]">
-                    {String(
-                      (Array.isArray(ciotConsultaRes.Mensagem) ? ciotConsultaRes.Mensagem[0] : ciotConsultaRes.Mensagem) ||
-                        ciotConsultaRes.message || "",
                     )}
-                    {ciotConsultaRes.CodigoIdentificacaoOperacao && ciotConsultaRes.CodigoIdentificacaoOperacao.length > 12
-                      ? ` • CIOT completo ${String(ciotConsultaRes.CodigoIdentificacaoOperacao)}`
-                      : ""}
-                  </span>
+                    <p className="text-[10px] text-muted-foreground">
+                      Direto na ANTT (homologação) — só frota própria, sem TAC. Tomador único
+                      obrigatório.
+                    </p>
+                  </Card>
                 )}
-              </div>
-              {!(ciotOps ?? []).length ? (
-                <div className="p-4">
-                  <EmptyState icon={Truck} title="Nenhum CIOT ainda" description="Selecione CT-es acima e emita." />
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>CIOT</TableHead>
-                      <TableHead>Protocolo</TableHead>
-                      <TableHead className="text-right">Valor</TableHead>
-                      <TableHead className="text-center">CT-es</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Data</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(ciotOps ?? []).map((o) => (
-                      <TableRow key={o.id} className="transition-colors hover:bg-accent/30">
-                        <TableCell className="font-mono text-xs">{o.ciot}</TableCell>
-                        <TableCell className="font-mono text-xs">{o.protocolo || "—"}</TableCell>
-                        <TableCell className="text-right">{brl(Number(o.valor_frete) || 0)}</TableCell>
-                        <TableCell className="text-center">{Array.isArray(o.cte_ids) ? o.cte_ids.length : "—"}</TableCell>
-                        <TableCell className="text-xs"><StatusBadge status={o.status} /></TableCell>
-                        <TableCell className="text-xs">{String(o.created_at || "").slice(0, 10)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </Card>
-          </TabsContent>
-          <TabsContent value="rejeitados" className="mt-0">
-            {barraFiltroDocs()}
-            {docsFiltrados.rejeitados.length > 0 && (
-              <div className="mb-2 flex justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={async () => {
-                    if (!empresa) return;
-                    try {
-                      await excluirRejeitadosCteFn({ data: { empresaId: empresa.id } });
-                      toast.success("CT-e rejeitados excluídos");
-                      qc.invalidateQueries({ queryKey: ["cte-documentos"] });
-                    } catch (e: any) {
-                      toast.error(e.message);
-                    }
-                  }}
-                >
-                  <Trash2 className="mr-1 h-3 w-3" /> Limpar Rejeitados
-                </Button>
-              </div>
-            )}
-            {renderTabelaDocs(docsFiltrados.rejeitados, "rejeitados")}
-          </TabsContent>
-          <TabsContent value="cancelados" className="mt-0">
-            {barraFiltroDocs()}
-            {renderTabelaDocs(docsFiltrados.cancelados, "cancelados")}
-          </TabsContent>
-          </CardContent>
+                <AlertDialog open={ciotConfirma} onOpenChange={setCiotConfirma}>
+                  <AlertDialogContent className="rounded-2xl">
+                    <AlertDialogHeader className="gap-1.5">
+                      <AlertDialogTitle className="tracking-tight">Emitir CIOT</AlertDialogTitle>
+                    </AlertDialogHeader>
+                    {resumoCiot && (
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="rounded border px-2 py-1">
+                          <div className="text-[10px] text-muted-foreground">Piso mínimo ANTT</div>
+                          <div className="font-semibold">
+                            {resumoCiot.piso !== null ? brl(resumoCiot.piso) : "—"}
+                          </div>
+                        </div>
+                        <div className="rounded border px-2 py-1">
+                          <div className="text-[10px] text-muted-foreground">Total CIOT</div>
+                          <div className="font-semibold">{brl(resumoCiot.valorTotal)}</div>
+                        </div>
+                      </div>
+                    )}
+                    {resumoCiot && !resumoCiot.motoOk && (
+                      <div className="rounded border border-destructive/50 bg-destructive/10 px-2 py-1 text-xs font-semibold text-destructive">
+                        Motoristas diferentes nos CT-es — uma operação CIOT exige o mesmo motorista.
+                      </div>
+                    )}
+                    {resumoCiot?.abaixo && (
+                      <div className="rounded border border-destructive/50 bg-destructive/10 px-2 py-1 text-xs font-semibold text-destructive">
+                        Valores abaixo do piso mínimo — não será possível emitir.
+                      </div>
+                    )}
+                    {resumoCiot && !resumoCiot.donoOk && (
+                      <div className="rounded border border-destructive/50 bg-destructive/10 px-2 py-1 text-xs font-semibold text-destructive">
+                        Tração {resumoCiot.placa || "—"}{" "}
+                        {resumoCiot.donoDoc
+                          ? `em nome de ${resumoCiot.donoNome || "terceiro"} — CIOT próprio exige cavalo no CNPJ do emissor.`
+                          : "sem proprietário cadastrado — informe o CNPJ do emissor no veículo."}
+                      </div>
+                    )}
+                    <AlertDialogFooter className="gap-2">
+                      <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        data-acao
+                        disabled={
+                          !resumoCiot ||
+                          resumoCiot.abaixo ||
+                          !resumoCiot.donoOk ||
+                          !resumoCiot.motoOk ||
+                          emitindoCiotLote
+                        }
+                        onClick={emitirCiotLote}
+                        className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                      >
+                        Emitir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                <Card className="overflow-hidden rounded-2xl shadow-panel">
+                  <div className="bg-primary/8 border-b border-primary/20 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                    CIOTs emitidos ({(ciotOps ?? []).length})
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-2 border-b">
+                    <Input
+                      className="h-8 max-w-[200px] font-mono text-xs"
+
+                      value={ciotConsulta}
+                      onChange={(e) =>
+                        setCiotConsulta(e.target.value.replace(/\D/g, "").slice(0, 12))
+                      }
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={consultarCiotNaAntt}
+                      disabled={ciotConsultaLoading}
+                    >
+                      {ciotConsultaLoading ? "Consultando…" : "Consultar na ANTT"}
+                    </Button>
+                    {ciotConsultaRes && (
+                      <span className="text-[11px]">
+                        {String(
+                          (Array.isArray(ciotConsultaRes.Mensagem)
+                            ? ciotConsultaRes.Mensagem[0]
+                            : ciotConsultaRes.Mensagem) ||
+                            ciotConsultaRes.message ||
+                            "",
+                        )}
+                        {ciotConsultaRes.CodigoIdentificacaoOperacao &&
+                        ciotConsultaRes.CodigoIdentificacaoOperacao.length > 12
+                          ? ` • CIOT completo ${String(ciotConsultaRes.CodigoIdentificacaoOperacao)}`
+                          : ""}
+                      </span>
+                    )}
+                  </div>
+                  {!(ciotOps ?? []).length ? (
+                    <div className="p-4">
+                      <EmptyState
+                        icon={Truck}
+                        title="Nenhum CIOT ainda"
+                        description="Selecione CT-es acima e emita."
+                      />
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>CIOT</TableHead>
+                          <TableHead>Protocolo</TableHead>
+                          <TableHead className="text-right">Valor</TableHead>
+                          <TableHead className="text-center">CT-es</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Data</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {(ciotOps ?? []).map((o) => (
+                          <TableRow key={o.id} className="transition-colors hover:bg-accent/30">
+                            <TableCell className="font-mono text-xs">{o.ciot}</TableCell>
+                            <TableCell className="font-mono text-xs">
+                              {o.protocolo || "—"}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {brl(Number(o.valor_frete) || 0)}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {Array.isArray(o.cte_ids) ? o.cte_ids.length : "—"}
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              <StatusBadge status={o.status} />
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {String(o.created_at || "").slice(0, 10)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </Card>
+              </TabsContent>
+              <TabsContent value="rejeitados" className="mt-0">
+                {barraFiltroDocs()}
+                {docsFiltrados.rejeitados.length > 0 && (
+                  <div className="mb-2 flex justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        if (!empresa) return;
+                        try {
+                          await excluirRejeitadosCteFn({ data: { empresaId: empresa.id } });
+                          toast.success("CT-e rejeitados excluídos");
+                          qc.invalidateQueries({ queryKey: ["cte-documentos"] });
+                        } catch (e: any) {
+                          toast.error(e.message);
+                        }
+                      }}
+                    >
+                      <Trash2 className="mr-1 h-3 w-3" /> Limpar Rejeitados
+                    </Button>
+                  </div>
+                )}
+                {renderTabelaDocs(docsFiltrados.rejeitados, "rejeitados")}
+              </TabsContent>
+              <TabsContent value="cancelados" className="mt-0">
+                {barraFiltroDocs()}
+                {renderTabelaDocs(docsFiltrados.cancelados, "cancelados")}
+              </TabsContent>
+            </CardContent>
           </Card>
         </Tabs>
       )}
-      <AlertDialog open={!!confRascunho} onOpenChange={(v) => { if (!v) setConfRascunho(null); }}>
+      <AlertDialog
+        open={!!confRascunho}
+        onOpenChange={(v) => {
+          if (!v) setConfRascunho(null);
+        }}
+      >
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader className="gap-1.5">
             <AlertDialogTitle className="tracking-tight">Excluir rascunho</AlertDialogTitle>
@@ -8093,7 +8586,9 @@ function CtePage() {
       <AlertDialog open={loteCiotOpen} onOpenChange={setLoteCiotOpen}>
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader className="gap-1.5">
-            <AlertDialogTitle className="tracking-tight">Preencher CIOT ({envSel.size} rascunho{envSel.size !== 1 ? "s" : ""})</AlertDialogTitle>
+            <AlertDialogTitle className="tracking-tight">
+              Preencher CIOT ({envSel.size} rascunho{envSel.size !== 1 ? "s" : ""})
+            </AlertDialogTitle>
             <AlertDialogDescription className="leading-relaxed">
               Aplica nos rascunhos marcados. Campos vazios mantêm o valor atual de cada um.
             </AlertDialogDescription>
@@ -8101,12 +8596,19 @@ function CtePage() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="grid gap-1.5">
               <Label className="text-[11px] text-foreground/80">Nº CIOT</Label>
-              <Input className="h-9 rounded-xl font-mono" value={loteCiot} onChange={(e) => setLoteCiot(e.target.value.replace(/\D/g, "").slice(0, 12))} maxLength={12} />
+              <Input
+                className="h-9 rounded-xl font-mono"
+                value={loteCiot}
+                onChange={(e) => setLoteCiot(e.target.value.replace(/\D/g, "").slice(0, 12))}
+                maxLength={12}
+              />
             </div>
             <div className="grid gap-1.5">
               <Label className="text-[11px] text-foreground/80">Pagto. pedágio</Label>
               <Select value={loteModo} onValueChange={setLoteModo}>
-                <SelectTrigger className="h-9 rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-9 rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="manter">Manter atual</SelectItem>
                   <SelectItem value="tag-transportador">TAG Transportador</SelectItem>
@@ -8118,17 +8620,25 @@ function CtePage() {
             <div className="grid gap-1.5">
               <Label className="text-[11px] text-foreground/80">Operadora</Label>
               <Select value={loteOperadora || undefined} onValueChange={setLoteOperadora}>
-                <SelectTrigger className="h-9 rounded-xl"><SelectValue placeholder="Manter atual" /></SelectTrigger>
+                <SelectTrigger className="h-9 rounded-xl">
+                  <SelectValue placeholder="Manter atual" />
+                </SelectTrigger>
                 <SelectContent>
                   {PEDAGIO_OPERADORAS.map((o) => (
-                    <SelectItem key={o.nome} value={o.nome}>{o.nome}</SelectItem>
+                    <SelectItem key={o.nome} value={o.nome}>
+                      {o.nome}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-1.5">
               <Label className="text-[11px] text-foreground/80">Identificador VPO</Label>
-              <Input className="h-9 rounded-xl font-mono" value={loteVpo} onChange={(e) => setLoteVpo(e.target.value)} />
+              <Input
+                className="h-9 rounded-xl font-mono"
+                value={loteVpo}
+                onChange={(e) => setLoteVpo(e.target.value)}
+              />
             </div>
             <div className="grid gap-1.5">
               <Label className="text-[11px] text-foreground/80">Vale-pedágio (R$)</Label>
@@ -8137,7 +8647,12 @@ function CtePage() {
           </div>
           <AlertDialogFooter className="gap-2">
             <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
-            <AlertDialogAction data-acao onClick={aplicarLoteCiotPedagio} disabled={loteSalvando} className="h-10 rounded-xl px-5 shadow-sm">
+            <AlertDialogAction
+              data-acao
+              onClick={aplicarLoteCiotPedagio}
+              disabled={loteSalvando}
+              className="h-10 rounded-xl px-5 shadow-sm"
+            >
               {loteSalvando ? "Aplicando…" : "Aplicar no lote"}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -8264,10 +8779,19 @@ function CtePage() {
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setManualNfeOpen(false)} className="h-10 rounded-xl">
+            <Button
+              variant="outline"
+              onClick={() => setManualNfeOpen(false)}
+              className="h-10 rounded-xl"
+            >
               Cancelar
             </Button>
-            <Button onClick={adicionarNfeManual} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">Adicionar NF-e</Button>
+            <Button
+              onClick={adicionarNfeManual}
+              className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+            >
+              Adicionar NF-e
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -8288,15 +8812,25 @@ function CtePage() {
             event.stopPropagation();
             // Enter em campo de texto salva rascunho (textarea quebra linha; checkbox/radio/file ficam fora)
             if (viewDoc) return; // somente leitura: Enter não faz nada
-            if (event.key === "Enter" && !event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
+            if (
+              event.key === "Enter" &&
+              !event.shiftKey &&
+              !event.ctrlKey &&
+              !event.altKey &&
+              !event.metaKey
+            ) {
               const t = event.target as HTMLElement;
               // Só no diálogo principal: ignora popovers/combos e diálogos aninhados
               const dlg = t.closest('[role="dialog"]');
               if (dlg && dlg !== event.currentTarget) return;
               if (
                 t.tagName === "INPUT" &&
-                !["checkbox", "radio", "file", "button", "submit", "hidden"].includes((t as HTMLInputElement).type) &&
-                !t.closest('[role="combobox"],[role="listbox"],[role="option"],[data-radix-popper-content-wrapper]')
+                !["checkbox", "radio", "file", "button", "submit", "hidden"].includes(
+                  (t as HTMLInputElement).type,
+                ) &&
+                !t.closest(
+                  '[role="combobox"],[role="listbox"],[role="option"],[data-radix-popper-content-wrapper]',
+                )
               ) {
                 event.preventDefault();
                 if (!salvarRascunho.isPending) salvarRascunho.mutate();
@@ -8312,8 +8846,8 @@ function CtePage() {
                 ? "Conhecimento de Transporte Simplificado"
                 : "Conhecimento de Transporte Avulso"}
             </DialogTitle>
-            </DialogHeader>
-            {viewDoc && (
+          </DialogHeader>
+          {viewDoc && (
             <div
               className={`mt-2 shrink-0 rounded-xl border px-4 py-2.5 text-xs font-semibold shadow-sm ${
                 viewDoc.status === "autorizado"
@@ -8346,7 +8880,9 @@ function CtePage() {
               <TabsTrigger
                 value="seguros"
                 className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"
-                title={tabOk.transporte ? "Aba completa" : `Falta: ${tabFalta.transporte.join("; ")}`}
+                title={
+                  tabOk.transporte ? "Aba completa" : `Falta: ${tabFalta.transporte.join("; ")}`
+                }
               >
                 {tabDot(tabOk.transporte, tabFalta.transporte)}
                 <Truck className="mr-1 h-3 w-3" />
@@ -8355,11 +8891,7 @@ function CtePage() {
               <TabsTrigger
                 value="docs"
                 className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"
-                title={
-                  tabOk.trib
-                    ? "Aba completa"
-                    : `Falta: ${tabFalta.trib.join("; ")}`
-                }
+                title={tabOk.trib ? "Aba completa" : `Falta: ${tabFalta.trib.join("; ")}`}
               >
                 {tabDot(tabOk.trib, tabFalta.trib)}
                 <FileText className="mr-1 h-3 w-3" />
@@ -8368,7 +8900,10 @@ function CtePage() {
             </TabsList>
 
             {/* === TAB: Geral === */}
-            <TabsContent value="geral" className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
+            <TabsContent
+              value="geral"
+              className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col"
+            >
               {viewDoc && (
                 <Card className="overflow-hidden p-3">
                   <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
@@ -8384,9 +8919,7 @@ function CtePage() {
                       />
                     </div>
                     <div>
-                      <Label className="text-[10px] text-foreground/80">
-                        Protocolo de Envio
-                      </Label>
+                      <Label className="text-[10px] text-foreground/80">Protocolo de Envio</Label>
                       <Input
                         className="h-6 text-[10px] font-mono bg-transparent dark:bg-transparent"
                         value={viewDoc ? viewDoc.protocolo_sefaz || "—" : "— aguardando emissão —"}
@@ -8438,9 +8971,7 @@ function CtePage() {
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <Label className="text-[10px] text-foreground/80">
-                        Motivo Cancelamento
-                      </Label>
+                      <Label className="text-[10px] text-foreground/80">Motivo Cancelamento</Label>
                       <Input
                         className="h-6 text-[10px] bg-transparent dark:bg-transparent"
                         value="—"
@@ -8454,11 +8985,13 @@ function CtePage() {
               <div className="grid grid-cols-2 md:grid-cols-[auto_auto_auto_minmax(0,1fr)_auto_auto] gap-2 border rounded p-3 bg-muted/20">
                 <div>
                   <Label className="text-[10px] text-foreground/80">Ambiente</Label>
-                  <div className={`flex h-7 items-center rounded-md border px-2 text-[10px] font-medium ${
-                    SEFAZ_AMBIENTE === "producao"
-                      ? "border-green-200 bg-green-50 text-green-800 dark:bg-green-950/30 dark:text-green-200"
-                      : "border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-200"
-                  }`}>
+                  <div
+                    className={`flex h-7 items-center rounded-md border px-2 text-[10px] font-medium ${
+                      SEFAZ_AMBIENTE === "producao"
+                        ? "border-green-200 bg-green-50 text-green-800 dark:bg-green-950/30 dark:text-green-200"
+                        : "border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-200"
+                    }`}
+                  >
                     {SEFAZ_AMBIENTE === "producao" ? "Produção" : "Homologação (testes)"}
                   </div>
                 </div>
@@ -8502,7 +9035,6 @@ function CtePage() {
                     <PopoverContent className="w-[480px] p-0" align="start">
                       <Command shouldFilter={false}>
                         <CommandInput
-                          
                           value={tomadorQuery}
                           onValueChange={(v) => {
                             setTomadorQuery(v);
@@ -8620,11 +9152,7 @@ function CtePage() {
                       </PopoverTrigger>
                       <PopoverContent className="w-[480px] p-0" align="start">
                         <Command shouldFilter={false}>
-                          <CommandInput
-                            
-                            value={cfopQuery}
-                            onValueChange={setCfopQuery}
-                          />
+                          <CommandInput value={cfopQuery} onValueChange={setCfopQuery} />
                           <CommandList onWheelCapture={(e) => e.stopPropagation()}>
                             <CommandEmpty>Nenhum CFOP encontrado.</CommandEmpty>
                             <CommandGroup>
@@ -8674,7 +9202,7 @@ function CtePage() {
                         readOnly
                         tabIndex={-1}
                         className="h-7 text-xs flex-1 min-w-0 bg-transparent"
-                        
+
                         value={form.xMunIni}
                         title="Segue o remetente"
                       />
@@ -8683,7 +9211,7 @@ function CtePage() {
                         tabIndex={-1}
                         title="Segue o remetente"
                         className="h-7 text-xs w-14 text-center shrink-0 bg-transparent"
-                        
+
                         value={form.ufIni}
                         maxLength={2}
                       />
@@ -8696,7 +9224,7 @@ function CtePage() {
                         readOnly
                         tabIndex={-1}
                         className="h-7 text-xs flex-1 min-w-0 bg-transparent"
-                        
+
                         value={form.xMunFim}
                         title="Segue redespacho/destinatario"
                       />
@@ -8705,7 +9233,7 @@ function CtePage() {
                         tabIndex={-1}
                         title="Segue redespacho/destinatario"
                         className="h-7 text-xs w-14 text-center shrink-0 bg-transparent"
-                        
+
                         value={form.ufFim}
                         maxLength={2}
                       />
@@ -8833,8 +9361,9 @@ function CtePage() {
                                 : "—"}{" "}
                               {destIE ||
                               (
-                                (contatoByDoc.get(String(active.destCnpj || "").replace(/\D/g, "")) ||
-                                  {}) as any
+                                (contatoByDoc.get(
+                                  String(active.destCnpj || "").replace(/\D/g, ""),
+                                ) || {}) as any
                               ).ie
                                 ? `IE: ${destIE || ((contatoByDoc.get(String(active.destCnpj || "").replace(/\D/g, "")) || {}) as any).ie}`
                                 : ""}
@@ -8879,7 +9408,7 @@ function CtePage() {
                     <div className="ml-auto flex items-center gap-1">
                       <Input
                         className="h-6 text-[10px] w-44 font-mono"
-                        
+
                         value={fmtCnpjInput(form.cnpjConsignatario || "")}
                         onChange={(e) => {
                           const digits = e.target.value.replace(/\D/g, "").slice(0, 14);
@@ -8973,8 +9502,11 @@ function CtePage() {
                       </p>
                       <p className="text-muted-foreground">
                         Fone:{" "}
-                        {(contatoByDoc.get(String(form.cnpjConsignatario || "").replace(/\D/g, "")) || {})
-                          .telefone || "—"}
+                        {(
+                          contatoByDoc.get(
+                            String(form.cnpjConsignatario || "").replace(/\D/g, ""),
+                          ) || {}
+                        ).telefone || "—"}
                       </p>
                     </div>
                   ) : (
@@ -8999,7 +9531,7 @@ function CtePage() {
                     <div className="ml-auto flex items-center gap-1">
                       <Input
                         className="h-6 text-[10px] w-44 font-mono"
-                        
+
                         value={fmtCnpjInput(form.cnpjRedespacho || "")}
                         onChange={(e) => {
                           const digits = e.target.value.replace(/\D/g, "").slice(0, 14);
@@ -9065,12 +9597,12 @@ function CtePage() {
                       <p>
                         <span className="font-medium text-xs">{form.xNomeRedespacho || "—"}</span>{" "}
                         <span className="text-muted-foreground">
-                          CNPJ:{" "}
-                          {form.cnpjRedespacho ? fmtCnpjInput(form.cnpjRedespacho) : "—"}{" "}
+                          CNPJ: {form.cnpjRedespacho ? fmtCnpjInput(form.cnpjRedespacho) : "—"}{" "}
                           {form.ieRedespacho ||
                           (
-                            (contatoByDoc.get(String(form.cnpjRedespacho || "").replace(/\D/g, "")) ||
-                              {}) as any
+                            (contatoByDoc.get(
+                              String(form.cnpjRedespacho || "").replace(/\D/g, ""),
+                            ) || {}) as any
                           ).ie
                             ? `IE: ${form.ieRedespacho || ((contatoByDoc.get(String(form.cnpjRedespacho || "").replace(/\D/g, "")) || {}) as any).ie}`
                             : ""}
@@ -9090,8 +9622,10 @@ function CtePage() {
                       </p>
                       <p className="text-muted-foreground">
                         Fone:{" "}
-                        {(contatoByDoc.get(String(form.cnpjRedespacho || "").replace(/\D/g, "")) || {})
-                          .telefone || "—"}
+                        {(
+                          contatoByDoc.get(String(form.cnpjRedespacho || "").replace(/\D/g, "")) ||
+                          {}
+                        ).telefone || "—"}
                       </p>
                     </div>
                   ) : (
@@ -9114,437 +9648,470 @@ function CtePage() {
             </TabsContent>
 
             {/* === TAB: Doc Mercadorias === */}
-            <TabsContent value="docs" className="mt-2 min-h-0 flex-1 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
+            <TabsContent
+              value="docs"
+              className="mt-2 min-h-0 flex-1 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col"
+            >
               {/* Impostos sempre abaixo da grade, em todas as telas. */}
               <div className="flex min-h-0 flex-1 flex-col gap-3">
-              <Card
-                className={`overflow-hidden flex flex-col min-h-0 flex-1`}
-              >
-                <div className="flex items-center justify-between gap-2 border-b border-primary/20 bg-primary/8 px-3 py-1.5 shrink-0">
-                  <div className="flex items-center gap-1.5">
-                    <Package className="h-3.5 w-3.5 text-primary" />
-                    <h5 className="text-[10px] font-bold uppercase tracking-wide text-primary/80">
-                      Mercadorias Transportadas
-                    </h5>
+                <Card className={`overflow-hidden flex flex-col min-h-0 flex-1`}>
+                  <div className="flex items-center justify-between gap-2 border-b border-primary/20 bg-primary/8 px-3 py-1.5 shrink-0">
+                    <div className="flex items-center gap-1.5">
+                      <Package className="h-3.5 w-3.5 text-primary" />
+                      <h5 className="text-[10px] font-bold uppercase tracking-wide text-primary/80">
+                        Mercadorias Transportadas
+                      </h5>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] text-muted-foreground">
+                        {totBase.length} de {mercadorias.length} NF-e(s) na grade
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setManualNfeOpen(true)}
+                        className="text-[11px] font-medium text-primary hover:underline"
+                      >
+                        + Inserir NF-e manual
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] text-muted-foreground">
-                      {totBase.length} de {mercadorias.length} NF-e(s) na grade
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setManualNfeOpen(true)}
-                      className="text-[11px] font-medium text-primary hover:underline"
-                    >
-                      + Inserir NF-e manual
-                    </button>
-                  </div>
-                </div>
-                <div className="flex flex-col min-h-0 flex-1">
-                  <div className="min-h-0 flex-1 overflow-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:h-2.5 [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-track]:bg-muted/50 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-primary/40 hover:[&::-webkit-scrollbar-thumb]:bg-primary/60 [&_.erp-table-wrap]:max-h-none [&_.erp-table-wrap]:overflow-visible">
-                    <Table className="min-w-[980px] min-[1500px]:min-w-[920px] [&_th]:h-7 [&_th]:px-1.5 [&_td]:px-1.5 [&_td]:py-0.5">
-                    <TableHeader className="sticky top-0 z-10 bg-[color-mix(in_oklab,var(--color-primary)_10%,var(--color-card))]">
-                      <TableRow>
-                        <TableHead className="w-6">
-                          <input
-                            type="checkbox"
-                            checked={
-                              mercsGrade.length > 0 && selecionadasAtivas.size === mercsGrade.length
-                            }
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                const red = (form as any).modoEmbarque === "simplificado";
-                                const emits = new Set(mercsGrade.map((m) => m.emitCnpj || m.emit));
-                                const dests = new Set(mercsGrade.map((m) => m.destCnpj || m.dest));
-                                const tomads = new Set(
-                                  mercsGrade.map((m) => m.tomadorCnpj || m.tomador),
-                                );
-                                if (red && emits.size > 1) {
-                                  toast.error("Remetentes diferentes");
-                                  return;
-                                }
-                                if (!red && dests.size > 1) {
-                                  toast.error("CT-e não pode ter destinatários diferentes");
-                                  return;
-                                }
-                                if (tomads.size > 1) {
-                                  toast.error("No simplificado, selecione NF-es do mesmo tomador");
-                                  return;
-                                }
-                                const todas = new Set(mercsGrade.map((m) => m.chave));
-                                setSelecionadas(todas);
-                                setSelecionadasAtivas(todas);
-                              } else {
-                                // Deselecionar todos: tira do total mas mantem na grade
-                                setSelecionadasAtivas(new Set());
-                              }
-                            }}
-                          />
-                        </TableHead>
-                        <TableHead className="text-[10px]">Modelo Doc</TableHead>
-                        <TableHead className="text-[10px]">Chave NF-e</TableHead>
-                        <TableHead className="text-[10px]">Desc. Mercadoria</TableHead>
-                        <TableHead className="text-[10px] text-right">Qtde Unit</TableHead>
-                        <TableHead className="text-[10px] text-right">Qtde Medida</TableHead>
-                        <TableHead className="text-[10px]">Und. Med</TableHead>
-                        <TableHead className="text-[10px] text-right">N. Doc</TableHead>
-                        <TableHead className="text-[10px]">Série</TableHead>
-                        <TableHead className="text-[10px]">Data Doc</TableHead>
-                        <TableHead className="text-[10px] text-right">Valor Doc</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {mercsGrade.length === 0 ? (
-                        <TableRow className="hover:bg-transparent">
-                          <TableCell colSpan={11} className="p-0">
-                            <div className="flex flex-col items-center justify-center gap-3 px-4 py-9 text-center">
-                              <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 text-primary">
-                                <FileCode className="h-5 w-5" aria-hidden="true" />
-                              </div>
-                              <div>
-                                <p className="text-xs font-semibold">Nenhuma NF-e no CT-e</p>
-                                <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                  Importe os XMLs das notas ou lance uma NF-e manual.
-                                </p>
-                              </div>
-                              <div className="flex flex-wrap items-center justify-center gap-2">
-                                <label
-                                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 ${
-                                    isParsing ? "pointer-events-none opacity-60" : ""
-                                  }`}
-                                >
-                                  <UploadCloud className="h-3.5 w-3.5" />
-                                  {isParsing ? "Importando…" : "Importar XML"}
-                                  <input
-                                    type="file"
-                                    accept=".xml"
-                                    multiple
-                                    className="hidden"
-                                    disabled={isParsing}
-                                    onChange={(e) => {
-                                      if (isParsing) return;
-                                      if (e.target.files) handleImportNFeXml(e.target.files);
-                                      e.currentTarget.value = "";
-                                    }}
-                                  />
-                                </label>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-7 text-[11px]"
-                                  onClick={() => setManualNfeOpen(true)}
-                                >
-                                  <Plus className="h-3.5 w-3.5" /> NF-e manual
-                                </Button>
-                              </div>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        mercsGrade.map((m) => (
-                          <TableRow
-                            key={m.chave}
-                            className="text-[11px]"
-                            data-selected={selecionadasAtivas.has(m.chave)}
-                          >
-                            <TableCell>
+                  <div className="flex flex-col min-h-0 flex-1">
+                    <div className="min-h-0 flex-1 overflow-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:h-2.5 [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-track]:bg-muted/50 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-primary/40 hover:[&::-webkit-scrollbar-thumb]:bg-primary/60 [&_.erp-table-wrap]:max-h-none [&_.erp-table-wrap]:overflow-visible">
+                      <Table className="min-w-[980px] min-[1500px]:min-w-[920px] [&_th]:h-7 [&_th]:px-1.5 [&_td]:px-1.5 [&_td]:py-0.5">
+                        <TableHeader className="sticky top-0 z-10 bg-[color-mix(in_oklab,var(--color-primary)_10%,var(--color-card))]">
+                          <TableRow>
+                            <TableHead className="w-6">
                               <input
                                 type="checkbox"
-                                checked={selecionadasAtivas.has(m.chave)}
+                                checked={
+                                  mercsGrade.length > 0 &&
+                                  selecionadasAtivas.size === mercsGrade.length
+                                }
                                 onChange={(e) => {
                                   if (e.target.checked) {
-                                    setSelecionadas((prev) => new Set([...prev, m.chave]));
-                                    setSelecionadasAtivas((prev) => new Set([...prev, m.chave]));
+                                    const red = (form as any).modoEmbarque === "simplificado";
+                                    const emits = new Set(
+                                      mercsGrade.map((m) => m.emitCnpj || m.emit),
+                                    );
+                                    const dests = new Set(
+                                      mercsGrade.map((m) => m.destCnpj || m.dest),
+                                    );
+                                    const tomads = new Set(
+                                      mercsGrade.map((m) => m.tomadorCnpj || m.tomador),
+                                    );
+                                    if (red && emits.size > 1) {
+                                      toast.error("Remetentes diferentes");
+                                      return;
+                                    }
+                                    if (!red && dests.size > 1) {
+                                      toast.error("CT-e não pode ter destinatários diferentes");
+                                      return;
+                                    }
+                                    if (tomads.size > 1) {
+                                      toast.error(
+                                        "No simplificado, selecione NF-es do mesmo tomador",
+                                      );
+                                      return;
+                                    }
+                                    const todas = new Set(mercsGrade.map((m) => m.chave));
+                                    setSelecionadas(todas);
+                                    setSelecionadasAtivas(todas);
                                   } else {
-                                    setSelecionadasAtivas((prev) => {
-                                      const next = new Set(prev);
-                                      next.delete(m.chave);
-                                      return next;
-                                    });
+                                    // Deselecionar todos: tira do total mas mantem na grade
+                                    setSelecionadasAtivas(new Set());
                                   }
                                 }}
                               />
-                            </TableCell>
-                            <TableCell className="text-[10px] text-muted-foreground">
-                              {String(m.chave).replace(/\D/g, "").length === 44 ? "NFe" : "—"}
-                            </TableCell>
-                            <TableCell
-                              className="font-mono text-[9px] whitespace-nowrap"
-                              title={m.chave}
-                            >
-                              {m.chave}
-                            </TableCell>
-                            <TableCell className="text-[10px] whitespace-nowrap">
-                              CAIXAS
-                            </TableCell>
-                            <TableCell className="text-right font-mono">
-                              {(() => {
-                                const q =
-                                  Number((m as any).qtdUnit) ||
-                                  Number((m as any).qVol) ||
-                                  Number((m as any).quantidade) ||
-                                  0;
-                                return q > 0 ? fmt2(q) : "—";
-                              })()}
-                            </TableCell>
-                            <TableCell className="text-right font-mono">
-                              {fmt3((m as any).peso ?? (m as any).qtdePeso)}
-                            </TableCell>
-                            <TableCell className="text-[10px] text-muted-foreground">
-                              {(m as any).undMed || "UN"}
-                            </TableCell>
-                            <TableCell className="text-right font-mono font-semibold text-primary">
-                              {m.nNF}
-                            </TableCell>
-                            <TableCell className="text-[10px]">{m.serie}</TableCell>
-                            <TableCell className="text-[10px]">
-                              {m.data ? dateBR(m.data) : "—"}
-                            </TableCell>
-                            <TableCell className="text-right font-mono font-semibold">
-                              {brl(m.valor)}
-                            </TableCell>
+                            </TableHead>
+                            <TableHead className="text-[10px]">Modelo Doc</TableHead>
+                            <TableHead className="text-[10px]">Chave NF-e</TableHead>
+                            <TableHead className="text-[10px]">Desc. Mercadoria</TableHead>
+                            <TableHead className="text-[10px] text-right">Qtde Unit</TableHead>
+                            <TableHead className="text-[10px] text-right">Qtde Medida</TableHead>
+                            <TableHead className="text-[10px]">Und. Med</TableHead>
+                            <TableHead className="text-[10px] text-right">N. Doc</TableHead>
+                            <TableHead className="text-[10px]">Série</TableHead>
+                            <TableHead className="text-[10px]">Data Doc</TableHead>
+                            <TableHead className="text-[10px] text-right">Valor Doc</TableHead>
                           </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-                {/* Resumo da Seleção: box abaixo da grade, só aparece quando há notas selecionadas.
+                        </TableHeader>
+                        <TableBody>
+                          {mercsGrade.length === 0 ? (
+                            <TableRow className="hover:bg-transparent">
+                              <TableCell colSpan={11} className="p-0">
+                                <div className="flex flex-col items-center justify-center gap-3 px-4 py-9 text-center">
+                                  <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 text-primary">
+                                    <FileCode className="h-5 w-5" aria-hidden="true" />
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-semibold">Nenhuma NF-e no CT-e</p>
+                                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                      Importe os XMLs das notas ou lance uma NF-e manual.
+                                    </p>
+                                  </div>
+                                  <div className="flex flex-wrap items-center justify-center gap-2">
+                                    <label
+                                      className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 ${
+                                        isParsing ? "pointer-events-none opacity-60" : ""
+                                      }`}
+                                    >
+                                      <UploadCloud className="h-3.5 w-3.5" />
+                                      {isParsing ? "Importando…" : "Importar XML"}
+                                      <input
+                                        type="file"
+                                        accept=".xml"
+                                        multiple
+                                        className="hidden"
+                                        disabled={isParsing}
+                                        onChange={(e) => {
+                                          if (isParsing) return;
+                                          if (e.target.files) handleImportNFeXml(e.target.files);
+                                          e.currentTarget.value = "";
+                                        }}
+                                      />
+                                    </label>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7 text-[11px]"
+                                      onClick={() => setManualNfeOpen(true)}
+                                    >
+                                      <Plus className="h-3.5 w-3.5" /> NF-e manual
+                                    </Button>
+                                  </div>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            mercsGrade.map((m) => (
+                              <TableRow
+                                key={m.chave}
+                                className="text-[11px]"
+                                data-selected={selecionadasAtivas.has(m.chave)}
+                              >
+                                <TableCell>
+                                  <input
+                                    type="checkbox"
+                                    checked={selecionadasAtivas.has(m.chave)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelecionadas((prev) => new Set([...prev, m.chave]));
+                                        setSelecionadasAtivas(
+                                          (prev) => new Set([...prev, m.chave]),
+                                        );
+                                      } else {
+                                        setSelecionadasAtivas((prev) => {
+                                          const next = new Set(prev);
+                                          next.delete(m.chave);
+                                          return next;
+                                        });
+                                      }
+                                    }}
+                                  />
+                                </TableCell>
+                                <TableCell className="text-[10px] text-muted-foreground">
+                                  {String(m.chave).replace(/\D/g, "").length === 44 ? "NFe" : "—"}
+                                </TableCell>
+                                <TableCell
+                                  className="font-mono text-[9px] whitespace-nowrap"
+                                  title={m.chave}
+                                >
+                                  {m.chave}
+                                </TableCell>
+                                <TableCell className="text-[10px] whitespace-nowrap">
+                                  CAIXAS
+                                </TableCell>
+                                <TableCell className="text-right font-mono">
+                                  {(() => {
+                                    const q =
+                                      Number((m as any).qtdUnit) ||
+                                      Number((m as any).qVol) ||
+                                      Number((m as any).quantidade) ||
+                                      0;
+                                    return q > 0 ? fmt2(q) : "—";
+                                  })()}
+                                </TableCell>
+                                <TableCell className="text-right font-mono">
+                                  {fmt3((m as any).peso ?? (m as any).qtdePeso)}
+                                </TableCell>
+                                <TableCell className="text-[10px] text-muted-foreground">
+                                  {(m as any).undMed || "UN"}
+                                </TableCell>
+                                <TableCell className="text-right font-mono font-semibold text-primary">
+                                  {m.nNF}
+                                </TableCell>
+                                <TableCell className="text-[10px]">{m.serie}</TableCell>
+                                <TableCell className="text-[10px]">
+                                  {m.data ? dateBR(m.data) : "—"}
+                                </TableCell>
+                                <TableCell className="text-right font-mono font-semibold">
+                                  {brl(m.valor)}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    {/* Resumo da Seleção: box abaixo da grade, só aparece quando há notas selecionadas.
                     Ocupa o espaço branco quando há poucas notas; com muitas, fica abaixo do scroll. */}
-                {selecionadas.size > 0 && (
-                  <div className="mt-3 border border-primary/20 rounded bg-primary/5 px-3 py-2 text-[10px]">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-primary/80 uppercase tracking-wide text-[9px]">
-                        Resumo da seleção
-                      </span>
-                      <span className="text-muted-foreground">
-                        {totBase.length} NF-e(s) selecionada(s)
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap items-start gap-x-4 gap-y-1">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-muted-foreground">Qtde total</span>
-                        <span className="font-mono font-semibold">{fmt2(totGrade.qtd)}</span>
-                        <span className="text-muted-foreground">
-                          {(() => {
-                            const uns = totBase.map((m) => String((m as any).undMed || "UN").toUpperCase());
-                            const unica = new Set(uns);
-                            return unica.size === 1 ? uns[0] : "—";
-                          })()}
-                        </span>
-                      </div>
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-muted-foreground">Peso total</span>
-                        <span className="font-mono font-semibold">{fmt3(totGrade.peso)}</span>
-                        <span className="text-muted-foreground">KG</span>
-                      </div>
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-muted-foreground">Valor total</span>
-                        <span className="font-mono font-semibold">{brl(totGrade.doc)}</span>
-                      </div>
-                    </div>
-                    {(() => {
-                      const emits = new Set(totBase.map((m) => String((m as any).emitCnpj || m.emit || "").replace(/\D/g, "")));
-                      const dests = new Set(totBase.map((m) => String((m as any).destCnpj || m.dest || "").replace(/\D/g, "")));
-                      if (emits.size === 1 && dests.size === 1) {
-                        const m0 = totBase[0] as any;
-                        return (
-                          <div className="mt-1 pt-1 border-t border-primary/10 flex items-center gap-2 text-[9px]">
-                            <span className="text-muted-foreground">Remetente / Destinatário</span>
-                            <span className="font-mono">{m0.emit}</span>
-                            <span className="text-muted-foreground">/</span>
-                            <span className="font-mono">{m0.dest}</span>
+                    {selecionadas.size > 0 && (
+                      <div className="mt-3 border border-primary/20 rounded bg-primary/5 px-3 py-2 text-[10px]">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-semibold text-primary/80 uppercase tracking-wide text-[9px]">
+                            Resumo da seleção
+                          </span>
+                          <span className="text-muted-foreground">
+                            {totBase.length} NF-e(s) selecionada(s)
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-start gap-x-4 gap-y-1">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-muted-foreground">Qtde total</span>
+                            <span className="font-mono font-semibold">{fmt2(totGrade.qtd)}</span>
+                            <span className="text-muted-foreground">
+                              {(() => {
+                                const uns = totBase.map((m) =>
+                                  String((m as any).undMed || "UN").toUpperCase(),
+                                );
+                                const unica = new Set(uns);
+                                return unica.size === 1 ? uns[0] : "—";
+                              })()}
+                            </span>
                           </div>
-                        );
-                      }
-                      return null;
-                    })()}
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-muted-foreground">Peso total</span>
+                            <span className="font-mono font-semibold">{fmt3(totGrade.peso)}</span>
+                            <span className="text-muted-foreground">KG</span>
+                          </div>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-muted-foreground">Valor total</span>
+                            <span className="font-mono font-semibold">{brl(totGrade.doc)}</span>
+                          </div>
+                        </div>
+                        {(() => {
+                          const emits = new Set(
+                            totBase.map((m) =>
+                              String((m as any).emitCnpj || m.emit || "").replace(/\D/g, ""),
+                            ),
+                          );
+                          const dests = new Set(
+                            totBase.map((m) =>
+                              String((m as any).destCnpj || m.dest || "").replace(/\D/g, ""),
+                            ),
+                          );
+                          if (emits.size === 1 && dests.size === 1) {
+                            const m0 = totBase[0] as any;
+                            return (
+                              <div className="mt-1 pt-1 border-t border-primary/10 flex items-center gap-2 text-[9px]">
+                                <span className="text-muted-foreground">
+                                  Remetente / Destinatário
+                                </span>
+                                <span className="font-mono">{m0.emit}</span>
+                                <span className="text-muted-foreground">/</span>
+                                <span className="font-mono">{m0.dest}</span>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              </Card>
+                </Card>
 
-              {/* Tributação (fundida nesta aba) */}
-              <Card className="overflow-hidden p-3 shrink-0">
-                <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-2 flex items-center gap-1.5">
-                  <ReceiptText className="h-3.5 w-3.5 text-primary" />
-                  <h5 className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
-                    Impostos
-                  </h5>
-                </div>
-                <div className="flex flex-wrap items-end gap-x-2 gap-y-2">
-                  <div className="min-w-[240px] max-w-[800px] flex-1">
-                    <Label className="text-[10px] text-foreground/80">* CST</Label>
-                    <Select value={form.icmsCST} onValueChange={(v) => setForm((f: any) => ({ ...f, icmsCST: v }))}>
-                      <SelectTrigger className="h-7 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="00">00 — Tributada integralmente</SelectItem>
-                        <SelectItem value="10">
-                          10 — Tributada e com cobrança do ICMS por substituição tributária
-                        </SelectItem>
-                        <SelectItem value="20">20 — Com redução de base de cálculo</SelectItem>
-                        <SelectItem value="30">
-                          30 — Isenta ou não tributada e com cobrança do ICMS por substituição tributária
-                        </SelectItem>
-                        <SelectItem value="40">40 — Isenta</SelectItem>
-                        <SelectItem value="41">41 — Não tributada</SelectItem>
-                        <SelectItem value="50">50 — Suspensão</SelectItem>
-                        <SelectItem value="51">51 — Diferimento</SelectItem>
-                        <SelectItem value="60">
-                          60 — ICMS cobrado anteriormente por substituição tributária
-                        </SelectItem>
-                        <SelectItem value="70">
-                          70 — Com redução de base de cálculo e cobrança do ICMS por substituição tributária
-                        </SelectItem>
-                        <SelectItem value="90">90 — Outras</SelectItem>
-                      </SelectContent>
-                    </Select>
+                {/* Tributação (fundida nesta aba) */}
+                <Card className="overflow-hidden p-3 shrink-0">
+                  <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-2 flex items-center gap-1.5">
+                    <ReceiptText className="h-3.5 w-3.5 text-primary" />
+                    <h5 className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                      Impostos
+                    </h5>
                   </div>
-                  <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-foreground/80">Redução de Base (%)</Label>
-                    <MoneyInput
-                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
-                      prefix=""
-                      value={(form as any).reducaoBase || "0.00"}
-                      onChange={() => {}}
-                      
-                    />
+                  <div className="flex flex-wrap items-end gap-x-2 gap-y-2">
+                    <div className="min-w-[240px] max-w-[800px] flex-1">
+                      <Label className="text-[10px] text-foreground/80">* CST</Label>
+                      <Select
+                        value={form.icmsCST}
+                        onValueChange={(v) => setForm((f: any) => ({ ...f, icmsCST: v }))}
+                      >
+                        <SelectTrigger className="h-7 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="00">00 — Tributada integralmente</SelectItem>
+                          <SelectItem value="10">
+                            10 — Tributada e com cobrança do ICMS por substituição tributária
+                          </SelectItem>
+                          <SelectItem value="20">20 — Com redução de base de cálculo</SelectItem>
+                          <SelectItem value="30">
+                            30 — Isenta ou não tributada e com cobrança do ICMS por substituição
+                            tributária
+                          </SelectItem>
+                          <SelectItem value="40">40 — Isenta</SelectItem>
+                          <SelectItem value="41">41 — Não tributada</SelectItem>
+                          <SelectItem value="50">50 — Suspensão</SelectItem>
+                          <SelectItem value="51">51 — Diferimento</SelectItem>
+                          <SelectItem value="60">
+                            60 — ICMS cobrado anteriormente por substituição tributária
+                          </SelectItem>
+                          <SelectItem value="70">
+                            70 — Com redução de base de cálculo e cobrança do ICMS por substituição
+                            tributária
+                          </SelectItem>
+                          <SelectItem value="90">90 — Outras</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="w-[136px] shrink-0">
+                      <Label className="text-[10px] text-foreground/80">Redução de Base (%)</Label>
+                      <MoneyInput
+                        className="h-7 text-xs bg-muted/50 text-muted-foreground"
+                        prefix=""
+                        value={(form as any).reducaoBase || "0.00"}
+                        onChange={() => {}}
+                      />
+                    </div>
+                    <div className="w-[136px] shrink-0">
+                      <Label className="text-[10px] text-foreground/80">Alíquota ICMS (%)</Label>
+                      <MoneyInput
+                        className="h-7 text-xs bg-muted/50 text-muted-foreground"
+                        prefix=""
+                        value={form.icmsAliq}
+                        onChange={() => {}}
+                      />
+                    </div>
+                    <div className="w-[136px] shrink-0">
+                      <Label className="text-[10px] text-foreground/80">Base Cálculo (R$)</Label>
+                      <MoneyInput
+                        className="h-7 text-xs bg-muted/50 text-muted-foreground"
+                        value={totalPrestacao(form).toFixed(2)}
+                        onChange={() => {}}
+                      />
+                    </div>
+                    <div className="w-[136px] shrink-0">
+                      <Label className="text-[10px] text-foreground/80">ICMS (R$)</Label>
+                      <MoneyInput
+                        className="h-7 text-xs bg-muted/50 text-muted-foreground"
+                        value={form.icmsValor}
+                        onChange={() => {}}
+                      />
+                    </div>
+                    <div className="w-[160px] shrink-0">
+                      <Label
+                        className="text-[10px] text-foreground/80 whitespace-nowrap"
+                        title="Crédito outorgado/presumido (R$)"
+                      >
+                        Crédito outorg./presum. (R$)
+                      </Label>
+                      <MoneyInput
+                        className="h-7 text-xs bg-muted/50 text-muted-foreground"
+                        value={(form as any).creditoOutorgado || "0.00"}
+                        onChange={() => {}}
+                      />
+                    </div>
                   </div>
-                  <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-foreground/80">Alíquota ICMS (%)</Label>
-                    <MoneyInput
-                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
-                      prefix=""
-                      value={form.icmsAliq}
-                      onChange={() => {}}
-                      
-                    />
+                  <div className="flex flex-wrap items-end gap-x-2 gap-y-1 mt-2">
+                    <div className="w-[136px] shrink-0">
+                      <Label className="text-[10px] text-foreground/80 flex items-center gap-1">
+                        PIS (%) <Lock className="h-3 w-3 text-muted-foreground/50" />
+                      </Label>
+                      <MoneyInput
+                        className="h-7 text-xs bg-muted/50 text-muted-foreground"
+                        prefix=""
+                        value={form.pisAliq}
+                        onChange={() => {}}
+                      />
+                    </div>
+                    <div className="w-[136px] shrink-0">
+                      <Label className="text-[10px] text-foreground/80 flex items-center gap-1">
+                        COFINS (%) <Lock className="h-3 w-3 text-muted-foreground/50" />
+                      </Label>
+                      <MoneyInput
+                        className="h-7 text-xs bg-muted/50 text-muted-foreground"
+                        prefix=""
+                        value={form.cofinsAliq}
+                        onChange={() => {}}
+                      />
+                    </div>
+                    <div className="w-[136px] shrink-0">
+                      <Label className="text-[10px] text-foreground/80 flex items-center gap-1">
+                        IBS (%) <Lock className="h-3 w-3 text-muted-foreground/50" />
+                      </Label>
+                      <MoneyInput
+                        className="h-7 text-xs bg-muted/50 text-muted-foreground"
+                        prefix=""
+                        value="0.10"
+                        onChange={() => {}}
+                      />
+                    </div>
+                    <div className="w-[136px] shrink-0">
+                      <Label className="text-[10px] text-foreground/80 flex items-center gap-1">
+                        CBS (%) <Lock className="h-3 w-3 text-muted-foreground/50" />
+                      </Label>
+                      <MoneyInput
+                        className="h-7 text-xs bg-muted/50 text-muted-foreground"
+                        prefix=""
+                        value="0.90"
+                        onChange={() => {}}
+                      />
+                    </div>
+                    <div className="w-[136px] shrink-0">
+                      <Label className="text-[10px] text-foreground/80 flex items-center gap-1">
+                        PIS (R$) <Lock className="h-3 w-3 text-muted-foreground/50" />
+                      </Label>
+                      <MoneyInput
+                        className="h-7 text-xs bg-muted/50 text-muted-foreground"
+                        value={valorImposto(form.pisAliq)}
+                        onChange={() => {}}
+                      />
+                    </div>
+                    <div className="w-[136px] shrink-0">
+                      <Label className="text-[10px] text-foreground/80 flex items-center gap-1">
+                        COFINS (R$) <Lock className="h-3 w-3 text-muted-foreground/50" />
+                      </Label>
+                      <MoneyInput
+                        className="h-7 text-xs bg-muted/50 text-muted-foreground"
+                        value={valorImposto(form.cofinsAliq)}
+                        onChange={() => {}}
+                      />
+                    </div>
+                    <div className="w-[136px] shrink-0">
+                      <Label className="text-[10px] text-foreground/80 flex items-center gap-1">
+                        IBS (R$) <Lock className="h-3 w-3 text-muted-foreground/50" />
+                      </Label>
+                      <MoneyInput
+                        className="h-7 text-xs bg-muted/50 text-muted-foreground"
+                        value={valorImposto("0.10")}
+                        onChange={() => {}}
+                      />
+                    </div>
+                    <div className="w-[136px] shrink-0">
+                      <Label className="text-[10px] text-foreground/80 flex items-center gap-1">
+                        CBS (R$) <Lock className="h-3 w-3 text-muted-foreground/50" />
+                      </Label>
+                      <MoneyInput
+                        className="h-7 text-xs bg-muted/50 text-muted-foreground"
+                        value={valorImposto("0.90")}
+                        onChange={() => {}}
+                      />
+                    </div>
                   </div>
-                  <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-foreground/80">Base Cálculo (R$)</Label>
-                    <MoneyInput
-                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
-                      value={totalPrestacao(form).toFixed(2)}
-                      onChange={() => {}}
-                      
-                    />
-                  </div>
-                  <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-foreground/80">ICMS (R$)</Label>
-                    <MoneyInput
-                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
-                      value={form.icmsValor}
-                      onChange={() => {}}
-                      
-                    />
-                  </div>
-                  <div className="w-[160px] shrink-0">
-                    <Label
-                      className="text-[10px] text-foreground/80 whitespace-nowrap"
-                      title="Crédito outorgado/presumido (R$)"
-                    >
-                      Crédito outorg./presum. (R$)
-                    </Label>
-                    <MoneyInput
-                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
-                      value={(form as any).creditoOutorgado || "0.00"}
-                      onChange={() => {}}
-                      
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-wrap items-end gap-x-2 gap-y-1 mt-2">
-                  <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-foreground/80 flex items-center gap-1">PIS (%) <Lock className="h-3 w-3 text-muted-foreground/50" /></Label>
-                    <MoneyInput
-                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
-                      prefix=""
-                      value={form.pisAliq}
-                      onChange={() => {}}
-                      
-                    />
-                  </div>
-                  <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-foreground/80 flex items-center gap-1">COFINS (%) <Lock className="h-3 w-3 text-muted-foreground/50" /></Label>
-                    <MoneyInput
-                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
-                      prefix=""
-                      value={form.cofinsAliq}
-                      onChange={() => {}}
-                      
-                    />
-                  </div>
-                  <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-foreground/80 flex items-center gap-1">IBS (%) <Lock className="h-3 w-3 text-muted-foreground/50" /></Label>
-                    <MoneyInput
-                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
-                      prefix=""
-                      value="0.10"
-                      onChange={() => {}}
-                      
-                    />
-                  </div>
-                  <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-foreground/80 flex items-center gap-1">CBS (%) <Lock className="h-3 w-3 text-muted-foreground/50" /></Label>
-                    <MoneyInput
-                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
-                      prefix=""
-                      value="0.90"
-                      onChange={() => {}}
-                      
-                    />
-                  </div>
-                  <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-foreground/80 flex items-center gap-1">PIS (R$) <Lock className="h-3 w-3 text-muted-foreground/50" /></Label>
-                    <MoneyInput
-                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
-                      value={valorImposto(form.pisAliq)}
-                      onChange={() => {}}
-                      
-                    />
-                  </div>
-                  <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-foreground/80 flex items-center gap-1">COFINS (R$) <Lock className="h-3 w-3 text-muted-foreground/50" /></Label>
-                    <MoneyInput
-                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
-                      value={valorImposto(form.cofinsAliq)}
-                      onChange={() => {}}
-                      
-                    />
-                  </div>
-                  <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-foreground/80 flex items-center gap-1">IBS (R$) <Lock className="h-3 w-3 text-muted-foreground/50" /></Label>
-                    <MoneyInput
-                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
-                      value={valorImposto("0.10")}
-                      onChange={() => {}}
-                      
-                    />
-                  </div>
-                  <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-foreground/80 flex items-center gap-1">CBS (R$) <Lock className="h-3 w-3 text-muted-foreground/50" /></Label>
-                    <MoneyInput
-                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
-                      value={valorImposto("0.90")}
-                      onChange={() => {}}
-                      
-                    />
-                  </div>
-                </div>
-                {totalPrestacao(form) <= 0 ? (
-                  <p className="text-[9px] font-medium text-amber-600 mt-1">
-                    Base zerada: informe o Valor Serviço na aba Transporte (Componentes do Frete)
-                    para o ICMS ser calculado.
-                  </p>
-                ) : null}
-              </Card>
+                  {totalPrestacao(form) <= 0 ? (
+                    <p className="text-[9px] font-medium text-amber-600 mt-1">
+                      Base zerada: informe o Valor Serviço na aba Transporte (Componentes do Frete)
+                      para o ICMS ser calculado.
+                    </p>
+                  ) : null}
+                </Card>
               </div>
             </TabsContent>
 
             {/* === TAB: Seguros/Veículos === */}
-            <TabsContent value="seguros" className="mt-2 min-h-0 flex-1 space-y-1.5 overflow-y-auto [&>*]:shrink-0 data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
+            <TabsContent
+              value="seguros"
+              className="mt-2 min-h-0 flex-1 space-y-1.5 overflow-y-auto [&>*]:shrink-0 data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col"
+            >
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-1.5">
                 <Card className="overflow-hidden p-1.5">
                   <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
@@ -9850,7 +10417,9 @@ function CtePage() {
                           />
                         </div>
                         {(form as any).ciotProtocolo ? (
-                          <div className="text-[9px] text-muted-foreground">Prot. ANTT: {(form as any).ciotProtocolo}</div>
+                          <div className="text-[9px] text-muted-foreground">
+                            Prot. ANTT: {(form as any).ciotProtocolo}
+                          </div>
                         ) : null}
                       </div>
                     </div>
@@ -9881,10 +10450,7 @@ function CtePage() {
                           </PopoverTrigger>
                           <PopoverContent className="w-[320px] p-0" align="start">
                             <Command shouldFilter={false}>
-                              <CommandInput
-                                value={veiculoQuery}
-                                onValueChange={setVeiculoQuery}
-                              />
+                              <CommandInput value={veiculoQuery} onValueChange={setVeiculoQuery} />
                               <CommandList>
                                 <CommandEmpty>
                                   {veiculos?.length
@@ -9930,7 +10496,9 @@ function CtePage() {
                                         />
                                         <span className="text-xs font-mono truncate">
                                           {v.placa}
-                                          {(v.marca_modelo || v.tipo) ? ` — ${v.marca_modelo || v.tipo}` : ""}
+                                          {v.marca_modelo || v.tipo
+                                            ? ` — ${v.marca_modelo || v.tipo}`
+                                            : ""}
                                         </span>
                                       </CommandItem>
                                     ))}
@@ -9970,25 +10538,33 @@ function CtePage() {
                             limpar
                           </button>
                         ) : null}
-                        {form.placaVeiculo ? (() => {
-                          const vv = (veiculos || []).find(
-                            (v: any) =>
-                              String(v.placa || "").toUpperCase() ===
-                              String(form.placaVeiculo || "").toUpperCase(),
-                          );
-                          const donoDoc = String((vv as any)?.proprietario_doc || "").replace(/\D/g, "");
-                          const emitCnpj = String((empresa as any)?.cnpj || "").replace(/\D/g, "");
-                          const isTerceiro = donoDoc.length > 0 && donoDoc !== emitCnpj;
-                          return isTerceiro ? (
-                            <span className="mt-0.5 inline-flex items-center gap-1 text-[9px] font-semibold text-amber-600">
-                              Terceirizado
-                            </span>
-                          ) : (
-                            <span className="mt-0.5 inline-flex items-center gap-1 text-[9px] text-emerald-600">
-                              Frota própria
-                            </span>
-                          );
-                        })() : null}
+                        {form.placaVeiculo
+                          ? (() => {
+                              const vv = (veiculos || []).find(
+                                (v: any) =>
+                                  String(v.placa || "").toUpperCase() ===
+                                  String(form.placaVeiculo || "").toUpperCase(),
+                              );
+                              const donoDoc = String((vv as any)?.proprietario_doc || "").replace(
+                                /\D/g,
+                                "",
+                              );
+                              const emitCnpj = String((empresa as any)?.cnpj || "").replace(
+                                /\D/g,
+                                "",
+                              );
+                              const isTerceiro = donoDoc.length > 0 && donoDoc !== emitCnpj;
+                              return isTerceiro ? (
+                                <span className="mt-0.5 inline-flex items-center gap-1 text-[9px] font-semibold text-amber-600">
+                                  Terceirizado
+                                </span>
+                              ) : (
+                                <span className="mt-0.5 inline-flex items-center gap-1 text-[9px] text-emerald-600">
+                                  Frota própria
+                                </span>
+                              );
+                            })()
+                          : null}
                       </div>
                       <div>
                         <Label className="text-[10px] text-foreground/80">Reboque 1</Label>
@@ -10014,10 +10590,7 @@ function CtePage() {
                           </PopoverTrigger>
                           <PopoverContent className="w-[320px] p-0" align="start">
                             <Command shouldFilter={false}>
-                              <CommandInput
-                                value={veiculoQuery}
-                                onValueChange={setVeiculoQuery}
-                              />
+                              <CommandInput value={veiculoQuery} onValueChange={setVeiculoQuery} />
                               <CommandList>
                                 <CommandEmpty>
                                   {veiculos?.length
@@ -10063,7 +10636,9 @@ function CtePage() {
                                         />
                                         <span className="text-xs font-mono truncate">
                                           {v.placa}
-                                          {(v.marca_modelo || v.tipo) ? ` — ${v.marca_modelo || v.tipo}` : ""}
+                                          {v.marca_modelo || v.tipo
+                                            ? ` — ${v.marca_modelo || v.tipo}`
+                                            : ""}
                                         </span>
                                       </CommandItem>
                                     ))}
@@ -10130,10 +10705,7 @@ function CtePage() {
                           </PopoverTrigger>
                           <PopoverContent className="w-[320px] p-0" align="start">
                             <Command shouldFilter={false}>
-                              <CommandInput
-                                value={veiculoQuery}
-                                onValueChange={setVeiculoQuery}
-                              />
+                              <CommandInput value={veiculoQuery} onValueChange={setVeiculoQuery} />
                               <CommandList>
                                 <CommandEmpty>
                                   {veiculos?.length
@@ -10179,7 +10751,9 @@ function CtePage() {
                                         />
                                         <span className="text-xs font-mono truncate">
                                           {v.placa}
-                                          {(v.marca_modelo || v.tipo) ? ` — ${v.marca_modelo || v.tipo}` : ""}
+                                          {v.marca_modelo || v.tipo
+                                            ? ` — ${v.marca_modelo || v.tipo}`
+                                            : ""}
                                         </span>
                                       </CommandItem>
                                     ))}
@@ -10779,8 +11353,8 @@ function CtePage() {
                 )}
                 {(form as any).finalidadeEmissao === "Complemento" && (
                   <p className="text-[11px] leading-relaxed text-muted-foreground">
-                    Escolher um CT-e emitido por esta empresa herda motorista, veículos e seguro
-                    do CT-e original.
+                    Escolher um CT-e emitido por esta empresa herda motorista, veículos e seguro do
+                    CT-e original.
                   </p>
                 )}
               </div>

@@ -13,16 +13,12 @@ const PROCESSING_INSTRUCTION_NODE = 7;
 const COMMENT_NODE = 8;
 
 function escapeC14nText(value: string): string {
-  return value
-    .replace(/\r\n?/g, "\n")
-    .replace(/&/g, "&")
-    .replace(/</g, "<")
-    .replace(/>/g, ">");
+  return value.replace(/\r\n?/g, "\n").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
 }
 
 function escapeC14nAttribute(value: string): string {
   return escapeC14nText(value)
-    .replace(/"/g, "\"")
+    .replace(/"/g, '"')
     .replace(/\t/g, "&#x9;")
     .replace(/\n/g, "&#xA;")
     .replace(/\r/g, "&#xD;");
@@ -52,7 +48,12 @@ export function canonicalizeMdfInfMdfInclusive(node: Element): string {
     }
 
     const allAttributes = Array.from(element.attributes);
-    const explicitXmlns = allAttributes.filter((attr) => attr.name === "xmlns" || attr.prefix === "xmlns" || attr.namespaceURI === "http://www.w3.org/2000/xmlns/");
+    const explicitXmlns = allAttributes.filter(
+      (attr) =>
+        attr.name === "xmlns" ||
+        attr.prefix === "xmlns" ||
+        attr.namespaceURI === "http://www.w3.org/2000/xmlns/",
+    );
     if (explicitXmlns.some((attr) => attr.name !== "xmlns")) {
       throw new Error("MDF-e com namespace prefixado não suportado");
     }
@@ -60,31 +61,58 @@ export function canonicalizeMdfInfMdfInclusive(node: Element): string {
     if (explicitDefaultXmlns && explicitDefaultXmlns !== "http://www.portalfiscal.inf.br/mdfe") {
       throw new Error("MDF-e com namespace default divergente do MDF-e");
     }
-    const attributes = allAttributes
-      .filter((attr) => attr.name !== "xmlns" && attr.prefix !== "xmlns" && attr.namespaceURI !== "http://www.w3.org/2000/xmlns/");
-    if (attributes.some((attr) => attr.prefix || attr.namespaceURI === "http://www.w3.org/XML/1998/namespace" || (attr.namespaceURI || "") !== "")) {
+    const attributes = allAttributes.filter(
+      (attr) =>
+        attr.name !== "xmlns" &&
+        attr.prefix !== "xmlns" &&
+        attr.namespaceURI !== "http://www.w3.org/2000/xmlns/",
+    );
+    if (
+      attributes.some(
+        (attr) =>
+          attr.prefix ||
+          attr.namespaceURI === "http://www.w3.org/XML/1998/namespace" ||
+          (attr.namespaceURI || "") !== "",
+      )
+    ) {
       throw new Error("MDF-e com atributo namespace/XML não suportado para C14N inclusivo");
     }
-    attributes.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+    attributes.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 
     // Preserva o xmlns declarado explicitamente no nó (ex.: <infModal ... xmlns="...">);
     // a raiz sempre carrega o namespace. Namespaces redundantes NÃO são limpos.
-    const isRoot = element === node || element.parentNode === null ||
+    const isRoot =
+      element === node ||
+      element.parentNode === null ||
       element.parentNode.namespaceURI !== "http://www.portalfiscal.inf.br/mdfe";
     const rootNamespace = isRoot ? ' xmlns="http://www.portalfiscal.inf.br/mdfe"' : "";
-    const renderedAttributes = attributes.map((attr) => ` ${attr.name}="${escapeC14nAttribute(attr.value)}"`).join("");
-    const preservedXmlns = !isRoot && explicitDefaultXmlns ? ` xmlns="${explicitDefaultXmlns}"` : "";
+    const renderedAttributes = attributes
+      .map((attr) => ` ${attr.name}="${escapeC14nAttribute(attr.value)}"`)
+      .join("");
+    const preservedXmlns =
+      !isRoot && explicitDefaultXmlns ? ` xmlns="${explicitDefaultXmlns}"` : "";
     const children = Array.from(element.childNodes)
       .map((child) => render(child))
       .join("");
-    return "<" + element.nodeName + rootNamespace + renderedAttributes + preservedXmlns + ">" + children + "</" + element.nodeName + ">";
+    return (
+      "<" +
+      element.nodeName +
+      rootNamespace +
+      renderedAttributes +
+      preservedXmlns +
+      ">" +
+      children +
+      "</" +
+      element.nodeName +
+      ">"
+    );
   };
 
   return render(node);
 }
 
 export function getMdfReferenceNode(xml: string): { node: Element; id: string } {
-  const { DOMParser } = require("@xmldom/xmldom");
+  // DOMParser já importado no topo do módulo (mesmo pacote @xmldom/xmldom).
   const document = new DOMParser().parseFromString(xml, "application/xml");
   const infMdf = document.getElementsByTagName("infMDFe").item(0);
   if (!infMdf) throw new Error("MDF-e sem elemento infMDFe para assinar");

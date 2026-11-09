@@ -31,7 +31,8 @@ MÓDULOS DO SISTEMA:
 export const AI_TOOLS = [
   {
     name: "buscar_cliente",
-    description: "Busca um cliente pelo nome ou CNPJ. Retorna dados como razão social, CNPJ, cidade e UF.",
+    description:
+      "Busca um cliente pelo nome ou CNPJ. Retorna dados como razão social, CNPJ, cidade e UF.",
     parameters: {
       type: "object" as const,
       properties: {
@@ -42,7 +43,8 @@ export const AI_TOOLS = [
   },
   {
     name: "listar_produtos",
-    description: "Lista produtos do estoque. Pode filtrar por nome. Retorna nome, código, preço de venda e estoque atual.",
+    description:
+      "Lista produtos do estoque. Pode filtrar por nome. Retorna nome, código, preço de venda e estoque atual.",
     parameters: {
       type: "object" as const,
       properties: {
@@ -64,22 +66,26 @@ export const AI_TOOLS = [
   },
   {
     name: "resumo_financeiro",
-    description: "Retorna um resumo do financeiro: total de contas a pagar e receber, abertas e pagas no mês atual.",
+    description:
+      "Retorna um resumo do financeiro: total de contas a pagar e receber, abertas e pagas no mês atual.",
     parameters: { type: "object" as const, properties: {} },
   },
   {
     name: "contas_a_pagar_vencidas",
-    description: "Lista contas a pagar vencidas (atrasadas). Retorna fornecedor, valor, vencimento e descrição.",
+    description:
+      "Lista contas a pagar vencidas (atrasadas). Retorna fornecedor, valor, vencimento e descrição.",
     parameters: { type: "object" as const, properties: {} },
   },
   {
     name: "contas_a_receber_vencidas",
-    description: "Lista contas a receber vencidas (inadimplência). Retorna cliente, valor, vencimento e descrição.",
+    description:
+      "Lista contas a receber vencidas (inadimplência). Retorna cliente, valor, vencimento e descrição.",
     parameters: { type: "object" as const, properties: {} },
   },
   {
     name: "listar_veiculos",
-    description: "Lista veículos da frota. Pode filtrar por placa ou marca. Retorna placa, modelo, tipo e status.",
+    description:
+      "Lista veículos da frota. Pode filtrar por placa ou marca. Retorna placa, modelo, tipo e status.",
     parameters: {
       type: "object" as const,
       properties: {
@@ -89,12 +95,14 @@ export const AI_TOOLS = [
   },
   {
     name: "listar_motoristas",
-    description: "Lista motoristas ativos (colaboradores com cargo de motorista). Retorna nome, CPF e CNH.",
+    description:
+      "Lista motoristas ativos (colaboradores com cargo de motorista). Retorna nome, CPF e CNH.",
     parameters: { type: "object" as const, properties: {} },
   },
   {
     name: "buscar_nfe",
-    description: "Busca uma NF-e pela chave de acesso. Retorna número, emitente, destinatário, valor e situação.",
+    description:
+      "Busca uma NF-e pela chave de acesso. Retorna número, emitente, destinatário, valor e situação.",
     parameters: {
       type: "object" as const,
       properties: {
@@ -124,7 +132,7 @@ async function executeTool(
   toolName: string,
   args: Record<string, unknown>,
   empresaId: string,
-  supa: any
+  supa: any,
 ): Promise<string> {
   const limit = Math.min(Number(args.limit) || 10, 50);
 
@@ -160,10 +168,34 @@ async function executeTool(
       const hoje = new Date().toISOString().slice(0, 10);
       const inicioMes = hoje.slice(0, 7) + "-01";
       const [pagar, receber, pagas, recebidas] = await Promise.all([
-        supa.from("lancamentos_financeiros" as never).select("valor", { count: "exact", head: true }).eq("empresa_id", empresaId).eq("tipo", "pagar").eq("status", "aberto"),
-        supa.from("lancamentos_financeiros" as never).select("valor", { count: "exact", head: true }).eq("empresa_id", empresaId).eq("tipo", "receber").eq("status", "aberto"),
-        supa.from("lancamentos_financeiros" as never).select("valor").eq("empresa_id", empresaId).eq("tipo", "pagar").eq("status", "pago").gte("data_pagamento", inicioMes).lte("data_pagamento", hoje),
-        supa.from("lancamentos_financeiros" as never).select("valor").eq("empresa_id", empresaId).eq("tipo", "receber").eq("status", "pago").gte("data_pagamento", inicioMes).lte("data_pagamento", hoje),
+        supa
+          .from("lancamentos_financeiros" as never)
+          .select("valor", { count: "exact", head: true })
+          .eq("empresa_id", empresaId)
+          .eq("tipo", "pagar")
+          .eq("status", "aberto"),
+        supa
+          .from("lancamentos_financeiros" as never)
+          .select("valor", { count: "exact", head: true })
+          .eq("empresa_id", empresaId)
+          .eq("tipo", "receber")
+          .eq("status", "aberto"),
+        supa
+          .from("lancamentos_financeiros" as never)
+          .select("valor")
+          .eq("empresa_id", empresaId)
+          .eq("tipo", "pagar")
+          .eq("status", "pago")
+          .gte("data_pagamento", inicioMes)
+          .lte("data_pagamento", hoje),
+        supa
+          .from("lancamentos_financeiros" as never)
+          .select("valor")
+          .eq("empresa_id", empresaId)
+          .eq("tipo", "receber")
+          .eq("status", "pago")
+          .gte("data_pagamento", inicioMes)
+          .lte("data_pagamento", hoje),
       ]);
       const sum = (arr: any[] | null) => (arr ?? []).reduce((s, r) => s + Number(r.valor ?? 0), 0);
       return JSON.stringify({
@@ -222,7 +254,9 @@ async function executeTool(
     case "buscar_nfe": {
       const { data } = await supa
         .from("nfe_documento" as never)
-        .select("numero, serie, emitente_nome, emitente_cnpj, destinatario_nome, valor_total, status, chave_acesso")
+        .select(
+          "numero, serie, emitente_nome, emitente_cnpj, destinatario_nome, valor_total, status, chave_acesso",
+        )
         .eq("empresa_id", empresaId)
         .ilike("chave_acesso", `%${args.chave}%`)
         .limit(3);
@@ -256,20 +290,19 @@ async function executeTool(
 export async function handleAiChat(
   env: Record<string, string>,
   messages: Array<{ role: string; content: string }>,
-  empresaId: string
+  empresaId: string,
 ): Promise<{ reply: string }> {
-  const supa = createClient(
-    env.SUPABASE_URL || "",
-    env.SUPABASE_PUBLISHABLE_KEY || ""
-  );
+  const supa = createClient(env.SUPABASE_URL || "", env.SUPABASE_PUBLISHABLE_KEY || "");
 
-  const ai = (env as any).AI as { run: Function };
+  const ai = (env as any).AI as {
+    run: (model: string, input: Record<string, unknown>) => Promise<unknown>;
+  };
   if (!ai) throw new Error("Workers AI binding não configurado");
 
   // Tool calling: máximo 3 rodadas para evitar loops
   // Formato Workers AI (llama/hermes): { response, tool_calls: [{ name, arguments }] }
   // — tool_calls no TOPO do objeto, não aninhado; arguments pode vir objeto ou string JSON.
-  let allMessages: Array<Record<string, unknown>> = [
+  const allMessages: Array<Record<string, unknown>> = [
     { role: "system", content: SYSTEM_PROMPT },
     ...messages,
   ];
@@ -281,7 +314,8 @@ export async function handleAiChat(
       max_tokens: 512,
     })) as { response?: unknown; tool_calls?: Array<Record<string, any>> };
     const out = (raw as any)?.result ?? raw ?? {};
-    const calls: Array<Record<string, any>> = out.tool_calls ?? (out.response as any)?.tool_calls ?? [];
+    const calls: Array<Record<string, any>> =
+      out.tool_calls ?? (out.response as any)?.tool_calls ?? [];
     const text = typeof out.response === "string" ? (out.response as string) : "";
 
     // Sem tool_calls: resposta final
@@ -298,8 +332,10 @@ export async function handleAiChat(
       let args: Record<string, unknown> = {};
       const rawArgs = tc.arguments ?? tc.function?.arguments;
       try {
-        args = typeof rawArgs === "string" ? JSON.parse(rawArgs || "{}") : (rawArgs || {});
-      } catch { args = {}; }
+        args = typeof rawArgs === "string" ? JSON.parse(rawArgs || "{}") : rawArgs || {};
+      } catch {
+        args = {};
+      }
       const result = await executeTool(toolName, args, empresaId, supa);
 
       allMessages.push({
