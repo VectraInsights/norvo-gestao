@@ -67,6 +67,12 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 - **Notas vêm marcadas por padrão ao gerar CT-e**: o snapshot da tela de NF Embarque agora grava `selecionadas` junto com `chaves` antes de abrir o CT-e, então as notas escolhidas aparecem já marcadas na grade e somam no total ao carregar.
 
+## [1.2.25] - 2026-10-27
+
+### Corrigido
+
+- **Notas vêm marcadas por padrão ao gerar CT-e**: o snapshot da tela de NF Embarque agora grava `selecionadas` junto com `chaves` antes de abrir o CT-e, então as notas escolhidas aparecem já marcadas na grade e somam no total ao carregar.
+
 ## [1.2.24] - 2026-10-27
 
 ### Corrigido
@@ -80,6 +86,12 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 - **CT-e — notas carregam selecionadas por padrão e somam no total**: `selecionadasAtivas` inicia com as mesmas chaves de `selecionadas` (as notas escolhidas originalmente para o CT-e), então elas aparecem marcadas na grade e já somam no total ao carregar. Desmarcar uma nota mantém ela na grade, apenas para de somar. Marcar de novo volta a somar.
 
 ## [1.2.22] - 2026-10-27
+
+### Corrigido
+
+- **CT-e — checkbox individual permite desmarcar e selecionar novamente**: o `checked` do checkbox individual agora reflete `selecionadasAtivas` (o que está ativo/marcado), não `selecionadas` (o que aparece na grade). Assim, desmarcar uma nota tira ela do total e o checkbox fica realmente desmarcado, permitindo selecioná-la novamente depois. A nota continua visível na grade enquanto estiver em `selecionadas`.
+
+## [1.2.21] - 2026-10-27
 
 ### Corrigido
 
@@ -115,6 +127,12 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 - **CT-e — resumo da seleção no espaço branco**: a faixa verde de totais saiu da base da caixa de notas. Agora o resumo (Qtde, Peso, Valor doc. com unidades) fica no rodapé interno do card da grade. Quando há poucas notas, sobra espaço em branco acima e o resumo fica fixo embaixo; quando há muitas, a tabela faz scroll e o resumo fica visível no rodapé.
 
+## [1.2.15] - 2026-10-27
+
+### Alterado
+
+- **CT-e — resumo da seleção no espaço branco**: a faixa verde de totais saiu da base da caixa de notas. Agora o resumo (Qtde, Peso, Valor doc. com unidades) fica no rodapé interno do card da grade. Quando há poucas notas, sobra espaço em branco acima e o resumo fica fixo embaixo; quando há muitas, a tabela faz scroll e o resumo fica visível no rodapé.
+
 ## [1.2.14] - 2026-10-27
 
 ### Alterado
@@ -122,6 +140,36 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 - **CT-e — grade sempre com espaço abaixo**: o card da grade agora ocupa sempre o espaço disponível (`min-h-0 flex-1`), independente de ter 1, 2, 3 ou mais notas selecionadas. Assim fica sempre com espaço em branco abaixo e os Impostos não colam na caixa de cima.
 
 ## [1.2.13] - 2026-10-27
+
+### Corrigido
+
+- **CT-e — grade Mercadorias Transportadas**: desmarcar uma nota fazia ela sumir da tela. Agora a grade sempre exibe todas as NF-e; a marcação controla apenas o que entra no total e na emissão. O rodapé mostra o total de selecionadas quando houver seleção.
+
+## [1.2.12] - 2026-10-27
+
+### Corrigido
+
+- **CT-e — grade Mercadorias Transportadas**: desmarcar uma nota fazia ela sumir da tela. Agora a grade sempre exibe todas as NF-e; a marcação controla apenas o que entra no total e na emissão. O rodapé mostra o total de selecionadas quando houver seleção.
+
+## [1.2.11] - 2026-10-27
+
+### Corrigido
+
+- **CT-e — grade Mercadorias Transportadas**: desmarcar uma nota fazia ela sumir da tela. Agora a grade sempre exibe todas as NF-e; a marcação controla apenas o que entra no total e na emissão. O rodapé mostra o total de selecionadas quando houver seleção.
+
+## [1.2.10] - 2026-10-27
+
+### Corrigido
+
+- **CT-e — grade Mercadorias Transportadas**: desmarcar uma nota fazia ela sumir da tela. Agora a grade sempre exibe todas as NF-e; a marcação controla apenas o que entra no total e na emissão. O rodapé mostra o total de selecionadas quando houver seleção.
+
+## [1.2.9] - 2026-10-27
+
+### Corrigido
+
+- **CT-e — grade Mercadorias Transportadas**: desmarcar uma nota fazia ela sumir da tela. Agora a grade sempre exibe todas as NF-e; a marcação controla apenas o que entra no total e na emissão. O rodapé mostra o total de selecionadas quando houver seleção.
+
+## [1.2.8] - 2026-10-26
 
 ### Corrigido
 
