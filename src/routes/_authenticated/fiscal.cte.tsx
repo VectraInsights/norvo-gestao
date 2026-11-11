@@ -5053,12 +5053,11 @@ function CtePage() {
   const MOTIVOS_COMPLEMENTO = [
     "Adicional de frete",
     "Descarga",
-    "Diferença de frete",
-    "Estadia",
+    "Diária",
+    "Outros",
     "Pedágio",
     "Reentrega",
     "Retorno",
-    "Outros",
   ];
   const motoristasXml = () => {
     const a: Array<{ xNome: string; cpf: string }> = [];
@@ -11474,6 +11473,14 @@ function CtePage() {
                       {m.toUpperCase()}
                     </SelectItem>
                   ))}
+                  {/* Motivo já gravado em CT-e antigo (ex.: "Estadia", que saiu
+                      da lista): mantém visível para o campo não virar placeholder */}
+                  {cteOrigemDraft.motivo &&
+                    !MOTIVOS_COMPLEMENTO.includes(cteOrigemDraft.motivo) && (
+                      <SelectItem value={cteOrigemDraft.motivo}>
+                        {cteOrigemDraft.motivo.toUpperCase()}
+                      </SelectItem>
+                    )}
                 </SelectContent>
               </Select>
             </div>
