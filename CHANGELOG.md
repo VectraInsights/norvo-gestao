@@ -13,6 +13,12 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.35] - 2026-11-11
+
+### Alterado
+
+- **Motivos do CT-e complementar**: o seletor "Motivo do Complemento" ficou sem a opção **"Diferença de frete"** e com **"Estadia" substituída por "Diária"** — lista final em ordem alfabética estrita: Adicional de frete, Descarga, Diária, Outros, Pedágio, Reentrega, Retorno ("Outros" saiu do fim e entrou na posição alfabética). CT-es antigos já gravados com os motivos removidos continuam exibindo o valor no campo (item especial no select) em vez de cair no placeholder.
+
 ## [1.2.34] - 2026-11-11
 
 ### Corrigido
