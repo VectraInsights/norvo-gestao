@@ -13,6 +13,12 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.36] - 2026-11-11
+
+### Corrigido
+
+- **Complementar nascia com o valor do CT-e original**: a herança (`...base` do form salvo) copiava os **Componentes do Frete** do original — o complementar abria com "Valor Serviço" já preenchido (ex.: R$ 100,00) e os demais componentes (Taxa Coleta, Taxa Entrega, Ad Valorem, GRIS, Outros, Desconto). Os 7 valores agora vêm **zerados** (`0.00`): o complementar é uma prestação nova e o valor deve ser digitado. Continuam herdados o restante (tomador, placas, motorista, seguro, notas).
+
 ## [1.2.35] - 2026-11-11
 
 ### Alterado
