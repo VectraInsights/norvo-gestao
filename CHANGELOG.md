@@ -13,6 +13,23 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.33] - 2026-11-11
+
+### Alterado
+
+- **CT-e complementar abre pelo motivo**: o botão "Emitir CT-e complementar" agora abre direto a tela "CT-e Complementar — CT-e Original" (motivo + CT-e de origem) e só depois do **Salvar** é que o formulário do CT-e abre, já com os dados do original carregados. O modal saiu de dentro do diálogo do formulário (ele só renderizava com o form aberto) e o cancelar antes do Salvar volta o estado para um CT-e novo.
+- **Finalidade travada em COMPLEMENTAR**: no fluxo do botão a "Finalidade / Tipo de Serviço" fica travada em `COMPLEMENTAR` (não dá para trocar por Normal por engano); os demais fluxos (substituição, CT-e novo, rascunho, percurso) continuam liberados.
+
+### Corrigido
+
+- **Placas e motorista herdados do CT-e original**: o complementar herdava apenas remetente/destinatário. Agora herda **Tração, Reboque 1, Reboque 2 e o motorista** (com 2º motorista quando existe), lidos do form salvo do original e, na falta dele, direto do XML (`<veicTracao>`, `<veicReboque>`, `<moto>`) — inclusive o id do motorista no cadastro, para o `<moto>` com CPF sair no XML.
+- **Finalidade que voltava para NORMAL**: ao abrir o formulário do complementar, um snapshot velho de "Gerar CT-e" (`cte_progress_snapshot`) era restaurado por cima do form e apagava finalidade, motorista e placas. O snapshot agora é ignorado no fluxo do complementar.
+- **Motorista do CT-e escolhido no modal**: a herança passou a ter fallback no XML e não limpa mais os dados quando o CT-e escolhido está fora da lista.
+
+### Adicionado
+
+- **`src/lib/cte-original.ts`** + 8 testes: leitura dos veículos/motorista do CT-e original (XML ou form) e resolução do id do motorista por nome/CPF.
+
 ## [1.2.32] - 2026-11-09
 
 ### Alterado
