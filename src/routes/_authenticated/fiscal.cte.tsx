@@ -4897,6 +4897,16 @@ function CtePage() {
         dataEmissao: new Date().toISOString().slice(0, 10),
         pedagioPagto: base.pedagioPagto || "sem-pagamento",
         valePedagio: base.valePedagio || "0.00",
+        // Valores do frete NÃO se herdam: o complementar é uma prestação nova
+        // (o `...base` copiava o vPrest/componentes do original, ex.: R$ 100,00,
+        // fazendo o complementar nascer já com o valor do CT-e original).
+        vPrest: "0.00",
+        taxaColeta: "0.00",
+        taxaEntrega: "0.00",
+        adValorem: "0.00",
+        gris: "0.00",
+        outrosPed: "0.00",
+        descontoPed: "0.00",
         // Veículos e motorista herdados do original (form ou XML)
         placaVeiculo: veic.placaVeiculo,
         placaReboque: veic.placaReboque,
