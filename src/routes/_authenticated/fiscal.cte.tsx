@@ -538,6 +538,10 @@ function chavesNFeDoXml(xmlAssinado: string | null): string[] {
   return [...out];
 }
 
+// Colunas das NF-es da grade do CT-e (remetente/destinatário saem daqui).
+const COLS_NFE_PENDENTES =
+  "chave,n_nf,serie,emit_nome,emit_cnpj,emit_uf,emit_cmun,emit_xmun,emit_ie,emit_logradouro,emit_nro,emit_bairro,emit_cep,emit_fone,dest_nome,dest_cnpj,dest_uf,dest_cmun,dest_xmun,dest_ie,dest_logradouro,dest_nro,dest_bairro,dest_cep,dest_fone,valor,peso,qvol,qtd_unit,desc_mercadoria,ncm,und_med,valor_merc,valor_frete,especificacao,data_emissao,tomador_nome,tomador_cnpj,tomador_uf,tomador_cmun,tomador_xmun,tomador_ie,tomador_logradouro,tomador_bairro,tomador_cep,mod_frete";
+
 // Placa(s), motorista e data de emissão direto do XML/form do CT-e p/ a tabela.
 function infoCteLinha(xmlAssinado: string | null): {
   placas: string[];
@@ -4743,9 +4747,7 @@ function CtePage() {
       if (chs.length && empresa) {
         const { data } = await supabase
           .from("cte_nfes_pendentes" as any)
-          .select(
-            "chave,n_nf,serie,emit_nome,emit_cnpj,emit_uf,emit_cmun,emit_xmun,emit_ie,emit_logradouro,emit_nro,emit_bairro,emit_cep,emit_fone,dest_nome,dest_cnpj,dest_uf,dest_cmun,dest_xmun,dest_ie,dest_logradouro,dest_nro,dest_bairro,dest_cep,dest_fone,valor,peso,qvol,qtd_unit,desc_mercadoria,ncm,und_med,valor_merc,valor_frete,especificacao,data_emissao,tomador_nome,tomador_cnpj,tomador_uf,tomador_cmun,tomador_xmun,tomador_ie,tomador_logradouro,tomador_bairro,tomador_cep,mod_frete",
-          )
+          .select(COLS_NFE_PENDENTES)
           .eq("empresa_id", empresa.id)
           .in("chave", chs);
         if (((data as any[]) || []).length) setMercadorias(mapearPendentes(data as any) as any);
@@ -4785,7 +4787,32 @@ function CtePage() {
     toast.info(`Substituição do CT-e ${doc.numero || ""} — confira os dados e emita`);
   };
 
-  const complementarCte = (doc: CteDoc) => {
+  // NF-es de um CT-e já emitido: o CT-e Normal não tem <det> e o xml_assinado
+  // autorizado guarda só {xml, form} — as notas saem da tabela de pendentes
+  // (mesmo caminho do visualizarDoc; após a emissão viram "embarcada" e seguem
+  // consultáveis). Sem elas a grade nasce vazia e Remetente/Destinatário não
+  // renderizam. Fallback: nfs[] gravado no rascunho.
+  const carregarNotasDoCte = async (xmlAssinado: string | null | undefined) => {
+    try {
+      const chs = chavesNFeDoXml(xmlAssinado || "");
+      if (chs.length && empresa) {
+        const { data } = await supabase
+          .from("cte_nfes_pendentes" as any)
+          .select(COLS_NFE_PENDENTES)
+          .eq("empresa_id", empresa.id)
+          .in("chave", chs);
+        const rows = (data as any[]) || [];
+        if (rows.length) return mapearPendentes(rows) as any[];
+      }
+    } catch {}
+    try {
+      const p = JSON.parse(String(xmlAssinado || ""));
+      if (Array.isArray(p.nfs) && p.nfs.length) return p.nfs as any[];
+    } catch {}
+    return [] as any[];
+  };
+
+  const complementarCte = async (doc: CteDoc) => {
     const chave = String(doc.chave_acesso || "").replace(/\D/g, "");
     // Tração/Reboque/motorista do original (form salvo ou XML) + id no cadastro
     // ativo: sem isso o complementar abria com placas/motorista vazios.
@@ -4882,10 +4909,16 @@ function CtePage() {
         motorista2Id: acharId(veic.motorista2Nome, veic.motorista2Cpf, base.motorista2Id),
       };
       setForm({ ...emptyForm, ...inherited } as any);
-      setMercadorias(nfs.length ? (nfs as any) : Array.isArray(parsed.nfs) ? parsed.nfs : []);
-      setSelecionadas(
-        new Set((nfs.length ? nfs : parsed.nfs || []).map((n: any) => n.chave).filter(Boolean)),
-      );
+      const notas = await carregarNotasDoCte(doc.xml_assinado);
+      const lista = notas.length
+        ? notas
+        : nfs.length
+          ? (nfs as any)
+          : Array.isArray(parsed.nfs)
+            ? parsed.nfs
+            : [];
+      setMercadorias(lista as any);
+      setSelecionadas(new Set(lista.map((n: any) => n.chave).filter(Boolean)));
     } catch (error) {
       console.log("[v0] Falha ao herdar dados do CT-e complementar:", error);
       setForm({
@@ -4903,8 +4936,9 @@ function CtePage() {
         motorista2Nome: veic.motorista2Nome,
         motorista2Id: acharId(veic.motorista2Nome, veic.motorista2Cpf, base.motorista2Id),
       } as any);
-      setMercadorias([]);
-      setSelecionadas(new Set());
+      const notas = await carregarNotasDoCte(doc.xml_assinado);
+      setMercadorias(notas as any);
+      setSelecionadas(new Set(notas.map((n: any) => n.chave).filter(Boolean)));
     }
     setEditingRascunhoId(null);
     setViewDoc(null);
@@ -5061,7 +5095,31 @@ function CtePage() {
           throw new Error("Selecione pelo menos uma NF-e na grade antes de emitir o CT-e");
         }
         // Uma NF-e = um CT-e: barra na hora se a NF-e já foi autorizada ou está em outro rascunho
-        const bloq = chavesBloqueadas(chaves, editingRascunhoId);
+        let bloq = chavesBloqueadas(chaves, editingRascunhoId);
+        // Complemento: as NF-es já estão embarcadas no CT-e ORIGINAL (por isso
+        // aparecem como "utilizadas"). Sem isentar as chaves dele, a emissão
+        // barra com "já utilizada em CT-e <original>".
+        if ((form as any).finalidadeEmissao === "Complemento") {
+          const chOrig = chaveCteOriginal();
+          if (chOrig.length === 44) {
+            let xmlOrig = ((docs || []) as CteDoc[]).find(
+              (d) => String(d.chave_acesso || "").replace(/\D/g, "") === chOrig,
+            )?.xml_assinado;
+            if (!xmlOrig && empresa) {
+              try {
+                const { data } = await supabase
+                  .from("cte_documentos" as any)
+                  .select("xml_assinado")
+                  .eq("chave_acesso", chOrig)
+                  .maybeSingle();
+                xmlOrig = (data as any)?.xml_assinado;
+              } catch {}
+            }
+            const chavesOrig = new Set(chavesNFeDoXml(xmlOrig || ""));
+            if (chavesOrig.size)
+              bloq = bloq.filter((b) => !chavesOrig.has(b.chave) || !b.onde.startsWith("CT-e "));
+          }
+        }
         if (bloq.length > 0) {
           const b0 = bloq[0];
           throw new Error(
@@ -5569,8 +5627,9 @@ function CtePage() {
       toast.info(`CT-e complementar do CT-e ${origem || ""} — dados do original carregados`);
     }
   };
-  // Complemento do nosso CT-e: herda motorista, veículos e seguro do XML do original.
-  const herdarDadosCteOriginal = (chave: string) => {
+  // Complemento do nosso CT-e: herda motorista, veículos, seguro e as NF-es
+  // do XML do original (sem as notas, Remetente/Destinatário não aparecem).
+  const herdarDadosCteOriginal = async (chave: string) => {
     const orig = ((docs || []) as CteDoc[]).find(
       (x) => String(x.chave_acesso || "").replace(/\D/g, "") === String(chave).replace(/\D/g, ""),
     );
@@ -5620,6 +5679,13 @@ function CtePage() {
       }));
     } catch {
       /* mantém só a chave */
+    }
+    // NF-es do CT-e escolhido: alimentam a grade e os cards de
+    // Remetente/Destinatário (primeira nota selecionada).
+    const notas = await carregarNotasDoCte(orig?.xml_assinado || null);
+    if (notas.length) {
+      setMercadorias(notas as any);
+      setSelecionadas(new Set(notas.map((n: any) => n.chave).filter(Boolean)));
     }
   };
   const enviarCce = useMutation({
