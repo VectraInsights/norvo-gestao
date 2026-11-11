@@ -13,6 +13,13 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.34] - 2026-11-11
+
+### Corrigido
+
+- **Complementar sem remetente, destinatário e notas**: o CT-e complementar abria com a grade de NF-es vazia e, sem notas, os cards de Remetente/Destinatário nem renderizavam ("Importe NF-es para preencher remetente e destinatário") e a emissão falhava com "Selecione pelo menos uma NF-e". Causa: as notas eram lidas de `<det>` (que só existe no CT-e Simplificado) e vinham por acidente do snapshot antigo de "Gerar CT-e" (agora corretamente bloqueado) — o CT-e Normal guarda as NF-es em `infDoc > infNFe > chave` e o `xml_assinado` autorizado grava só `{xml, form}`. Agora as notas do original são carregadas da tabela `cte_nfes_pendentes` (mesmo caminho do "visualizar XML", com fallback para o `nfs[]` do rascunho), tanto pelo botão "Emitir CT-e complementar" quanto ao trocar o CT-e no modal.
+- **Emissão barrada pelas próprias NF-es do original**: no Complemento as NF-es apareciam como "já utilizada em CT-e original" porque estão embarcadas nele. As chaves do CT-e referenciado agora são isentas do bloqueio quando a finalidade é Complemento.
+
 ## [1.2.33] - 2026-11-11
 
 ### Alterado
