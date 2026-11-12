@@ -74,6 +74,8 @@ import {
   Pencil,
   Sparkles,
   ArrowLeftRight,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DateInput } from "@/components/erp/date-input";
@@ -397,6 +399,31 @@ function ContaDetalhe({
     const [y, m] = mes.split("-").map(Number);
     return `${mes}-${String(new Date(y, m, 0).getDate()).padStart(2, "0")}`;
   })();
+
+  // Data da última transação importada do OFX: mostra até onde o extrato
+  // carregado cobre (e avisa quando ele é parcial — falta o dia de hoje).
+  const { data: importadoAte } = useQuery({
+    enabled: !!contaId,
+    queryKey: ["ofx-ultima", contaId] as const,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ofx_transacoes")
+        .select("data_transacao")
+        .eq("conta_bancaria_id", contaId)
+        .order("data_transacao", { ascending: false })
+        .limit(1);
+      if (error) throw error;
+      return String((data?.[0]?.data_transacao as string) || "");
+    },
+  });
+  const hojeIso = format(new Date(), "yyyy-MM-dd");
+  const dataUltima = String(importadoAte || "");
+  // "2026-11-12" -> "12/11/2026" (sem new Date(): coluna DATE em UTC-3 volta um dia)
+  const brData = dataUltima
+    ? `${dataUltima.slice(8, 10)}/${dataUltima.slice(5, 7)}/${dataUltima.slice(0, 4)}`
+    : "";
+  // Extrato parcial: o OFX importado não cobre o dia de hoje.
+  const extratoParcial = !!dataUltima && dataUltima < hojeIso;
   const { data: lancs, isLoading: loadingMovs } = useQuery({
     enabled: !!contaId,
     queryKey: ["lancs-conta", contaId, mes] as const,
@@ -611,10 +638,24 @@ function ContaDetalhe({
             size="sm"
             onClick={() => onImportar(contaId)}
             className="h-10 rounded-xl px-4 shadow-sm"
+            title="Abre o seletor de arquivos: baixe o OFX no banco (pode ser o extrato parcial do dia) e importe aqui."
           >
-            <Upload className="mr-1.5 h-3.5 w-3.5" />
-            Importar OFX
+            {brData ? (
+              <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+            ) : (
+              <Upload className="mr-1.5 h-3.5 w-3.5" />
+            )}
+            {brData ? "Reimportar parcial do dia" : "Importar OFX"}
           </Button>
+        )}
+        {extratoParcial && (
+          <span
+            className="flex h-10 items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 text-[11px] font-medium text-amber-700 dark:text-amber-300"
+            title={`O OFX importado vai até ${brData}. Baixe o extrato parcial de hoje no banco para não deixar a conciliação do dia pendente.`}
+          >
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+            Extrato parcial — hoje pode faltar movimento
+          </span>
         )}
         {conta && (
           <DropdownMenu>
@@ -673,6 +714,14 @@ function ContaDetalhe({
                 className={`text-tabular text-sm font-bold ${valorPendente > 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}
               >
                 {brl(valorPendente)}
+              </span>
+            </div>
+            <div>
+              <span className="text-[11px] text-muted-foreground">Importado até </span>
+              <span
+                className={`text-tabular text-sm font-bold ${extratoParcial ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}
+              >
+                {brData || "—"}
               </span>
             </div>
           </div>
@@ -1331,6 +1380,7 @@ function ContasFinanceiras() {
     qc.invalidateQueries({ queryKey: ["ofx", contaId] });
     qc.invalidateQueries({ queryKey: ["ofx-mes", contaId] });
     qc.invalidateQueries({ queryKey: ["ofx-pend", contaId] });
+    qc.invalidateQueries({ queryKey: ["ofx-ultima", contaId] });
     qc.invalidateQueries({ queryKey: ["lanc-abertos", empresa?.id] });
     qc.invalidateQueries({ queryKey: ["lancamentos"] });
     qc.invalidateQueries({ queryKey: ["lancs-conta", contaId] });
@@ -2944,6 +2994,7 @@ function ReconcileDialog({
       setSel(new Set());
       qc.invalidateQueries({ queryKey: ["ofx", contaId] });
       qc.invalidateQueries({ queryKey: ["ofx-mes", contaId] });
+      qc.invalidateQueries({ queryKey: ["ofx-ultima", contaId] });
     },
   });
 
@@ -2977,6 +3028,7 @@ function ReconcileDialog({
       toast.success(`Extrato removido — ${r.lancs} lançamento(s) excluído(s)`);
       qc.invalidateQueries({ queryKey: ["ofx", contaId] });
       qc.invalidateQueries({ queryKey: ["ofx-mes", contaId] });
+      qc.invalidateQueries({ queryKey: ["ofx-ultima", contaId] });
       qc.invalidateQueries({ queryKey: ["lanc-abertos", empresaId] });
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
       qc.invalidateQueries({ queryKey: ["contas-bancarias"] });
