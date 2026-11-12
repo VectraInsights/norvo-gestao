@@ -13,6 +13,13 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.37] - 2026-11-12
+
+### Adicionado
+
+- **"Importado até" na conciliação bancária**: a tela Financeiro → Contas mostra agora a data da última transação do OFX carregado (**Importado até DD/MM/AAAA**) no cartão de saldos, e o botão de importação passa a se chamar **"Reimportar parcial do dia"** quando já existe extrato importado (na primeira importação continua "Importar OFX"). O OFX **continua sendo carregado manualmente** — o botão apenas abre o seletor de arquivos.
+- **Aviso de extrato parcial**: quando o OFX importado não cobre o dia de hoje, aparece o alerta **"Extrato parcial — hoje pode faltar movimento"** (ao lado do botão), para a conciliação do dia não ficar pendente sem ninguém perceber.
+
 ## [1.2.36] - 2026-11-11
 
 ### Corrigido
