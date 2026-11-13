@@ -13,6 +13,24 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.39] - 2026-11-13
+
+### Adicionado
+
+- **Marcador de modalidade na lista de CT-es**: nova coluna **"Tipo"** entre "Número" e "Série" identificando o documento — **Complementar** (badge âmbar), **Substituição** (badge azul), **Subcontratação**, **Redespacho** e **Redespacho Intermediário**; o CT-e Normal continua exibindo "Normal". No hover do badge do complementar aparece a chave do CT-e original que ele complementa. A modalidade sai do XML emitido (`<tpCTe>`/`<tpServ>`) e, nos rascunhos, do form salvo.
+- **Notas do CT-e original repetidas no complementar**: como o CT-e complementar não tem `<infDoc>`/`<infNFe>` no XML (grupo não existe no leiaute 4.00), a coluna **"Notas Fiscais"** passa a exibir **as mesmas notas do CT-e original**, marcadas com a etiqueta **"(do original)"** — o complementar deixa de parecer um CT-e "sem notas".
+
+### Alterado
+
+- **Regras da SEFAZ (MOC CT-e 4.00) aplicadas na lista**: os botões **"Emitir CT-e complementar"** e **"Emitir CT-e de substituição"** agora são desabilitados com o motivo no tooltip quando a operação seria rejeitada pela SEFAZ:
+  - **Complementar**: o CT-e alvo deve ser Normal ou Substituição (G164 — rejeição 491), não pode já ter sido substituído (G166 — 657) e aceita no máximo 10 complementares (G167 — 520). **Complementar um complementar é bloqueado**, tanto no botão quanto dentro de `complementarCte` (toast explicando).
+  - **Substituir**: o CT-e deve ser Normal/Substituição (G085 — 571) e ainda não ter sido complementado (G083 — 659).
+  - O seletor **"CT-e Original"** do fluxo de complemento/substituição lista apenas os CT-e elegíveis para a modalidade escolhida.
+- **Emissão de CT-e mais rápida** (gargalos medidos na prática):
+  - **BrasilAPI (IBGE)**: a consulta de município era feita **2x em sequência a cada emissão** e demorava ~10s (às vezes devolvendo HTML). Agora só é consultada quando o `cMun` guardado é vazio ou pertence a outra UF; a lista de municípios da UF fica em cache (memória + `localStorage`, 12h) e a chamada externa tem **timeout de 3,5s**, com início/fim resolvidos **em paralelo**.
+  - **Lista de CT-es**: `linhaDocs()` (parse do XML/form) era chamada dentro do comparador de ordenação — O(n log n) parses por render — e de novo em cada linha da tabela. Agora é memoizada por documento (`useMemo`), com mapas por id e por chave.
+  - **Certificado digital**: `buscarCertificadoAtivo` fazia 4 idas ao Supabase (registro, download do PFX, senha, CNPJ/UF) a cada emissão; o download do PFX + senha passam a ficar em cache em memória por 5 min, invalidado por **id do certificado** (um upload novo vale na hora).
+
 ## [1.2.38] - 2026-11-13
 
 ### Corrigido
