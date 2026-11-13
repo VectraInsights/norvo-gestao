@@ -13,6 +13,12 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.40] - 2026-11-13
+
+### Alterado
+
+- **Coluna "Notas Fiscais" sem marcação extra**: a etiqueta **"(do original)"** que aparecia ao lado das notas repetidas no CT-e complementar foi removida — as notas do CT-e original aparecem agora **igual às demais linhas**, sem texto entre parênteses. A repetição em si continua (o complementar segue listando as mesmas notas do original).
+
 ## [1.2.39] - 2026-11-13
 
 ### Adicionado
