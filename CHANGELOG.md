@@ -13,6 +13,16 @@ O identificador do deploy (SHA do commit) aparece no rodapé do menu lateral.
 
 ## [Não publicado]
 
+## [1.2.38] - 2026-11-13
+
+### Corrigido
+
+- **CT-e rejeitado com `cStat 225` ("Falha no Schema XML do CT-e")**: o XML gerado não respeitava o leiaute CT-e 4.00 oficial e era recusado pela SEFAZ MG (o `cStat 217` no `consSit` era consequência — CT-e rejeitado não entra na base). Três correções no gerador (`src/lib/sefaz-cte.ts`):
+  - **Complementar (`tpCTe=1`)**: o grupo `<infCteComp>` era emitido **depois** de `</infCte>` (e junto do `<infCTeNorm>`). No leiaute 4.00 ele é **alternativa** ao `<infCTeNorm>` (regra G017 do MOC: _"Tipo do CTe=1 → deve existir o grupo de CTe complementar"_) e precisa ficar **dentro** do `<infCte>`. Agora o complementar sai com `<infCteComp><chCTe>…</chCTe></infCteComp>` no lugar do `<infCTeNorm>` (sem `<infCarga>`/`<infDoc>`/`<infModal>`, como manda o schema).
+  - **Substituto (`tpCTe=3`)**: o `<infCteSub>` também estava fora do `<infCte>` e usava `<chCTe>`; no leiaute ele fica **dentro do `<infCTeNorm>`** (depois do `<infModal>`) e o campo da chave chama **`<chCte>`**.
+  - **`<docAnt>` (subcontratação/redespacho)**: faltava o `<xNome>` do emissor do documento anterior — obrigatório no XSD 4.00 (`<emiDocAnt>` = CNPJ, IE?, UF?, **xNome**, idDocAnt). O nome/IE/UF agora saem do CT-e anterior já salvo no sistema (ou do emitente atual, caso do redespacho, que é da mesma empresa).
+  - **`<pgtoVinc>`** (split payment, RTC fase 2) também estava fora do `<infCte>`; agora fica no lugar correto (filho do `<infCte>`, depois do `<imp>`), inclusive no CT-e Simplificado.
+
 ## [1.2.37] - 2026-11-12
 
 ### Adicionado
