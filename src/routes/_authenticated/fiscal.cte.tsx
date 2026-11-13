@@ -4,6 +4,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/erp/primary-button";
 import { StatusBadge } from "@/components/erp/status-badge";
+import { Badge } from "@/components/ui/badge";
+import {
+  modalidadeCte,
+  motivoBloqueioComplementar,
+  motivoBloqueioSubstituicao,
+} from "@/lib/cte-modalidade";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -499,36 +505,93 @@ function ufPorCMunIBGE(cMun: unknown): string {
 
 // Resolve o cMun IBGE por cidade+UF (backstop p/ percursos antigos salvos sem
 // o código: sem ele o CT-e herda o cMun da NF-e e a UF sai errada).
-// Cache em memória; se falhar, devolve "" (chamador mantém o valor atual).
+//
+// O BrasilAPI é lento (medido: ~10s e às vezes devolve HTML em vez de JSON),
+// e a consulta era feita 2x em sequência a cada emissão. Agora:
+//  - se o código guardado já é válido e pertence à UF, nem sai pra fora
+//    (caminho normal — a emissão não espera nada);
+//  - a lista de municípios da UF fica em cache (memória + localStorage) e a
+//    consulta externa tem timeout curto (3,5s), rodando uma vez por UF.
 const cmunIBGEFixCache = new Map<string, string>();
-async function resolverCMunIBGE(xmun: unknown, uf: unknown): Promise<string> {
+const cmunMunicipiosCache = new Map<string, { t: number; lista: MunicipioIBGE[] }>();
+const CMUN_CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12h
+const CMUN_TIMEOUT_MS = 3500;
+type MunicipioIBGE = { nome: string; codigo: string };
+const normMunicipio = (s: string) =>
+  (s || "")
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[^A-Z ]/g, "")
+    .replace(/ +/g, " ")
+    .trim();
+
+function lerMunicipiosDoCache(uf: string): MunicipioIBGE[] | null {
+  const mem = cmunMunicipiosCache.get(uf);
+  if (mem && Date.now() - mem.t < CMUN_CACHE_TTL_MS) return mem.lista;
+  try {
+    const raw = localStorage.getItem("cte-municipios-" + uf);
+    if (raw) {
+      const o = JSON.parse(raw);
+      if (o && Array.isArray(o.lista) && Date.now() - Number(o.t || 0) < CMUN_CACHE_TTL_MS) {
+        cmunMunicipiosCache.set(uf, { t: Number(o.t), lista: o.lista });
+        return o.lista as MunicipioIBGE[];
+      }
+    }
+  } catch {
+    /* localStorage indisponível (SSR/privacidade) */
+  }
+  return null;
+}
+
+async function buscarMunicipiosIBGE(uf: string): Promise<MunicipioIBGE[] | null> {
+  const cache = lerMunicipiosDoCache(uf);
+  if (cache) return cache;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), CMUN_TIMEOUT_MS);
+  try {
+    const r = await fetch(
+      `https://brasilapi.com.br/api/ibge/municipios/v1/${encodeURIComponent(uf)}`,
+      { signal: ctrl.signal },
+    );
+    if (!r.ok) return null;
+    const arr = (await r.json()) as Array<{ nome?: unknown; codigo_ibge?: unknown }>;
+    const lista: MunicipioIBGE[] = (Array.isArray(arr) ? arr : [])
+      .map((m) => ({ nome: String(m?.nome || ""), codigo: String(m?.codigo_ibge || "") }))
+      .filter((m) => m.nome && m.codigo);
+    if (!lista.length) return null;
+    const t = Date.now();
+    cmunMunicipiosCache.set(uf, { t, lista });
+    try {
+      localStorage.setItem("cte-municipios-" + uf, JSON.stringify({ t, lista }));
+    } catch {
+      /* ignore */
+    }
+    return lista;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function resolverCMunIBGE(xmun: unknown, uf: unknown, cmunAtual?: unknown): Promise<string> {
   const xu = String(xmun || "").trim();
   const uu = String(uf || "")
     .trim()
     .toUpperCase();
   if (!xu || !uu) return "";
+  const atual = String(cmunAtual || "").replace(/\D/g, "");
+  // Código já válido e da UF certa: dispensa a consulta externa (BrasilAPI
+  // demora ~10s e às vezes nem responde).
+  if (/^\d{7}$/.test(atual) && ufPorCMunIBGE(atual) === uu) return atual;
   const key = xu.toUpperCase() + "|" + uu;
   if (cmunIBGEFixCache.has(key)) return cmunIBGEFixCache.get(key)!;
-  try {
-    const r = await fetch(
-      `https://brasilapi.com.br/api/ibge/municipios/v1/${encodeURIComponent(uu)}`,
-    );
-    if (!r.ok) return "";
-    const arr = (await r.json()) as any[];
-    const norm = (s: string) =>
-      (s || "")
-        .toUpperCase()
-        .normalize("NFD")
-        .replace(/[^A-Z ]/g, "")
-        .replace(/ +/g, " ")
-        .trim();
-    const hit = (arr || []).find((m) => norm(m.nome) === norm(xu));
-    const cod = hit?.codigo_ibge ? String(hit.codigo_ibge) : "";
-    cmunIBGEFixCache.set(key, cod);
-    return cod;
-  } catch {
-    return "";
-  }
+  const lista = await buscarMunicipiosIBGE(uu);
+  if (!lista) return "";
+  const hit = lista.find((m) => normMunicipio(m.nome) === normMunicipio(xu));
+  const cod = hit?.codigo || "";
+  if (cod) cmunIBGEFixCache.set(key, cod);
+  return cod;
 }
 
 // Chaves das NF-es vinculadas ao CT-e: Simplificado usa <chNFe>, Normal usa
@@ -569,10 +632,14 @@ const COLS_NFE_PENDENTES =
   "chave,n_nf,serie,emit_nome,emit_cnpj,emit_uf,emit_cmun,emit_xmun,emit_ie,emit_logradouro,emit_nro,emit_bairro,emit_cep,emit_fone,dest_nome,dest_cnpj,dest_uf,dest_cmun,dest_xmun,dest_ie,dest_logradouro,dest_nro,dest_bairro,dest_cep,dest_fone,valor,peso,qvol,qtd_unit,desc_mercadoria,ncm,und_med,valor_merc,valor_frete,especificacao,data_emissao,tomador_nome,tomador_cnpj,tomador_uf,tomador_cmun,tomador_xmun,tomador_ie,tomador_logradouro,tomador_bairro,tomador_cep,mod_frete";
 
 // Placa(s), motorista e data de emissão direto do XML/form do CT-e p/ a tabela.
+// Devolve também o XML e o form já lidos: a modalidade (tpCTe/tpServ) sai de
+// lá e não vale parsear o documento de novo.
 function infoCteLinha(xmlAssinado: string | null): {
   placas: string[];
   motorista: string;
   dataEmi: string;
+  xml: string;
+  form: Record<string, unknown>;
 } {
   let raw = String(xmlAssinado || ""),
     form: Record<string, unknown> = {};
@@ -617,7 +684,7 @@ function infoCteLinha(xmlAssinado: string | null): {
   const dataEmi = /^\d{4}-\d{2}-\d{2}/.test(dataRaw)
     ? dataRaw.slice(0, 10).split("-").reverse().join("/")
     : dataRaw.slice(0, 10);
-  return { placas, motorista, dataEmi };
+  return { placas, motorista, dataEmi, xml: raw, form };
 }
 
 // Linha resumida de um documento p/ exibição e ordenação das tabelas
@@ -630,6 +697,10 @@ function linhaDocs(d: CteDoc): {
   valor: number;
   responsavel: string;
   dataEmi: string;
+  tpCTe: string;
+  tpServ: string;
+  chReferenciada: string;
+  rotulo: string;
 } {
   const info = infoCteLinha(d.xml_assinado);
   let nfsArr: string[] = [];
@@ -650,6 +721,10 @@ function linhaDocs(d: CteDoc): {
       nfsArr = [];
     }
   }
+  // Modalidade do CT-e (Normal / Complementar / Substituição / Subcontratação /
+  // Redespacho). O XML emitido traz <tpCTe>/<tpServ>; o rascunho, o form salvo.
+  const form = info.form as Record<string, any>;
+  const mod = modalidadeCte(info.xml, form);
   return {
     placas: info.placas.join(" / "),
     motorista: info.motorista,
@@ -659,6 +734,10 @@ function linhaDocs(d: CteDoc): {
     valor: Number(d.valor_servico ?? 0),
     responsavel: String((d as any).responsavel_emissao || ""),
     dataEmi: info.dataEmi,
+    tpCTe: mod.tpCTe,
+    tpServ: mod.tpServ,
+    chReferenciada: mod.chReferenciada,
+    rotulo: mod.rotulo,
   };
 }
 
@@ -955,6 +1034,42 @@ function CtePage() {
       rascunhos: docs.filter((d) => d.status === "rascunho").sort(byNum),
     };
   }, [docs]);
+
+  // Linha de cada documento (placa/motorista/notas/modalidade) calculada UMA
+  // vez por documento: antes o comparador da ordenação chamava linhaDocs()
+  // a cada comparação (parse do XML O(n log n) vezes) e a tabela reparseava
+  // tudo a cada re-render — era o grosso da lentidão percebida na tela.
+  const { linhasPorDoc, linhasPorChave } = useMemo(() => {
+    const porDoc = new Map<string, ReturnType<typeof linhaDocs>>();
+    const porChave = new Map<string, ReturnType<typeof linhaDocs>>();
+    for (const d of docs || []) {
+      const L = linhaDocs(d);
+      porDoc.set(d.id, L);
+      const ch = String(d.chave_acesso || "").replace(/\D/g, "");
+      if (ch && !porChave.has(ch)) porChave.set(ch, L);
+    }
+    return { linhasPorDoc: porDoc, linhasPorChave: porChave };
+  }, [docs]);
+  const linhaDe = (d: CteDoc) => linhasPorDoc.get(d.id) || linhaDocs(d);
+
+  // Regras da SEFAZ (MOC CT-e 4.00) p/ o botão de complementar:
+  //  - G164: o CT-e complementado deve ser Normal ou Substituição (complementar
+  //    um complementar é rejeitado com 491);
+  //  - G166: o CT-e complementado não pode ter sido substituído (657);
+  //  - G167: no máximo 10 CT-es complementares por CT-e (520).
+  const { complementosPorChave, substituicoesPorChave } = useMemo(() => {
+    const comp = new Map<string, number>();
+    const subs = new Map<string, number>();
+    for (const d of docs || []) {
+      const L = linhasPorDoc.get(d.id);
+      if (!L || !L.chReferenciada) continue;
+      if (L.rotulo === "Complementar")
+        comp.set(L.chReferenciada, (comp.get(L.chReferenciada) || 0) + 1);
+      if (L.rotulo === "Substituição")
+        subs.set(L.chReferenciada, (subs.get(L.chReferenciada) || 0) + 1);
+    }
+    return { complementosPorChave: comp, substituicoesPorChave: subs };
+  }, [docs, linhasPorDoc]);
 
   // Busca + período nas abas de documentos (nº, chave, motivo, valor)
   const buscaDocsNorm = buscaDocs.trim().toLowerCase();
@@ -4785,6 +4900,20 @@ function CtePage() {
   };
 
   const substituirCte = (doc: CteDoc) => {
+    // MOC CT-e 4.00: G085 (o CT-e substituído deve ser Normal ou Substituição
+    // — rejeição 571) e G083 (CT-e substituído não pode ter sido complementado
+    // — rejeição 659).
+    const chaveDoc = String(doc.chave_acesso || "").replace(/\D/g, "");
+    const L = linhaDe(doc);
+    const motivoSubs = motivoBloqueioSubstituicao({
+      rotulo: L.rotulo,
+      qtdComplementares: complementosPorChave.get(chaveDoc) || 0,
+      qtdSubstituicoes: substituicoesPorChave.get(chaveDoc) || 0,
+    });
+    if (motivoSubs) {
+      toast.error(motivoSubs);
+      return;
+    }
     try {
       const parsed = JSON.parse(doc.xml_assinado || "{}");
       const base = parsed.form || {};
@@ -4840,6 +4969,23 @@ function CtePage() {
 
   const complementarCte = async (doc: CteDoc) => {
     const chave = String(doc.chave_acesso || "").replace(/\D/g, "");
+    // Regras da SEFAZ (MOC CT-e 4.00) — barredas ANTES de abrir o form:
+    //  G164: o CT-e complementado deve ser Normal ou Substituição (complementar
+    //        um complementar é rejeitado com 491);
+    //  G166: o CT-e complementado não pode ter sido substituído (657);
+    //  G167: no máximo 10 CT-es complementares por CT-e (520).
+    const L = linhaDe(doc);
+    const ctx = {
+      rotulo: L.rotulo,
+      // complementosPorChave conta os complementares que REFERENCIAM este CT-e
+      qtdComplementares: complementosPorChave.get(chave) || 0,
+      qtdSubstituicoes: substituicoesPorChave.get(chave) || 0,
+    };
+    const motivoComp = motivoBloqueioComplementar(ctx);
+    if (motivoComp) {
+      toast.error(motivoComp);
+      return;
+    }
     // Tração/Reboque/motorista do original (form salvo ou XML) + id no cadastro
     // ativo: sem isso o complementar abria com placas/motorista vazios.
     const veic = veicMotoristaDoCte(doc.xml_assinado);
@@ -5280,8 +5426,13 @@ function CtePage() {
         if (pend.length > 0) throw new Error("Para emitir informe: " + pend.join("; "));
         validarPedagio(form);
         // cMun da prestação (não da NF-e): resolve pela cidade+UF quando divergente/vazio
-        const cMunIniFix = (await resolverCMunIBGE(form.xMunIni, form.ufIni)) || form.cMunIni;
-        const cMunFimFix = (await resolverCMunIBGE(form.xMunFim, form.ufFim)) || form.cMunFim;
+        // (as duas resoluções em paralelo — o BrasilAPI é lento)
+        const [cMunIniRes, cMunFimRes] = await Promise.all([
+          resolverCMunIBGE(form.xMunIni, form.ufIni, form.cMunIni),
+          resolverCMunIBGE(form.xMunFim, form.ufFim, form.cMunFim),
+        ]);
+        const cMunIniFix = cMunIniRes || form.cMunIni;
+        const cMunFimFix = cMunFimRes || form.cMunFim;
         const ret: any = await emitirCteFn({
           data: {
             empresaId: empresa.id,
@@ -5955,8 +6106,12 @@ function CtePage() {
       if (!empresa) throw new Error("Empresa não selecionada");
       const chaves =
         selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map((m) => m.chave);
-      const cMunIniFix = (await resolverCMunIBGE(form.xMunIni, form.ufIni)) || form.cMunIni;
-      const cMunFimFix = (await resolverCMunIBGE(form.xMunFim, form.ufFim)) || form.cMunFim;
+      const [cMunIniRes, cMunFimRes] = await Promise.all([
+        resolverCMunIBGE(form.xMunIni, form.ufIni, form.cMunIni),
+        resolverCMunIBGE(form.xMunFim, form.ufFim, form.cMunFim),
+      ]);
+      const cMunIniFix = cMunIniRes || form.cMunIni;
+      const cMunFimFix = cMunFimRes || form.cMunFim;
 
       // Mesma modalidade do XML real: complemento/substituição (tpCTe) e
       // subcontratação/redespacho (tpServ) + chave do CT-e anterior.
@@ -6661,8 +6816,28 @@ function CtePage() {
     const lista = ((docs || []) as CteDoc[]).filter(
       (d) => d.status === "autorizado" && d.chave_acesso,
     );
-    if (!rem && !dst && !tom) return lista;
-    return lista.filter((d) => {
+    // Elegibilidade do CT-e referenciado (MOC CT-e 4.00):
+    //  - Complemento: o original deve ser Normal ou Substituição (G164), não
+    //    pode já ter sido substituído (G166) e aceita no máximo 10
+    //    complementares (G167);
+    //  - Substituição: o CT-e substituído deve ser Normal ou Substituição
+    //    (G085) e não pode ter sido complementado (G083).
+    const fin = String((form as any).finalidadeEmissao || "");
+    const elegiveis = lista.filter((d) => {
+      if (fin !== "Complemento" && fin !== "Substituicao") return true;
+      const L = linhasPorDoc.get(d.id);
+      if (!L) return true;
+      const ctx = {
+        rotulo: L.rotulo,
+        qtdComplementares: complementosPorChave.get(dg(d.chave_acesso)) || 0,
+        qtdSubstituicoes: substituicoesPorChave.get(dg(d.chave_acesso)) || 0,
+      };
+      return fin === "Complemento"
+        ? !motivoBloqueioComplementar(ctx)
+        : !motivoBloqueioSubstituicao(ctx);
+    });
+    if (!rem && !dst && !tom) return elegiveis;
+    return elegiveis.filter((d) => {
       let tomaD = "",
         chaves: string[] = [];
       try {
@@ -6682,7 +6857,18 @@ function CtePage() {
         return !!n && (!rem || dg(n.emit_cnpj) === rem) && (!dst || dg(n.dest_cnpj) === dst);
       });
     });
-  }, [docs, nfesTodas, percursoMatch, mercadorias, selecionadas, form.cnpjTomador]);
+  }, [
+    docs,
+    nfesTodas,
+    percursoMatch,
+    mercadorias,
+    selecionadas,
+    form.cnpjTomador,
+    form.finalidadeEmissao,
+    linhasPorDoc,
+    complementosPorChave,
+    substituicoesPorChave,
+  ]);
   useEffect(() => {
     percursoAplicadoKey.current = "";
     // Preserva trava armada antes de abrir (rascunho/percurso manual); senão libera p/ NF-e preencher
@@ -6787,8 +6973,8 @@ function CtePage() {
   const ordenarListaDocs = (lista: CteDoc[]) =>
     ordDocs
       ? [...lista].sort((a, b) => {
-          const la = linhaDocs(a) as any;
-          const lb = linhaDocs(b) as any;
+          const la = linhaDe(a) as any;
+          const lb = linhaDe(b) as any;
           const va = la[ordDocs.chave];
           const vb = lb[ordDocs.chave];
           const cmp =
@@ -6894,6 +7080,7 @@ function CtePage() {
                   <TH k="placas" label="Placa" />
                   <TH k="motorista" label="Motorista" />
                   <TH k="numero" label="Número" />
+                  <TH k="rotulo" label="Tipo" />
                   <TH k="serie" label="Série" />
                   <TH k="nfs" label="Notas Fiscais" />
                   <TH k="valor" label="Valor" />
@@ -6905,14 +7092,37 @@ function CtePage() {
               </TableHeader>
               <TableBody>
                 {listaOrd.map((d) => {
-                  const L = linhaDocs(d);
-                  const nNFs = L.nfs ? L.nfs.split(", ") : [];
+                  const L = linhaDe(d);
+                  // CT-e complementar não repete NF-es no XML (o XSD não tem
+                  // infDoc/infNFe no infCteComp): a lista mostra as MESMAS
+                  // notas do CT-e original, para não parecer que sumiram.
+                  let nfsTexto = L.nfs;
+                  let nfsDoOriginal = false;
+                  if (!nfsTexto && L.rotulo === "Complementar" && L.chReferenciada) {
+                    const orig = linhasPorChave.get(L.chReferenciada);
+                    if (orig?.nfs) {
+                      nfsTexto = orig.nfs;
+                      nfsDoOriginal = true;
+                    }
+                  }
+                  const nNFs = nfsTexto ? nfsTexto.split(", ") : [];
                   const info = {
                     placas: L.placas ? L.placas.split(" / ") : [],
                     motorista: L.motorista,
                     dataEmi: L.dataEmi,
                   };
                   const isRascunho = d.status === "rascunho";
+                  // Regras MOC p/ os botões de complementar/substituir
+                  const chaveDoc = String(d.chave_acesso || "").replace(/\D/g, "");
+                  const ctxModalidade = {
+                    rotulo: L.rotulo,
+                    qtdComplementares: complementosPorChave.get(chaveDoc) || 0,
+                    qtdSubstituicoes: substituicoesPorChave.get(chaveDoc) || 0,
+                  };
+                  const motivoBloqComp = motivoBloqueioComplementar(ctxModalidade);
+                  const podeComplementar = !motivoBloqComp;
+                  const motivoBloqSubs = motivoBloqueioSubstituicao(ctxModalidade);
+                  const podeSubstituir = !motivoBloqSubs;
                   // Com MDF-e ativo: sem botão de cancelar em hipótese alguma
                   const stMdfRow = d.chave_acesso ? mdfStatusPorCte.get(d.chave_acesso) : undefined;
                   const cancBloq = stMdfRow === "autorizado" || stMdfRow === "encerrado";
@@ -6996,9 +7206,46 @@ function CtePage() {
                           </p>
                         ) : null}
                       </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {L.rotulo && L.rotulo !== "Normal" ? (
+                          <Badge
+                            variant="outline"
+                            className={
+                              L.rotulo === "Complementar"
+                                ? "border-amber-500/40 bg-amber-500/10 px-2 py-0 text-[10px] font-semibold text-amber-700 dark:text-amber-300"
+                                : L.rotulo === "Substituição"
+                                  ? "border-blue-500/40 bg-blue-500/10 px-2 py-0 text-[10px] font-semibold text-blue-700 dark:text-blue-300"
+                                  : "px-2 py-0 text-[10px] font-semibold"
+                            }
+                            title={
+                              L.rotulo === "Complementar"
+                                ? `CT-e complementar do CT-e ${L.chReferenciada} — não pode ser complementado`
+                                : `CT-e de ${L.rotulo.toLowerCase()}`
+                            }
+                          >
+                            {L.rotulo}
+                          </Badge>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground">Normal</span>
+                        )}
+                      </TableCell>
                       <TableCell>{d.serie ?? "—"}</TableCell>
                       <TableCell className="text-xs max-w-[180px] truncate" title={nNFs.join(", ")}>
-                        {nNFs.length > 0 ? nNFs.join(", ") : d.chave_acesso ? "—" : "—"}
+                        {nNFs.length > 0 ? (
+                          <>
+                            {nNFs.join(", ")}
+                            {nfsDoOriginal ? (
+                              <span
+                                className="ml-1 text-[10px] text-muted-foreground"
+                                title="Notas do CT-e original (repetidas no complementar)"
+                              >
+                                (do original)
+                              </span>
+                            ) : null}
+                          </>
+                        ) : (
+                          "—"
+                        )}
                       </TableCell>
                       <TableCell className="text-center">
                         {brl(Number(d.valor_servico ?? 0))}
@@ -7123,9 +7370,14 @@ function CtePage() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-7 w-7 text-primary"
+                            className={
+                              "h-7 w-7 " +
+                              (podeSubstituir ? "text-primary" : "text-muted-foreground/50")
+                            }
+                            disabled={!podeSubstituir}
                             onClick={() => substituirCte(d)}
-                            title="Emitir CT-e de substituição"
+                            title={motivoBloqSubs || "Emitir CT-e de substituição"}
+                            aria-label="Emitir CT-e de substituição"
                           >
                             <Repeat className="h-3.5 w-3.5" />
                           </Button>
@@ -7134,9 +7386,13 @@ function CtePage() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-7 w-7 text-primary"
+                            className={
+                              "h-7 w-7 " +
+                              (podeComplementar ? "text-primary" : "text-muted-foreground/50")
+                            }
+                            disabled={!podeComplementar}
                             onClick={() => complementarCte(d)}
-                            title="Emitir CT-e complementar"
+                            title={motivoBloqComp || "Emitir CT-e complementar"}
                             aria-label="Emitir CT-e complementar"
                           >
                             <FilePlus2 className="h-4 w-4" />

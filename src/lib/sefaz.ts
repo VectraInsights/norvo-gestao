@@ -1327,6 +1327,28 @@ export async function emitirNFe(
 // Buscar certificado ativo (usado pelo modo direto no Vercel)
 // ============================================================
 
+// Cache em memória do certificado (PFX + senha): cada emissão fazia 4
+// round-trips ao Supabase (registro, download do PFX, senha e CNPJ/UF da
+// empresa) antes de assinar. A consulta do REGISTRO continua (é a barata) e
+// só o download do PFX + senha entram em cache — invalidado por id do
+// certificado, então um upload novo passa a valer na hora; o TTL cobre as
+// emissões seguidas de um lote.
+type CertCache = {
+  certId: string;
+  pfx: Buffer;
+  senha: string;
+  cnpj: string;
+  uf: string;
+  expiraEm: number;
+};
+const CERT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 min
+const certCache = new Map<string, CertCache>();
+
+export function limparCacheCertificado(empresaId?: string) {
+  if (empresaId) certCache.delete(empresaId);
+  else certCache.clear();
+}
+
 export async function buscarCertificadoAtivo(empresaId: string) {
   const { createClient } = await import("@supabase/supabase-js");
   const url = process.env.SUPABASE_URL;
@@ -1342,6 +1364,16 @@ export async function buscarCertificadoAtivo(empresaId: string) {
     .single();
 
   if (certErr || !cert) throw new Error("Nenhum certificado ativo encontrado");
+
+  const cached = certCache.get(empresaId);
+  if (cached && cached.certId === cert.id && cached.expiraEm > Date.now()) {
+    return {
+      pfx: cached.pfx,
+      senha: cached.senha,
+      cnpj: cached.cnpj,
+      uf: cached.uf,
+    };
+  }
 
   const { data: fileData, error: dlErr } = await supabase.storage
     .from("certificados")
@@ -1365,12 +1397,18 @@ export async function buscarCertificadoAtivo(empresaId: string) {
     .eq("id", empresaId)
     .single();
 
-  return {
+  const retorno = {
     pfx,
     senha: certSenha.senha_cript,
     cnpj: empresa?.cnpj || "",
     uf: empresa?.uf || "SP",
   };
+  certCache.set(empresaId, {
+    certId: cert.id,
+    ...retorno,
+    expiraEm: Date.now() + CERT_CACHE_TTL_MS,
+  });
+  return retorno;
 }
 
 // ============================================================
