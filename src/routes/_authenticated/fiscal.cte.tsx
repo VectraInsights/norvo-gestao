@@ -7097,13 +7097,9 @@ function CtePage() {
                   // infDoc/infNFe no infCteComp): a lista mostra as MESMAS
                   // notas do CT-e original, para não parecer que sumiram.
                   let nfsTexto = L.nfs;
-                  let nfsDoOriginal = false;
                   if (!nfsTexto && L.rotulo === "Complementar" && L.chReferenciada) {
                     const orig = linhasPorChave.get(L.chReferenciada);
-                    if (orig?.nfs) {
-                      nfsTexto = orig.nfs;
-                      nfsDoOriginal = true;
-                    }
+                    if (orig?.nfs) nfsTexto = orig.nfs;
                   }
                   const nNFs = nfsTexto ? nfsTexto.split(", ") : [];
                   const info = {
@@ -7231,21 +7227,7 @@ function CtePage() {
                       </TableCell>
                       <TableCell>{d.serie ?? "—"}</TableCell>
                       <TableCell className="text-xs max-w-[180px] truncate" title={nNFs.join(", ")}>
-                        {nNFs.length > 0 ? (
-                          <>
-                            {nNFs.join(", ")}
-                            {nfsDoOriginal ? (
-                              <span
-                                className="ml-1 text-[10px] text-muted-foreground"
-                                title="Notas do CT-e original (repetidas no complementar)"
-                              >
-                                (do original)
-                              </span>
-                            ) : null}
-                          </>
-                        ) : (
-                          "—"
-                        )}
+                        {nNFs.length > 0 ? nNFs.join(", ") : "—"}
                       </TableCell>
                       <TableCell className="text-center">
                         {brl(Number(d.valor_servico ?? 0))}
