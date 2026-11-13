@@ -430,6 +430,32 @@ function destDoDocCiot(d: { xml_assinado: string | null }): string {
   return "";
 }
 
+// Emitente de um CT-e já salvo (do <emit> do XML): o <docAnt> do CT-e 4.00 exige
+// o <xNome> do emissor do documento anterior (sem isso a SEFAZ responde
+// "Falha no Schema XML do CT-e", cStat 225). Quando o CT-e anterior é de outra
+// empresa (subcontratação) ele não está na nossa lista — o builder usa o nome
+// do emitente atual como padrão (o redespacho, que é o caso comum, é da mesma
+// empresa, então o nome confere).
+function emitenteDoDocCiot(
+  chave: string,
+  docs: CteDoc[] | undefined,
+): { xNome?: string; ie?: string; uf?: string } {
+  const alvo = String(chave || "").replace(/\D/g, "");
+  const doc = (docs || []).find((d) => String(d.chave_acesso || "").replace(/\D/g, "") === alvo);
+  if (!doc) return {};
+  let xml = "";
+  try {
+    const j = JSON.parse(doc.xml_assinado || "{}");
+    xml = typeof (j as any)?.xml === "string" ? (j as any).xml : "";
+  } catch {}
+  const bloco = xml.match(/<emit>([\s\S]*?)<\/emit>/)?.[1] || "";
+  return {
+    xNome: (bloco.match(/<xNome>([^<]*)<\/xNome>/)?.[1] || "").trim(),
+    ie: (bloco.match(/<IE>([^<]*)<\/IE>/)?.[1] || "").trim(),
+    uf: (bloco.match(/<UF>([^<]*)<\/UF>/)?.[1] || "").trim(),
+  };
+}
+
 // UF pelo código IBGE do município (2 primeiros dígitos). O IBGE é a fonte
 // autoritativa: evita término "MARABA/AP" quando a UF veio do destinatário.
 const UF_POR_IBGE: Record<string, string> = {
@@ -5324,7 +5350,13 @@ function CtePage() {
               tpServ: tpServOrigem,
               cteReferenciado:
                 tpCTeOrigem !== "0" || tpServOrigem !== "0" ? chaveOrigem : undefined,
-              docAnt: tpServOrigem !== "0" ? { chaves: [chaveOrigem], tpPrest: "1" } : undefined,
+              docAnt:
+                tpServOrigem !== "0"
+                  ? {
+                      chaves: [{ chave: chaveOrigem, ...emitenteDoDocCiot(chaveOrigem, docs) }],
+                      tpPrest: "1",
+                    }
+                  : undefined,
               vPrest: totalPrestacao(form),
               vCarga: parseFloat(form.vCarga) || 0,
               pesoKg: parseFloat(form.peso) || 0,
@@ -6016,7 +6048,13 @@ function CtePage() {
             tpCTe: tpCTeOrigem as any,
             tpServ: tpServOrigem,
             cteReferenciado: tpCTeOrigem !== "0" || tpServOrigem !== "0" ? chaveOrigem : undefined,
-            docAnt: tpServOrigem !== "0" ? { chaves: [chaveOrigem], tpPrest: "1" } : undefined,
+            docAnt:
+              tpServOrigem !== "0"
+                ? {
+                    chaves: [{ chave: chaveOrigem, ...emitenteDoDocCiot(chaveOrigem, docs) }],
+                    tpPrest: "1",
+                  }
+                : undefined,
             vPrest: totalPrestacao(form),
             vCarga: parseFloat(form.vCarga) || 0,
             pesoKg: parseFloat(form.peso) || 0,

@@ -220,7 +220,10 @@ export interface CteInputCompleto {
   // 3=redespacho intermediário (vão no <docAnt>). 0 = normal.
   tpCTe?: "0" | "1" | "3";
   cteReferenciado?: string;
-  docAnt?: { chaves: string[]; tpPrest?: string };
+  // <docAnt>: chaves do(s) CT-e(s) anterior(es). Cada entrada pode ser só a chave
+  // ou um objeto com os dados do emissor do documento anterior (o XSD 4.00 exige
+  // o <xNome> do <emiDocAnt>).
+  docAnt?: { chaves: DocAntEntrada[]; tpPrest?: string };
   obs?: string;
   // RTC fase 2 (atrás de flag por empresa): cClassTrib real; desligado usa 000001.
   rtc?: { fase2?: boolean };
@@ -382,27 +385,49 @@ export function tomaSefazDeModFrete(ui: unknown): string {
 
 // <docAnt> oficial: agrupa as chaves pelo CNPJ do emitente (posições 7–20 da chave).
 // O leiaute não tem <infDocAnt> nem tpPrest — a forma antiga era rejeitada no schema.
-export function docAntOficial(chaves: unknown): string {
-  const chs = [
-    ...new Set(
-      (Array.isArray(chaves) ? chaves : [])
-        .map((c) => String(c).replace(/\D/g, ""))
-        .filter((c) => c.length === 44),
-    ),
-  ];
-  if (!chs.length) return "";
-  const porEmit = new Map<string, string[]>();
-  for (const ch of chs) {
+// No CT-e 4.00 o <emiDocAnt> é: CNPJ|CPF, IE?, UF?, xNome (OBRIGATÓRIO), idDocAnt.
+// Sem o xNome a SEFAZ responde "Falha no Schema XML" (cStat 225) — por isso o
+// chamador passa o nome/IE/UF do emissor do documento anterior (ou o do CT-e atual
+// como padrão, que é o caso do redespacho: o CT-e anterior é da mesma empresa).
+export type DocAntEntrada = string | { chave?: string; xNome?: string; ie?: string; uf?: string };
+
+export function docAntOficial(
+  chaves: unknown,
+  padrao?: { xNome?: string; ie?: string; uf?: string },
+): string {
+  const lista = (Array.isArray(chaves) ? chaves : []) as DocAntEntrada[];
+  const porEmit = new Map<string, { chaves: string[]; xNome?: string; ie?: string; uf?: string }>();
+  for (const item of lista) {
+    const ch = String(typeof item === "string" ? item : (item?.chave ?? "")).replace(/\D/g, "");
+    if (ch.length !== 44) continue;
     const doc = ch.slice(6, 20);
     if (!/^\d{14}$/.test(doc)) throw new Error(`Chave de CT-e anterior inválida: ${ch}`);
-    if (!porEmit.has(doc)) porEmit.set(doc, []);
-    porEmit.get(doc)!.push(ch);
+    const reg = porEmit.get(doc) || { chaves: [] as string[] };
+    if (!reg.chaves.includes(ch)) reg.chaves.push(ch);
+    if (item && typeof item === "object") {
+      if (!reg.xNome && item.xNome) reg.xNome = item.xNome;
+      if (!reg.ie && item.ie) reg.ie = item.ie;
+      if (!reg.uf && item.uf) reg.uf = item.uf;
+    }
+    porEmit.set(doc, reg);
   }
+  if (!porEmit.size) return "";
   return `<docAnt>${[...porEmit]
-    .map(
-      ([doc, lista]) =>
-        `<emiDocAnt><CNPJ>${doc}</CNPJ>${lista.map((c) => `<idDocAnt><idDocAntEle><chCTe>${c}</chCTe></idDocAntEle></idDocAnt>`).join("")}</emiDocAnt>`,
-    )
+    .map(([doc, reg]) => {
+      const nome = String(reg.xNome || padrao?.xNome || "").trim();
+      if (!nome)
+        throw new Error("O <docAnt> exige a razão social do emissor do CT-e anterior (xNome)");
+      const ie = String(reg.ie || padrao?.ie || "").replace(/\D/g, "");
+      const uf = String(reg.uf || padrao?.uf || "")
+        .trim()
+        .toUpperCase();
+      // IE e UF formam a mesma sequência opcional no XSD: só entram os dois.
+      const ieUf =
+        /^\d{2,14}$/.test(ie) && /^[A-Z]{2}$/.test(uf) ? `<IE>${ie}</IE><UF>${uf}</UF>` : "";
+      return `<emiDocAnt><CNPJ>${doc}</CNPJ>${ieUf}<xNome>${escCte(nome.slice(0, 60))}</xNome>${reg.chaves
+        .map((c) => `<idDocAnt><idDocAntEle><chCTe>${c}</chCTe></idDocAntEle></idDocAnt>`)
+        .join("")}</emiDocAnt>`;
+    })
     .join("")}</docAnt>`;
 }
 
@@ -549,7 +574,13 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
       input.docAnt?.tpPrest === "2" && chNFeDet.length === 44
         ? `<infNFeTranspParcial><chNFe>${chNFeDet}</chNFeTranspParcial>`
         : "";
-    return docAntOficial(input.docAnt?.chaves) + parcial;
+    return (
+      docAntOficial(input.docAnt?.chaves, {
+        xNome: input.emit.xNome,
+        ie: input.emit.ie,
+        uf: input.emit.uf,
+      }) + parcial
+    );
   };
   // Rateio de vPrest/vRec por det (MOC 4.00: a soma dos dets compõe o total).
   // Pesos = valores das NF-es na ordem das chaves; sem valores, divisão igual.
@@ -601,8 +632,9 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
     <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}${veicTracXmlS}${veicRebXmlS}</rodo></infModal>
     ${impXml}
     <total><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vTRec>${input.vPrest.toFixed(2)}</vTRec><vTotDFe>${vTotDFe}</vTotDFe></total>
+    ${pgtoVincXml(input)}
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
-  </infCte>${pgtoVincXml(input)}
+  </infCte>
   <infCTeSupl><qrCodCTe>https://${(input.ufEnv || input.emit.uf)?.toUpperCase() === "MG" ? "portalcte.fazenda.mg.gov.br/portalcte/sistema/qrcode.xhtml" : "dfeportal.svrs.rs.gov.br/cteQrCode"}?chCTe=${chave}&amp;tpAmb=${SEFAZ_TP_AMB}</qrCodCTe></infCTeSupl>
 </CTeSimp>`;
   return { xml, chave };
@@ -918,13 +950,24 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
         .filter((c) => c.length === 44),
     ),
   ];
-  if (!chsNfe.length) throw new Error("CT-e Normal exige ao menos 1 NF-e vinculada");
+  // Modalidade do CT-e (XSD 4.00): o grupo <infCTeNorm> e o <infCteComp> são
+  // ALTERNATIVAS (choice). O complementar (tpCTe=1) substitui o <infCTeNorm>
+  // (regra G017 do MOC: "Tipo do CTe=1 → deve existir o grupo de CTe
+  // complementar"), logo não leva <infCarga>/<infDoc>/<infModal> nem NF-e.
+  const ehComplemento = tpCTe === "1";
+  const ehSubstituto = tpCTe === "3";
+  if (!ehComplemento && !chsNfe.length)
+    throw new Error("CT-e Normal exige ao menos 1 NF-e vinculada");
   const docAntChaves = [
     ...(Array.isArray(input.docAnt?.chaves) ? input.docAnt!.chaves : []),
     // Subcontratação/redespacho: o CT-e anterior referenciado entra no <docAnt>.
     ...(tpServ !== "0" ? [chCTeAnt] : []),
   ];
-  const docAntXmlN = docAntOficial(docAntChaves);
+  const docAntXmlN = docAntOficial(docAntChaves, {
+    xNome: input.emit.xNome,
+    ie: input.emit.ie,
+    uf: input.emit.uf,
+  });
   const infDocXml = `<infDoc>${chsNfe.map((ch) => `<infNFe><chave>${ch}</chave></infNFe>`).join("")}</infDoc>`;
 
   // Modal rodoviário: RNTRC + moto + tração + reboques (regra única p/ os dois modelos)
@@ -950,6 +993,26 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
     (input.ufEnv || input.emit.uf)?.toUpperCase() === "MG"
       ? "portalcte.fazenda.mg.gov.br/portalcte/sistema/qrcode.xhtml"
       : "dfeportal.svrs.rs.gov.br/cteQrCode";
+
+  // Grupos finais do <infCte> (XSD 4.00, ordem: imp → pgtoVinc? → choice
+  // <infCTeNorm>|<infCteComp> → autXML? → infRespTec?):
+  //  - Normal/Substituto: <infCTeNorm>; no substituto (tpCTe=3) o <infCteSub>
+  //    fica DENTRO do <infCTeNorm> (depois do <infModal>) e o campo da chave
+  //    chama <chCte> (não <chCTe>).
+  //  - Complementar (tpCTe=1): <infCteComp> no LUGAR do <infCTeNorm>.
+  const infCteNormXml = ehComplemento
+    ? ""
+    : `<infCTeNorm>
+      <infCarga>
+        <vCarga>${Number(input.vCarga || 0).toFixed(2)}</vCarga><proPred>${escCte(input.infCTeNorm?.proPred || "CARGA GERAL")}</proPred>
+        <infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${Number(input.pesoKg || 0).toFixed(4)}</qCarga></infQ>
+      </infCarga>
+      ${infDocXml}${docAntXmlN}
+      <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}${veicTracXml}${veicRebXml}</rodo></infModal>
+      ${ehSubstituto ? `<infCteSub><chCte>${chCTeAnt}</chCte></infCteSub>` : ""}
+    </infCTeNorm>`;
+  const infCteCompXml = ehComplemento ? `<infCteComp><chCTe>${chCTeAnt}</chCTe></infCteComp>` : "";
+
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <CTe xmlns="http://www.portalfiscal.inf.br/cte">
   <infCte Id="${id}" versao="4.00">
@@ -970,16 +1033,10 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
     ${parteXml("dest", "enderDest", destHml, "destinatario")}
     ${vPrestXml}
     ${impXml}
-    <infCTeNorm>
-      <infCarga>
-        <vCarga>${Number(input.vCarga || 0).toFixed(2)}</vCarga><proPred>${escCte(input.infCTeNorm?.proPred || "CARGA GERAL")}</proPred>
-        <infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${Number(input.pesoKg || 0).toFixed(4)}</qCarga></infQ>
-      </infCarga>
-      ${infDocXml}${docAntXmlN}
-      <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}${veicTracXml}${veicRebXml}</rodo></infModal>
-    </infCTeNorm>
+    ${pgtoVincXml(input)}
+    ${infCteNormXml}${infCteCompXml}
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
-  </infCte>${tpCTe === "1" ? `<infCteComp><chCTe>${chCTeAnt}</chCTe></infCteComp>` : tpCTe === "3" ? `<infCteSub><chCTe>${chCTeAnt}</chCTe></infCteSub>` : ""}${pgtoVincXml(input)}
+  </infCte>
   <infCTeSupl><qrCodCTe>https://${qrBase}?chCTe=${chave}&amp;tpAmb=${SEFAZ_TP_AMB}</qrCodCTe></infCTeSupl>
 </CTe>`;
   return { xml, chave };

@@ -242,13 +242,32 @@ describe("<docAnt> oficial (agrupado por emitente)", () => {
   const ch2 = "35251021306287000152570010000000021000000020";
 
   it("agrupa chaves pelo CNPJ em <emiDocAnt> sem <infDocAnt>", () => {
-    const xml = docAntOficial([ch1, ch2]);
+    const xml = docAntOficial([ch1, ch2], { xNome: "TRANSPORTES LTDA" });
 
     expect(xml).toContain("<docAnt><emiDocAnt><CNPJ>21306287000152</CNPJ>");
     expect(xml).toContain(`<idDocAnt><idDocAntEle><chCTe>${ch1}</chCTe></idDocAntEle></idDocAnt>`);
     expect(xml).toContain(`<chCTe>${ch2}</chCTe>`);
     expect(xml).not.toContain("<infDocAnt>");
     expect(xml).not.toContain("tpPrest");
+  });
+
+  it("inclui o xNome do emissor do documento anterior (exigido pelo XSD 4.00)", () => {
+    const xml = docAntOficial([{ chave: ch1, xNome: "REMETENTE SA", ie: "123456789", uf: "MG" }]);
+
+    expect(xml).toContain(
+      "<emiDocAnt><CNPJ>21306287000152</CNPJ><IE>123456789</IE><UF>MG</UF><xNome>REMETENTE SA</xNome>",
+    );
+  });
+
+  it("usa o nome padrão quando a entrada é só a chave", () => {
+    const xml = docAntOficial([ch1], { xNome: "TRANSPORTES LTDA", ie: "1860873170000", uf: "MG" });
+
+    expect(xml).toContain("<xNome>TRANSPORTES LTDA</xNome>");
+    expect(xml).toContain("<IE>1860873170000</IE><UF>MG</UF>");
+  });
+
+  it("sem nome do emissor, recusa o XML (senão a SEFAZ devolve cStat 225)", () => {
+    expect(() => docAntOficial([ch1])).toThrow(/razão social/);
   });
 
   it("normal inclui o <docAnt> como irmão do <infDoc> (filho de infCTeNorm)", () => {
@@ -271,11 +290,41 @@ describe("CT-e original (complemento/substituição/redespacho)", () => {
     expect(xml).not.toContain("<docAnt>");
   });
 
-  it("substituto usa tpCTe=3 e <infCteSub>", () => {
+  it("complemento: o <infCteComp> fica DENTRO do <infCte> e substitui o <infCTeNorm>", () => {
+    // XSD 4.00: <infCTeNorm> e <infCteComp> são alternativas (choice). Com o
+    // <infCteComp> fora do <infCte> (ou junto do <infCTeNorm>) a SEFAZ MG
+    // rejeita com cStat 225 "Falha no Schema XML do CT-e".
+    const xml = buildNormal({ tpCTe: "1", cteReferenciado: chOrig });
+
+    expect(xml).toContain("</imp>");
+    expect(xml).toMatch(/<infCteComp><chCTe>\d{44}<\/chCTe><\/infCteComp>\s*<infRespTec>/);
+    expect(xml.indexOf("<infCteComp>")).toBeGreaterThan(xml.indexOf("<infCte "));
+    expect(xml.indexOf("<infCteComp>")).toBeLessThan(xml.indexOf("</infCte>"));
+    expect(xml).not.toContain("<infCTeNorm>");
+    expect(xml).not.toContain("</infCte><infCteComp>");
+  });
+
+  it("complemento não exige NF-e vinculada (não leva <infDoc>)", () => {
+    const xml = buildNormal({
+      tpCTe: "1",
+      cteReferenciado: chOrig,
+      chavesNFe: [],
+    });
+
+    expect(xml).toContain("<infCteComp>");
+    expect(xml).not.toContain("<infDoc>");
+  });
+
+  it("substituto usa tpCTe=3 e <infCteSub> dentro do <infCTeNorm>", () => {
     const xml = buildNormal({ tpCTe: "3", cteReferenciado: chOrig });
 
     expect(xml).toContain("<tpCTe>3</tpCTe>");
-    expect(xml).toContain(`<infCteSub><chCTe>${chOrig}</chCTe></infCteSub>`);
+    // No XSD 4.00 o <infCteSub> é filho do <infCTeNorm> e a chave chama <chCte>.
+    expect(xml).toContain(`<infCteSub><chCte>${chOrig}</chCte></infCteSub>`);
+    expect(xml).toMatch(
+      /<\/infModal>\s*<infCteSub><chCte>\d{44}<\/chCte><\/infCteSub>\s*<\/infCTeNorm>/,
+    );
+    expect(xml).not.toContain("</infCte><infCteSub>");
   });
 
   it("redespacho usa tpServ=2 e a chave do CT-e anterior no <docAnt>", () => {
@@ -284,6 +333,16 @@ describe("CT-e original (complemento/substituição/redespacho)", () => {
     expect(xml).toContain("<tpServ>2</tpServ>");
     expect(xml).toContain("<docAnt><emiDocAnt><CNPJ>21306287000152</CNPJ>");
     expect(xml).toContain(`<chCTe>${chOrig}</chCTe>`);
+    // <xNome> do emissor do documento anterior é obrigatório no XSD 4.00.
+    expect(xml).toMatch(/<emiDocAnt><CNPJ>21306287000152<\/CNPJ>.*<xNome>[^<]+<\/xNome>/);
+  });
+
+  it("normal não leva <infCteComp>/<infCteSub>", () => {
+    const xml = buildNormal();
+
+    expect(xml).toContain("<infCTeNorm>");
+    expect(xml).not.toContain("<infCteComp>");
+    expect(xml).not.toContain("<infCteSub>");
   });
 
   it("sem a chave do CT-e original, recusa o XML", () => {

@@ -64,3 +64,6 @@ desktop/node_modules
 
 # Dump local de conversa/projeto (nao versionar)
 /PROJETO.json
+
+# Vercel CLI (link local do projeto)
+/.vercel/
